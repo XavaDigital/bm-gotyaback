@@ -1,0 +1,89 @@
+/* #root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+} */
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+/* --- Admin Layout Styles Ported from BM-estore --- */
+
+.ant-layout {
+  min-height: 100vh;
+}
+
+/* Admin layout overrides */
+.admin-layout {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.admin-layout .ant-layout {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.admin-layout .ant-layout-content {
+  width: 100% !important;
+  flex: 1 !important;
+}
+
+.admin-layout .ant-layout-sider {
+  flex: 0 0 auto !important;
+}
+
+/* Ensure admin pages use full width */
+.admin-layout .ant-row {
+  width: 100% !important;
+}
+
+.admin-layout .ant-table-wrapper {
+  width: 100% !important;
+}
+
+.admin-layout .ant-card {
+  width: 100% !important;
+}
