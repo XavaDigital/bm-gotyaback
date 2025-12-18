@@ -4,6 +4,7 @@ const sponsorEntrySchema = new mongoose.Schema({
     campaignId: { type: mongoose.Schema.Types.ObjectId, ref: 'Campaign', required: true },
     positionId: { type: String },
     name: { type: String, required: true },
+    email: { type: String, required: true },
     message: { type: String },
     amount: { type: Number, required: true },
     paymentMethod: { type: String, enum: ['card', 'cash'], required: true },

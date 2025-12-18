@@ -5,8 +5,10 @@ import {
     LogoutOutlined,
     UserOutlined,
     SettingOutlined,
+    GlobalOutlined,
 } from "@ant-design/icons";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom"; // Added useNavigate
+import authService from "../services/auth.service";
 
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
@@ -20,6 +22,12 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onLogout }) => {
     const [collapsed, setCollapsed] = useState(false);
     const location = useLocation();
     const navigate = useNavigate(); // Used for logout navigation
+    const [currentUser, setCurrentUser] = useState<any>(null);
+
+    useEffect(() => {
+        const user = authService.getCurrentUser();
+        setCurrentUser(user);
+    }, [location.pathname]); // Re-check user when route changes
 
     useEffect(() => {
         // Override body styles to allow full viewport width
@@ -64,6 +72,11 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onLogout }) => {
             key: "/campaigns/create",
             icon: <SettingOutlined />,
             label: <Link to="/campaigns/create">Create Campaign</Link>,
+        },
+        {
+            key: "/dashboard/profile",
+            icon: <SettingOutlined />,
+            label: <Link to="/dashboard/profile">Profile Settings</Link>,
         }
     ];
 
@@ -187,7 +200,18 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onLogout }) => {
                         <Title level={3} style={{ margin: 0, color: "#1890ff" }}>
                             Admin Panel
                         </Title>
-                        {/* User profile dropdown or other header items could go here */}
+                        <div>
+                            {currentUser?.organizerProfile?.slug && (
+                                <Button
+                                    type="link"
+                                    icon={<GlobalOutlined />}
+                                    href={`/u/${currentUser.organizerProfile.slug}`}
+                                    target="_blank"
+                                >
+                                    View Public Profile
+                                </Button>
+                            )}
+                        </div>
                     </Header>
                     <Content
                         style={{

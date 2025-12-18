@@ -50,6 +50,11 @@ const campaignService = {
         return response.data;
     },
 
+    // Update campaign pricing
+    updatePricing: async (id: string, data: any): Promise<void> => {
+        await apiClient.put(`/campaigns/${id}/pricing`, data);
+    },
+
     // Get layout for campaign
     getLayout: async (campaignId: string): Promise<ShirtLayout> => {
         const response = await apiClient.get<ShirtLayout>(`/campaigns/${campaignId}/layout`);

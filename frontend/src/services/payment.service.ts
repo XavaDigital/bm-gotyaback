@@ -1,4 +1,5 @@
 import apiClient from './apiClient';
+import type { PaymentConfig, CampaignPaymentConfig } from '../types/campaign.types';
 
 const paymentService = {
     // Create payment intent for sponsorship
@@ -8,6 +9,7 @@ const paymentService = {
         amount: number;
         sponsorData: {
             name: string;
+            email: string;
             message?: string;
         };
     }) => {
@@ -16,8 +18,14 @@ const paymentService = {
     },
 
     // Get Stripe config (publishable key)
-    getConfig: async () => {
+    getConfig: async (): Promise<PaymentConfig> => {
         const response = await apiClient.get('/payment/config');
+        return response.data;
+    },
+
+    // Get campaign-specific payment config
+    getCampaignConfig: async (campaignId: string): Promise<CampaignPaymentConfig> => {
+        const response = await apiClient.get(`/payment/campaigns/${campaignId}/config`);
         return response.data;
     },
 };

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Form, Input, Button, Card, Typography, message } from 'antd';
+import { Form, Input, Button, Card, Typography, message, Alert } from 'antd';
 import { useNavigate, Link } from 'react-router-dom';
 import authService from '../services/auth.service';
 
-const { Title } = Typography;
+
+
+const { Title, Text } = Typography;
 
 const Login: React.FC = () => {
     const [loading, setLoading] = useState(false);
@@ -26,6 +28,26 @@ const Login: React.FC = () => {
     return (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f0f2f5' }}>
             <Card style={{ width: 400 }}>
+                 <Alert
+        message="Development Mode"
+        description={
+          <div>
+            <Text strong>Test Accounts:</Text>
+          
+            <div style={{ marginTop: 12 }}>
+              <Text strong>User Account:</Text>
+              <br />
+              <Text copyable>user@gmail.com</Text>
+              <br />
+              <Text>Password: </Text>
+              <Text copyable>qweqweqwe</Text>
+            </div>
+          </div>
+        }
+        type="info"
+        showIcon
+        style={{ marginBottom: 24 }}
+      />
                 <div style={{ textAlign: 'center', marginBottom: 20 }}>
                     <Title level={2}>Login</Title>
                 </div>

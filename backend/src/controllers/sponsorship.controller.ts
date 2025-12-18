@@ -4,16 +4,17 @@ import * as sponsorshipService from '../services/sponsorship.service';
 export const createSponsorship = async (req: Request, res: Response) => {
     try {
         const campaignId = req.params.id;
-        const { positionId, name, message, amount, paymentMethod } = req.body;
+        const { positionId, name, email, message, amount, paymentMethod } = req.body;
 
         // Validation
-        if (!name || !amount || !paymentMethod) {
+        if (!name || !email || !amount || !paymentMethod) {
             return res.status(400).json({ message: 'Missing required fields' });
         }
 
         const sponsorship = await sponsorshipService.createSponsorship(campaignId, {
             positionId,
             name,
+            email,
             message,
             amount,
             paymentMethod,
@@ -60,7 +61,7 @@ export const markAsPaid = async (req: Request, res: Response) => {
             return res.status(401).json({ message: 'User not authenticated' });
         }
 
-        const sponsorship = await sponsorshipService.markAsPaid(sponsorshipId, userId);
+        const sponsorship = await sponsorshipService.markAsPaid(sponsorshipId, userId.toString());
         res.json(sponsorship);
     } catch (error) {
         const message = (error as Error).message;

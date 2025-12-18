@@ -7,6 +7,8 @@ import CreateCampaign from './pages/CreateCampaign';
 import MyCampaigns from './pages/MyCampaigns';
 import CampaignDetail from './pages/CampaignDetail';
 import PublicCampaign from './pages/PublicCampaign';
+import ProfileSettings from './pages/ProfileSettings';
+import OrganizerLandingPage from './pages/OrganizerLandingPage';
 import { AppLayout } from './components/AppLayout';
 import { AuthGuard } from './components/AuthGuard';
 import { GuestGuard } from './components/GuestGuard';
@@ -23,8 +25,9 @@ const App: React.FC = () => {
           <Route path="/register" element={<Register />} />
         </Route>
 
-        {/* Public Campaign View (No auth required) */}
-        <Route path="/c/:slug" element={<PublicCampaign />} />
+        {/* Public Routes (No auth required) */}
+        <Route path="/campaign/:slug" element={<PublicCampaign />} />
+        <Route path="/u/:slug" element={<OrganizerLandingPage />} />
 
         {/* Protected Routes (Authenticated users only) */}
         <Route element={<AuthGuard />}>
@@ -32,6 +35,7 @@ const App: React.FC = () => {
             <Route path="/" element={<Home />} />
             <Route path="/campaigns/create" element={<CreateCampaign />} />
             <Route path="/dashboard" element={<MyCampaigns />} />
+            <Route path="/dashboard/profile" element={<ProfileSettings />} />
             <Route path="/campaigns/:id" element={<CampaignDetail />} />
           </Route>
         </Route>

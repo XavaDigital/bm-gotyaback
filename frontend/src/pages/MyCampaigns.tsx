@@ -4,10 +4,13 @@ import { Card, Button, Empty, Spin, Tag, Row, Col, message, Statistic } from 'an
 import { PlusOutlined, EyeOutlined, EditOutlined } from '@ant-design/icons';
 import type { Campaign } from '../types/campaign.types';
 import campaignService from '../services/campaign.service';
+import EditCampaignModal from '../components/EditCampaignModal';
 
 const MyCampaigns: React.FC = () => {
     const [campaigns, setCampaigns] = useState<Campaign[]>([]);
     const [loading, setLoading] = useState(true);
+    const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
+    const [isEditModalVisible, setIsEditModalVisible] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -23,6 +26,23 @@ const MyCampaigns: React.FC = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleEditClick = (campaign: Campaign) => {
+        setEditingCampaign(campaign);
+        setIsEditModalVisible(true);
+    };
+
+    const handleEditSuccess = () => {
+        setIsEditModalVisible(false);
+        setEditingCampaign(null);
+        loadCampaigns();
+        message.success('Campaign updated successfully');
+    };
+
+    const handleEditCancel = () => {
+        setIsEditModalVisible(false);
+        setEditingCampaign(null);
     };
 
     const getRemainingDays = (endDate?: string | Date) => {
@@ -92,7 +112,7 @@ const MyCampaigns: React.FC = () => {
                                     <Button
                                         type="link"
                                         icon={<EditOutlined />}
-                                        onClick={() => navigate(`/campaigns/${campaign._id}/edit`)}
+                                        onClick={() => handleEditClick(campaign)}
                                         disabled={campaign.isClosed}
                                     >
                                         Edit
@@ -137,6 +157,13 @@ const MyCampaigns: React.FC = () => {
                     );
                 })}
             </Row>
+
+            <EditCampaignModal
+                visible={isEditModalVisible}
+                campaign={editingCampaign}
+                onCancel={handleEditCancel}
+                onSuccess={handleEditSuccess}
+            />
         </div>
     );
 };

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Form, Input, Select, Steps, Button, DatePicker, InputNumber, Radio, message, Card } from 'antd';
+import { Form, Input, Select, Steps, Button, DatePicker, InputNumber, Radio, message, Card, Switch, Alert } from 'antd';
 import type { CreateCampaignRequest, CreateLayoutRequest } from '../types/campaign.types';
 import campaignService from '../services/campaign.service';
 
@@ -244,16 +244,32 @@ const CreateCampaign: React.FC = () => {
                         </Select>
                     </Form.Item>
 
+                    <Alert
+                        message="Payment Methods"
+                        description="Configure how sponsors can pay for their sponsorships. At least one payment method must be enabled."
+                        type="info"
+                        showIcon
+                        style={{ marginBottom: 16 }}
+                    />
+
+                    <Form.Item
+                        label="Enable Online Payments (Stripe)"
+                        name="enableStripePayments"
+                        valuePropName="checked"
+                        initialValue={false}
+                        tooltip="Allow sponsors to pay with credit/debit cards via Stripe. Requires Stripe to be configured on the server."
+                    >
+                        <Switch />
+                    </Form.Item>
+
                     <Form.Item
                         label="Allow Offline Payments"
                         name="allowOfflinePayments"
                         valuePropName="checked"
                         initialValue={true}
+                        tooltip="Allow sponsors to pledge and pay manually (cash, bank transfer, etc.). You'll need to mark payments as received."
                     >
-                        <Radio.Group>
-                            <Radio value={true}>Yes</Radio>
-                            <Radio value={false}>No</Radio>
-                        </Radio.Group>
+                        <Switch />
                     </Form.Item>
                 </Form>
             ),

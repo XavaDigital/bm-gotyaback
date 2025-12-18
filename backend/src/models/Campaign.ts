@@ -11,7 +11,8 @@ const campaignSchema = new mongoose.Schema({
     startDate: { type: Date },
     endDate: { type: Date },
     isClosed: { type: Boolean, default: false },
-    allowOfflinePayments: { type: Boolean, default: false },
+    enableStripePayments: { type: Boolean, default: false },
+    allowOfflinePayments: { type: Boolean, default: true },
 }, { timestamps: true });
 
 export const Campaign = mongoose.model('Campaign', campaignSchema);

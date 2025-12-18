@@ -153,7 +153,7 @@ const CampaignDetail: React.FC = () => {
                 <h1>{campaign.title}</h1>
                 <div>
                     <Button
-                        onClick={() => window.open(`/c/${campaign.slug}`, '_blank')}
+                        onClick={() => window.open(`/campaign/${campaign.slug}`, '_blank')}
                         style={{ marginRight: 8 }}
                         icon={<ExportOutlined />}
                     >
@@ -214,8 +214,8 @@ const CampaignDetail: React.FC = () => {
                     <Descriptions.Item label="Garment">{campaign.garmentType}</Descriptions.Item>
                     <Descriptions.Item label="Currency">{campaign.currency}</Descriptions.Item>
                     <Descriptions.Item label="Public URL">
-                        <a href={`/c/${campaign.slug}`} target="_blank" rel="noopener noreferrer">
-                            /c/{campaign.slug}
+                        <a href={`/campaign/${campaign.slug}`} target="_blank" rel="noopener noreferrer">
+                            /campaign/{campaign.slug}
                         </a>
                     </Descriptions.Item>
                     <Descriptions.Item label="End Date">

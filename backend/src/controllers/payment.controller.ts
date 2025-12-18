@@ -42,8 +42,18 @@ export const handleWebhook = async (req: Request, res: Response) => {
 
 export const getConfig = async (req: Request, res: Response) => {
     try {
-        const publishableKey = paymentService.getStripePublishableKey();
-        res.json({ publishableKey });
+        const config = paymentService.getPaymentConfig();
+        res.json(config);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const getCampaignConfig = async (req: Request, res: Response) => {
+    try {
+        const { campaignId } = req.params;
+        const config = await paymentService.getCampaignPaymentConfig(campaignId);
+        res.json(config);
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }

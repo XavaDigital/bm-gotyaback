@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Modal, Form, Input, Radio, Button, message } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Modal, Form, Input, Radio, Button, message, Alert, Spin } from 'antd';
 import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import type { CreateSponsorshipRequest } from '../types/campaign.types';
+import type { CreateSponsorshipRequest, CampaignPaymentConfig } from '../types/campaign.types';
 import getStripe from '../utils/stripe';
 import paymentService from '../services/payment.service';
 
@@ -17,14 +17,24 @@ interface SponsorCheckoutModalProps {
 
 const CheckoutForm: React.FC<{
     onSubmit: (paymentMethod: 'card' | 'cash') => Promise<void>;
-    sponsorData: { name: string; message?: string; campaignId: string; positionId?: string };
+    sponsorData: { name: string; email: string; message?: string; campaignId: string; positionId?: string; amount: number };
     amount: number;
     currency: string;
     loading: boolean;
-}> = ({ onSubmit, sponsorData, amount, currency, loading }) => {
+    paymentConfig: CampaignPaymentConfig;
+}> = ({ onSubmit, sponsorData, amount, currency, loading, paymentConfig }) => {
     const stripe = useStripe();
     const elements = useElements();
-    const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash'>('cash');
+
+    // Determine default payment method based on what's available
+    const getDefaultPaymentMethod = (): 'card' | 'cash' => {
+        if (paymentConfig.enableStripePayments && !paymentConfig.allowOfflinePayments) {
+            return 'card';
+        }
+        return 'cash';
+    };
+
+    const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash'>(getDefaultPaymentMethod());
     const [processing, setProcessing] = useState(false);
 
     const handleSubmit = async () => {
@@ -54,6 +64,7 @@ const CheckoutForm: React.FC<{
                 amount,
                 sponsorData: {
                     name: sponsorData.name,
+                    email: sponsorData.email,
                     message: sponsorData.message,
                 },
             });
@@ -64,6 +75,7 @@ const CheckoutForm: React.FC<{
                     card: cardElement,
                     billing_details: {
                         name: sponsorData.name,
+                        email: sponsorData.email,
                     },
                 },
             });
@@ -85,12 +97,28 @@ const CheckoutForm: React.FC<{
 
     return (
         <div>
-            <Form.Item label="Payment Method">
-                <Radio.Group value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
-                    <Radio value="card">Credit/Debit Card</Radio>
-                    <Radio value="cash">Cash / Bank Transfer (Offline)</Radio>
-                </Radio.Group>
-            </Form.Item>
+            {!paymentConfig.enableStripePayments && !paymentConfig.allowOfflinePayments && (
+                <Alert
+                    message="No Payment Methods Available"
+                    description="This campaign has no payment methods enabled. Please contact the campaign organizer."
+                    type="error"
+                    showIcon
+                    style={{ marginBottom: 16 }}
+                />
+            )}
+
+            {(paymentConfig.enableStripePayments || paymentConfig.allowOfflinePayments) && (
+                <Form.Item label="Payment Method">
+                    <Radio.Group value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
+                        {paymentConfig.enableStripePayments && (
+                            <Radio value="card">Credit/Debit Card</Radio>
+                        )}
+                        {paymentConfig.allowOfflinePayments && (
+                            <Radio value="cash">Cash / Bank Transfer (Offline)</Radio>
+                        )}
+                    </Radio.Group>
+                </Form.Item>
+            )}
 
             {paymentMethod === 'card' && (
                 <div style={{ marginTop: 16, marginBottom: 16 }}>
@@ -203,12 +231,45 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
     const [sponsorData, setSponsorData] = useState<any>(null);
-    const [stripePromise] = useState(() => getStripe());
+    const [paymentConfig, setPaymentConfig] = useState<CampaignPaymentConfig | null>(null);
+    const [loadingConfig, setLoadingConfig] = useState(true);
+    const [stripePromise, setStripePromise] = useState<Promise<any> | null>(null);
+
+    // Fetch payment config when modal opens
+    useEffect(() => {
+        if (visible && campaignId) {
+            fetchPaymentConfig();
+        }
+    }, [visible, campaignId]);
+
+    const fetchPaymentConfig = async () => {
+        try {
+            setLoadingConfig(true);
+            const config = await paymentService.getCampaignConfig(campaignId);
+            setPaymentConfig(config);
+
+            // Only load Stripe if it's enabled for this campaign
+            if (config.enableStripePayments) {
+                const stripe = await getStripe(campaignId);
+                setStripePromise(Promise.resolve(stripe));
+            } else {
+                setStripePromise(null);
+            }
+        } catch (error: any) {
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to load payment configuration';
+            message.error(errorMessage);
+            console.error('Failed to fetch payment config:', error);
+            console.error('Error details:', error.response?.data);
+        } finally {
+            setLoadingConfig(false);
+        }
+    };
 
     const handleFormSubmit = async () => {
         try {
             const values = await form.validateFields();
-            setSponsorData({ ...values, campaignId, positionId, amount });
+            const finalAmount = positionId ? amount : parseFloat(values.amount);
+            setSponsorData({ ...values, campaignId, positionId, amount: finalAmount });
         } catch (error) {
             // Validation error
         }
@@ -255,7 +316,19 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
             footer={null}
             width={550}
         >
-            {!sponsorData ? (
+            {loadingConfig ? (
+                <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                    <Spin size="large" />
+                    <div style={{ marginTop: 16 }}>Loading payment options...</div>
+                </div>
+            ) : !paymentConfig ? (
+                <Alert
+                    message="Error"
+                    description="Failed to load payment configuration. Please try again."
+                    type="error"
+                    showIcon
+                />
+            ) : !sponsorData ? (
                 <Form form={form} layout="vertical" onFinish={handleFormSubmit}>
                     {positionId && (
                         <div style={{ marginBottom: 16, padding: 12, backgroundColor: '#f0f0f0', borderRadius: 4 }}>
@@ -265,12 +338,43 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
                         </div>
                     )}
 
+                    {!positionId && (
+                        <Form.Item
+                            label={`Donation Amount (${currency})`}
+                            name="amount"
+                            rules={[
+                                { required: true, message: 'Please enter an amount' },
+                                {
+                                    validator: async (_, value) => {
+                                        if (value && parseFloat(value) <= 0) {
+                                            return Promise.reject(new Error('Amount must be greater than 0'));
+                                        }
+                                        return Promise.resolve();
+                                    }
+                                }
+                            ]}
+                        >
+                            <Input type="number" prefix="$" placeholder="10.00" min={1} step={0.01} />
+                        </Form.Item>
+                    )}
+
                     <Form.Item
                         label="Your Name"
                         name="name"
                         rules={[{ required: true, message: 'Please enter your name' }]}
                     >
                         <Input placeholder="John Doe" />
+                    </Form.Item>
+
+                    <Form.Item
+                        label="Email Address"
+                        name="email"
+                        rules={[
+                            { required: true, message: 'Please enter your email' },
+                            { type: 'email', message: 'Please enter a valid email' }
+                        ]}
+                    >
+                        <Input placeholder="john@example.com" />
                     </Form.Item>
 
                     <Form.Item
@@ -293,10 +397,10 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
                         </Button>
                     </div>
                 </Form>
-            ) : (
+            ) : paymentConfig.enableStripePayments && stripePromise ? (
                 <Elements stripe={stripePromise}>
                     <div style={{ marginBottom: 16, padding: 12, backgroundColor: '#f0f0f0', borderRadius: 4 }}>
-                        <strong>Name:</strong> {sponsorData.name}
+                        <strong>Name:</strong> {sponsorData.name} ({sponsorData.email})
                         {sponsorData.message && (
                             <>
                                 <br />
@@ -304,18 +408,42 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
                             </>
                         )}
                         <br />
-                        <strong>Amount:</strong> {currency} ${amount}
+                        <strong>Amount:</strong> {currency} ${sponsorData.amount}
                     </div>
                     <CheckoutForm
                         onSubmit={handlePaymentSubmit}
                         sponsorData={{ ...sponsorData, campaignId, positionId }}
-                        amount={amount}
+                        amount={sponsorData.amount}
                         currency={currency}
                         loading={loading}
+                        paymentConfig={paymentConfig}
                     />
                 </Elements>
+            ) : (
+                // Offline payments only (no Stripe)
+                <>
+                    <div style={{ marginBottom: 16, padding: 12, backgroundColor: '#f0f0f0', borderRadius: 4 }}>
+                        <strong>Name:</strong> {sponsorData.name} ({sponsorData.email})
+                        {sponsorData.message && (
+                            <>
+                                <br />
+                                <strong>Message:</strong> {sponsorData.message}
+                            </>
+                        )}
+                        <br />
+                        <strong>Amount:</strong> {currency} ${sponsorData.amount}
+                    </div>
+                    <CheckoutForm
+                        onSubmit={handlePaymentSubmit}
+                        sponsorData={{ ...sponsorData, campaignId, positionId }}
+                        amount={sponsorData.amount}
+                        currency={currency}
+                        loading={loading}
+                        paymentConfig={paymentConfig}
+                    />
+                </>
             )}
-        </Modal>
+        </Modal >
     );
 };
 

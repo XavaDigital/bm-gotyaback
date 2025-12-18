@@ -13,6 +13,7 @@ router.post('/', protect, campaignController.createCampaign);
 router.get('/my-campaigns', protect, campaignController.getMyCampaigns);
 router.get('/:id', protect, campaignController.getCampaign);
 router.put('/:id', protect, campaignController.updateCampaign);
+router.put('/:id/pricing', protect, campaignController.updatePricing);
 router.post('/:id/close', protect, campaignController.closeCampaign);
 
 // Shirt layout routes

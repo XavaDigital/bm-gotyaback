@@ -201,28 +201,26 @@ const PublicCampaign: React.FC = () => {
                                 onPositionSelect={handlePositionSelect}
                                 currency={campaign.currency}
                             />
+                            <div style={{ marginTop: 24, textAlign: 'center', backgroundColor: '#f9f9f9', padding: 20, borderRadius: 8 }}>
+                                <h4 style={{ marginBottom: 12, color: '#333' }}>Not looking for a spot on the shirt?</h4>
+                                <p style={{ marginBottom: 16, color: '#666' }}>You can still support this campaign by making a general donation of any amount.</p>
+                                <Button
+                                    type="primary"
+                                    onClick={() => {
+                                        setSelectedPosition(undefined);
+                                        setSelectedAmount(0);
+                                        setCheckoutVisible(true);
+                                    }}
+                                >
+                                    Make a General Donation
+                                </Button>
+                            </div>
                         </>
                     )}
                 </Card>
             )}
 
-            {campaign.campaignType === 'donation' && !isClosed && (
-                <Card title="Make a Donation" style={{ marginBottom: 24 }}>
-                    <div style={{ textAlign: 'center', padding: 20 }}>
-                        <Button
-                            type="primary"
-                            size="large"
-                            onClick={() => {
-                                setSelectedPosition(undefined);
-                                setSelectedAmount(0);
-                                setCheckoutVisible(true);
-                            }}
-                        >
-                            Donate Now
-                        </Button>
-                    </div>
-                </Card>
-            )}
+
 
             <Card title={`Our Sponsors (${sponsors.length})`}>
                 {sponsors.length === 0 ? (

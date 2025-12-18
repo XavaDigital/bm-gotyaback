@@ -9,6 +9,7 @@ export const createSponsorship = async (
     sponsorData: {
         positionId?: string;
         name: string;
+        email: string;
         message?: string;
         amount: number;
         paymentMethod: 'card' | 'cash';
@@ -54,6 +55,7 @@ export const createSponsorship = async (
             campaignId,
             positionId: sponsorData.positionId,
             name: sponsorData.name,
+            email: sponsorData.email,
             message: sponsorData.message,
             amount: sponsorData.amount,
             paymentMethod: sponsorData.paymentMethod,

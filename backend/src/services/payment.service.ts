@@ -10,26 +10,36 @@ let stripeInstance: Stripe | null = null;
 const getStripe = () => {
     if (!stripeInstance) {
         if (!process.env.STRIPE_SECRET_KEY) {
-            throw new Error('STRIPE_SECRET_KEY is not set in environment variables');
+            throw new Error('Stripe is not configured on this server');
         }
         stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY);
     }
     return stripeInstance;
 };
 
+const isStripeConfigured = (): boolean => {
+    return !!process.env.STRIPE_SECRET_KEY;
+};
+
 export const createPaymentIntent = async (
     campaignId: string,
     positionId: string | undefined,
     amount: number,
-    sponsorData: { name: string; message?: string }
+    sponsorData: { name: string; email: string; message?: string }
 ) => {
-    const stripe = getStripe();
-
     // Get campaign details for metadata
     const campaign = await campaignService.getCampaignById(campaignId);
 
     // Validate campaign is open
     campaignService.validateCampaignIsOpen(campaign);
+
+    // Validate Stripe is enabled for this campaign
+    if (!campaign.enableStripePayments) {
+        throw new Error('Online payments are not enabled for this campaign');
+    }
+
+    // Get Stripe instance (will throw if not configured)
+    const stripe = getStripe();
 
     // Create Payment Intent
     const paymentIntent = await stripe.paymentIntents.create({
@@ -39,6 +49,7 @@ export const createPaymentIntent = async (
             campaignId,
             positionId: positionId || 'none',
             sponsorName: sponsorData.name,
+            sponsorEmail: sponsorData.email,
             sponsorMessage: sponsorData.message || '',
         },
         // Allow payment methods
@@ -82,13 +93,14 @@ export const handleWebhook = async (
 };
 
 const handlePaymentSuccess = async (paymentIntent: Stripe.PaymentIntent) => {
-    const { campaignId, positionId, sponsorName, sponsorMessage } = paymentIntent.metadata;
+    const { campaignId, positionId, sponsorName, sponsorEmail, sponsorMessage } = paymentIntent.metadata;
 
     try {
         // Create sponsorship entry
         const sponsorship = await sponsorshipService.createSponsorship(campaignId, {
             positionId: positionId === 'none' ? undefined : positionId,
             name: sponsorName,
+            email: sponsorEmail,
             message: sponsorMessage || undefined,
             amount: paymentIntent.amount / 100, // Convert from cents
             paymentMethod: 'card',
@@ -125,4 +137,23 @@ const handlePaymentFailure = async (paymentIntent: Stripe.PaymentIntent) => {
 
 export const getStripePublishableKey = () => {
     return process.env.STRIPE_PUBLIC_KEY;
+};
+
+export const getPaymentConfig = () => {
+    return {
+        stripeEnabled: isStripeConfigured(),
+        publishableKey: isStripeConfigured() ? process.env.STRIPE_PUBLIC_KEY : null,
+    };
+};
+
+export const getCampaignPaymentConfig = async (campaignId: string) => {
+    const campaign = await campaignService.getCampaignById(campaignId);
+
+    return {
+        enableStripePayments: campaign.enableStripePayments,
+        allowOfflinePayments: campaign.allowOfflinePayments,
+        publishableKey: campaign.enableStripePayments && isStripeConfigured()
+            ? process.env.STRIPE_PUBLIC_KEY
+            : null,
+    };
 };

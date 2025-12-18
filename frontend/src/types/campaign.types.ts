@@ -3,6 +3,21 @@ export interface User {
     name: string;
     email: string;
     role: 'user' | 'admin';
+    organizerProfile?: OrganizerProfile;
+}
+
+export interface OrganizerProfile {
+    displayName?: string;
+    slug?: string;
+    logoUrl?: string;
+    coverImageUrl?: string;
+    bio?: string;
+    websiteUrl?: string;
+    socialLinks?: {
+        facebook?: string;
+        twitter?: string;
+        instagram?: string;
+    };
 }
 
 export interface Campaign {
@@ -17,6 +32,7 @@ export interface Campaign {
     startDate?: Date | string;
     endDate?: Date | string;
     isClosed: boolean;
+    enableStripePayments: boolean;
     allowOfflinePayments: boolean;
     createdAt: Date | string;
     updatedAt: Date | string;
@@ -41,6 +57,7 @@ export interface SponsorEntry {
     campaignId: string;
     positionId?: string;
     name: string;
+    email: string;
     message?: string;
     amount: number;
     paymentMethod: 'card' | 'cash';
@@ -57,6 +74,7 @@ export interface CreateCampaignRequest {
     currency?: 'NZD' | 'AUD' | 'USD';
     startDate?: Date | string;
     endDate?: Date | string;
+    enableStripePayments?: boolean;
     allowOfflinePayments?: boolean;
 }
 
@@ -76,6 +94,7 @@ export interface CreateLayoutRequest {
 export interface CreateSponsorshipRequest {
     positionId?: string;
     name: string;
+    email: string;
     message?: string;
     amount: number;
     paymentMethod: 'card' | 'cash';
@@ -85,5 +104,47 @@ export interface UpdateCampaignRequest {
     title?: string;
     description?: string;
     endDate?: Date | string;
+    startDate?: Date | string;
+    enableStripePayments?: boolean;
     allowOfflinePayments?: boolean;
+    garmentType?: 'singlet' | 'tshirt' | 'hoodie';
+}
+
+export interface UpdatePricingRequest {
+    fixedPrice?: number;
+    zonePricing?: {
+        top?: number;
+        middle?: number;
+        bottom?: number;
+    };
+}
+
+export interface UpdateProfileRequest {
+    displayName?: string;
+    slug?: string;
+    logoUrl?: string;
+    coverImageUrl?: string;
+    bio?: string;
+    websiteUrl?: string;
+    socialLinks?: {
+        facebook?: string;
+        twitter?: string;
+        instagram?: string;
+    };
+}
+
+export interface OrganizerPublicProfile {
+    profile: OrganizerProfile;
+    campaigns: Campaign[];
+}
+
+export interface PaymentConfig {
+    stripeEnabled: boolean;
+    publishableKey: string | null;
+}
+
+export interface CampaignPaymentConfig {
+    enableStripePayments: boolean;
+    allowOfflinePayments: boolean;
+    publishableKey: string | null;
 }

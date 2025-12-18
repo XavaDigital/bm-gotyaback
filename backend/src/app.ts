@@ -4,6 +4,8 @@ import authRoutes from './routes/auth.routes';
 import campaignRoutes from './routes/campaign.routes';
 import sponsorshipRoutes from './routes/sponsorship.routes';
 import paymentRoutes from './routes/payment.routes';
+import userRoutes from './routes/user.routes';
+import publicRoutes from './routes/public.routes';
 import * as paymentController from './controllers/payment.controller';
 
 const app = express();
@@ -22,6 +24,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/campaigns', campaignRoutes);
 app.use('/api', sponsorshipRoutes);
 app.use('/api/payment', paymentRoutes); // Other payment routes (not webhook)
+app.use('/api/users', userRoutes);
+app.use('/api/public', publicRoutes);
 app.get('/', (req, res) => {
     res.send('API is running');
 });
