@@ -3,6 +3,8 @@ import { Campaign } from "../models/Campaign";
 import * as shirtLayoutService from "./shirtLayout.service";
 import * as campaignService from "./campaign.service";
 import mongoose from "mongoose";
+import { calculateSizeTier, calculateDisplaySizes } from "./pricing.service";
+import { SponsorType } from "../types/campaign.types";
 
 export const createSponsorship = async (
   campaignId: string,
@@ -13,6 +15,8 @@ export const createSponsorship = async (
     message?: string;
     amount: number;
     paymentMethod: "card" | "cash";
+    sponsorType?: SponsorType;
+    logoUrl?: string;
   }
 ) => {
   // Get campaign and validate it's open
@@ -23,9 +27,9 @@ export const createSponsorship = async (
 
   campaignService.validateCampaignIsOpen(campaign);
 
-  // For placement and fixed campaigns, we need to reserve a position
+  // For positional and fixed campaigns, we need to reserve a position
   if (
-    (campaign.campaignType === "placement" ||
+    (campaign.campaignType === "positional" ||
       campaign.campaignType === "fixed") &&
     sponsorData.positionId
   ) {
@@ -53,6 +57,30 @@ export const createSponsorship = async (
     }
   }
 
+  // Calculate display size for pay-what-you-want campaigns
+  let displaySize: "small" | "medium" | "large" | "xlarge" = "medium";
+  let calculatedFontSize: number | undefined;
+  let calculatedLogoWidth: number | undefined;
+
+  if (
+    campaign.campaignType === "pay-what-you-want" &&
+    campaign.pricingConfig?.sizeTiers
+  ) {
+    const tier = calculateSizeTier(
+      sponsorData.amount,
+      campaign.pricingConfig.sizeTiers as any
+    );
+    displaySize = tier.size;
+
+    const sponsorType = sponsorData.sponsorType || "text";
+    const sizes = calculateDisplaySizes(sponsorData.amount, tier, sponsorType);
+    calculatedFontSize = sizes.fontSize;
+    calculatedLogoWidth = sizes.logoWidth;
+  }
+
+  // Determine logo approval status
+  const logoApprovalStatus = sponsorData.logoUrl ? "pending" : "approved";
+
   // Create sponsorship entry
   try {
     const sponsorEntry = await SponsorEntry.create({
@@ -65,13 +93,19 @@ export const createSponsorship = async (
       paymentMethod: sponsorData.paymentMethod,
       paymentStatus:
         sponsorData.paymentMethod === "cash" ? "pending" : "pending",
+      sponsorType: sponsorData.sponsorType || "text",
+      logoUrl: sponsorData.logoUrl,
+      logoApprovalStatus,
+      displaySize,
+      calculatedFontSize,
+      calculatedLogoWidth,
     });
 
     return sponsorEntry;
   } catch (error) {
     // If sponsorship creation fails, release the position
     if (
-      (campaign.campaignType === "placement" ||
+      (campaign.campaignType === "positional" ||
         campaign.campaignType === "fixed") &&
       sponsorData.positionId
     ) {
@@ -166,12 +200,15 @@ export const updatePaymentStatus = async (
   return sponsorship;
 };
 
-// Get public sponsor list (only paid sponsors, limited info)
+// Get public sponsor list (only paid sponsors with approved logos, limited info)
 export const getPublicSponsors = async (campaignId: string) => {
   const sponsors = await SponsorEntry.find({
     campaignId,
     paymentStatus: "paid",
-  }).select("name message positionId createdAt");
+    logoApprovalStatus: "approved", // Only show approved logos
+  }).select(
+    "name message positionId createdAt sponsorType logoUrl displaySize calculatedFontSize calculatedLogoWidth"
+  );
 
   return sponsors;
 };
@@ -190,4 +227,71 @@ export const validatePositionAvailable = async (
   }
 
   return true;
+};
+
+// Approve or reject logo sponsorship
+export const approveLogoSponsorship = async (
+  sponsorshipId: string,
+  userId: string,
+  approved: boolean,
+  rejectionReason?: string
+) => {
+  if (!mongoose.Types.ObjectId.isValid(sponsorshipId)) {
+    throw new Error("Invalid sponsorship ID");
+  }
+
+  const sponsorship = await SponsorEntry.findById(sponsorshipId);
+  if (!sponsorship) {
+    throw new Error("Sponsorship not found");
+  }
+
+  // Verify campaign ownership
+  const campaign = await Campaign.findById(sponsorship.campaignId);
+  if (!campaign) {
+    throw new Error("Campaign not found");
+  }
+
+  if (campaign.ownerId.toString() !== userId) {
+    throw new Error("Not authorized to approve logos for this campaign");
+  }
+
+  // Update logo approval status
+  sponsorship.logoApprovalStatus = approved ? "approved" : "rejected";
+  if (!approved && rejectionReason) {
+    sponsorship.logoRejectionReason = rejectionReason;
+  }
+
+  await sponsorship.save();
+
+  // TODO: Send email notification to sponsor about approval/rejection
+
+  return sponsorship;
+};
+
+// Get pending logo approvals for a campaign
+export const getPendingLogoApprovals = async (
+  campaignId: string,
+  userId: string
+) => {
+  if (!mongoose.Types.ObjectId.isValid(campaignId)) {
+    throw new Error("Invalid campaign ID");
+  }
+
+  // Verify campaign ownership
+  const campaign = await Campaign.findById(campaignId);
+  if (!campaign) {
+    throw new Error("Campaign not found");
+  }
+
+  if (campaign.ownerId.toString() !== userId) {
+    throw new Error("Not authorized to view logo approvals for this campaign");
+  }
+
+  const pendingLogos = await SponsorEntry.find({
+    campaignId,
+    sponsorType: "logo",
+    logoApprovalStatus: "pending",
+  }).sort({ createdAt: -1 });
+
+  return pendingLogos;
 };

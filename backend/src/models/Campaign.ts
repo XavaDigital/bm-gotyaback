@@ -16,47 +16,59 @@ const campaignSchema = new mongoose.Schema(
       enum: ["singlet", "tshirt", "hoodie"],
       required: true,
     },
+    // Campaign Type (Pricing Strategy)
     campaignType: {
       type: String,
-      enum: ["fixed", "placement", "donation"],
+      enum: ["fixed", "positional", "pay-what-you-want"],
       required: true,
-    },
-
-    // Pricing Strategy
-    pricingStrategy: {
-      type: String,
-      enum: [
-        "fixed", // All positions same price
-        "positional", // Position-based (1=$1, 40=$40)
-        "sectional", // Section-based (top/middle/bottom)
-        "size-based", // Size-based tiers
-        "pay-what-you-want", // Flexible pricing
-      ],
-      default: "fixed",
     },
 
     // Sponsor Display Type
     sponsorDisplayType: {
       type: String,
-      enum: [
-        "text-only", // Text sponsors only
-        "logo-only", // Logo sponsors only
-        "text-and-logo", // Both text and logo sections
-        "mixed", // Mixed in same section
-      ],
+      enum: ["text-only", "logo-only", "both"],
       default: "text-only",
     },
 
-    // Layout Style (for pay-what-you-want and size-based)
+    // Layout Style
     layoutStyle: {
       type: String,
-      enum: [
-        "grid", // Traditional grid layout
-        "word-cloud", // Word cloud style
-        "size-ordered", // Ordered by size
-        "amount-ordered", // Ordered by amount paid
-      ],
+      enum: ["grid", "size-ordered", "amount-ordered", "word-cloud"],
       default: "grid",
+    },
+
+    // Pricing Configuration (varies by campaign type)
+    pricingConfig: {
+      type: {
+        // For fixed pricing
+        fixedPrice: { type: Number },
+
+        // For positional pricing (additive: basePrice + position * pricePerPosition)
+        basePrice: { type: Number },
+        pricePerPosition: { type: Number },
+
+        // For positional pricing (multiplicative: position * priceMultiplier)
+        priceMultiplier: { type: Number },
+
+        // For pay-what-you-want
+        minimumAmount: { type: Number },
+        suggestedAmounts: [{ type: Number }],
+
+        // Size tiers for pay-what-you-want
+        sizeTiers: [
+          {
+            size: {
+              type: String,
+              enum: ["small", "medium", "large", "xlarge"],
+            },
+            minAmount: { type: Number },
+            maxAmount: { type: Number }, // null for highest tier
+            textFontSize: { type: Number }, // px for text sponsors
+            logoWidth: { type: Number }, // px for logo sponsors
+          },
+        ],
+      },
+      default: {},
     },
 
     currency: { type: String, enum: ["NZD", "AUD", "USD"], default: "NZD" },

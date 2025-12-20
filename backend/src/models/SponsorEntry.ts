@@ -22,11 +22,25 @@ const sponsorEntrySchema = new mongoose.Schema(
     // Sponsor type and display
     sponsorType: { type: String, enum: ["text", "logo"], default: "text" },
     logoUrl: { type: String }, // For logo sponsors
+
+    // Logo approval workflow
+    logoApprovalStatus: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
+    },
+    logoRejectionReason: { type: String },
+
+    // Display size (calculated based on amount/tier)
     displaySize: {
       type: String,
       enum: ["small", "medium", "large", "xlarge"],
       default: "medium",
-    }, // Calculated based on amount/pricing
+    },
+
+    // Calculated pixel sizes for rendering
+    calculatedFontSize: { type: Number }, // for text sponsors
+    calculatedLogoWidth: { type: Number }, // for logo sponsors
   },
   { timestamps: true }
 );

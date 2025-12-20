@@ -10,11 +10,13 @@ import {
   Table,
   Modal,
   Statistic,
+  Badge,
 } from "antd";
 import {
   CloseCircleOutlined,
   ExportOutlined,
   EditOutlined,
+  BellOutlined,
 } from "@ant-design/icons";
 import type {
   Campaign,
@@ -24,6 +26,9 @@ import type {
 import campaignService from "../services/campaign.service";
 import sponsorshipService from "../services/sponsorship.service";
 import EditCampaignModal from "../components/EditCampaignModal";
+import ShirtLayoutComponent from "../components/ShirtLayout";
+import LogoApprovalCard from "../components/LogoApprovalCard";
+import FlexibleLayoutRenderer from "../components/FlexibleLayoutRenderer";
 
 const CampaignDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -34,10 +39,13 @@ const CampaignDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [closingCampaign, setClosingCampaign] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [pendingLogos, setPendingLogos] = useState<SponsorEntry[]>([]);
+  const [loadingPendingLogos, setLoadingPendingLogos] = useState(false);
 
   useEffect(() => {
     if (id) {
       loadCampaignData();
+      loadPendingLogos();
     }
   }, [id]);
 
@@ -51,14 +59,12 @@ const CampaignDetail: React.FC = () => {
       setCampaign(campaignData);
       setSponsors(sponsorsData);
 
-      // Load layout if campaign is placement or fixed type
-      if (campaignData.campaignType !== "donation") {
-        try {
-          const layoutData = await campaignService.getLayout(id!);
-          setLayout(layoutData);
-        } catch (error) {
-          // Layout might not exist yet
-        }
+      // Load layout for all campaign types
+      try {
+        const layoutData = await campaignService.getLayout(id!);
+        setLayout(layoutData);
+      } catch (error) {
+        // Layout might not exist yet
       }
     } catch (error: any) {
       message.error(error.response?.data?.message || "Failed to load campaign");
@@ -66,6 +72,38 @@ const CampaignDetail: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadPendingLogos = async () => {
+    if (!id) return;
+
+    try {
+      setLoadingPendingLogos(true);
+      const logos = await sponsorshipService.getPendingLogos(id);
+      setPendingLogos(logos);
+    } catch (error: any) {
+      // Silently fail - user might not have permission or no pending logos
+      console.error("Failed to load pending logos:", error);
+    } finally {
+      setLoadingPendingLogos(false);
+    }
+  };
+
+  const handleApproveLogo = async (sponsorId: string) => {
+    await sponsorshipService.approveLogo(sponsorId, { approved: true });
+    // Reload data
+    loadPendingLogos();
+    loadCampaignData();
+  };
+
+  const handleRejectLogo = async (sponsorId: string, reason: string) => {
+    await sponsorshipService.approveLogo(sponsorId, {
+      approved: false,
+      rejectionReason: reason,
+    });
+    // Reload data
+    loadPendingLogos();
+    loadCampaignData();
   };
 
   const handleCloseCampaign = () => {
@@ -229,6 +267,7 @@ const CampaignDetail: React.FC = () => {
 
   const spotsTaken = layout?.placements.filter((p) => p.isTaken).length || 0;
   const totalSpots = layout?.placements.length || 0;
+  const isFlexibleLayout = layout?.layoutType === "flexible";
 
   return (
     <div style={{ padding: 24 }}>
@@ -287,7 +326,7 @@ const CampaignDetail: React.FC = () => {
             suffix="$"
             valueStyle={{ color: "#cf1322" }}
           />
-          {layout && (
+          {layout && !isFlexibleLayout && (
             <Statistic
               title="Spots Filled"
               value={spotsTaken}
@@ -295,11 +334,60 @@ const CampaignDetail: React.FC = () => {
             />
           )}
           <Statistic title="Total Sponsors" value={sponsors.length} />
+          {isFlexibleLayout && layout?.maxSponsors && (
+            <Statistic
+              title="Sponsor Limit"
+              value={sponsors.length}
+              suffix={`/ ${layout.maxSponsors}`}
+            />
+          )}
+          {pendingLogos.length > 0 && (
+            <Statistic
+              title="Pending Logo Approvals"
+              value={pendingLogos.length}
+              valueStyle={{ color: "#faad14" }}
+            />
+          )}
         </div>
       </Card>
 
+      {/* Pending Logo Approvals */}
+      {pendingLogos.length > 0 && (
+        <Card
+          title={
+            <span>
+              <BellOutlined style={{ marginRight: 8 }} />
+              Pending Logo Approvals
+              <Badge
+                count={pendingLogos.length}
+                style={{ marginLeft: 8 }}
+                showZero={false}
+              />
+            </span>
+          }
+          style={{ marginBottom: 24 }}
+        >
+          {loadingPendingLogos ? (
+            <div style={{ textAlign: "center", padding: 40 }}>
+              <Spin />
+            </div>
+          ) : (
+            <div>
+              {pendingLogos.map((sponsor) => (
+                <LogoApprovalCard
+                  key={sponsor._id}
+                  sponsor={sponsor}
+                  onApprove={handleApproveLogo}
+                  onReject={handleRejectLogo}
+                />
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
+
       <Card title="Campaign Details" style={{ marginBottom: 24 }}>
-        <Descriptions variant="bordered" column={2}>
+        <Descriptions bordered column={2}>
           <Descriptions.Item label="Status">
             {campaign.isClosed ? (
               <Tag color="red">Closed</Tag>
@@ -332,6 +420,71 @@ const CampaignDetail: React.FC = () => {
           </Descriptions.Item>
         </Descriptions>
       </Card>
+
+      {/* Layout Display */}
+      {layout && (
+        <Card title="Shirt Layout" style={{ marginBottom: 24 }}>
+          {layout.layoutType === "grid" ? (
+            <>
+              <div style={{ marginBottom: 16 }}>
+                <Tag color="blue">
+                  {campaign.campaignType === "fixed"
+                    ? "Fixed Pricing"
+                    : "Positional Pricing"}
+                </Tag>
+                <span style={{ marginLeft: 8, color: "#666" }}>
+                  {layout.rows} rows × {layout.columns} columns = {totalSpots}{" "}
+                  positions
+                </span>
+              </div>
+              <ShirtLayoutComponent
+                layout={layout}
+                readonly={true}
+                currency={campaign.currency}
+                showPriceGradient={campaign.campaignType === "positional"}
+                sponsors={sponsors}
+              />
+            </>
+          ) : (
+            <>
+              <div style={{ marginBottom: 16 }}>
+                <Tag color="purple">Pay What You Want</Tag>
+                <span style={{ marginLeft: 8, color: "#666" }}>
+                  Flexible layout
+                  {layout.maxSponsors
+                    ? ` (max ${layout.maxSponsors} sponsors)`
+                    : " (unlimited sponsors)"}
+                </span>
+              </div>
+              <div style={{ marginBottom: 16 }}>
+                <p style={{ fontSize: 14, color: "#666", marginBottom: 8 }}>
+                  Layout style: <strong>{campaign.layoutStyle}</strong>
+                </p>
+              </div>
+              {sponsors.length > 0 ? (
+                <FlexibleLayoutRenderer
+                  sponsors={sponsors}
+                  layoutStyle={campaign.layoutStyle}
+                  sponsorDisplayType={campaign.sponsorDisplayType}
+                />
+              ) : (
+                <div
+                  style={{
+                    padding: 40,
+                    background: "#f5f5f5",
+                    borderRadius: 8,
+                    textAlign: "center",
+                  }}
+                >
+                  <p style={{ fontSize: 16, color: "#999", margin: 0 }}>
+                    No sponsors yet
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+        </Card>
+      )}
 
       <Card title="Sponsors">
         <Table

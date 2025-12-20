@@ -1,15 +1,44 @@
 import { Request, Response } from "express";
 import * as sponsorshipService from "../services/sponsorship.service";
+import * as uploadService from "../services/upload.service";
 
 export const createSponsorship = async (req: Request, res: Response) => {
   try {
     const campaignId = req.params.id;
-    const { positionId, name, email, message, amount, paymentMethod } =
-      req.body;
+
+    // Parse data from body (could be JSON or multipart form data)
+    const data =
+      typeof req.body.data === "string" ? JSON.parse(req.body.data) : req.body;
+
+    const {
+      positionId,
+      name,
+      email,
+      message,
+      amount,
+      paymentMethod,
+      sponsorType,
+    } = data;
 
     // Validation
     if (!name || !email || !amount || !paymentMethod) {
       return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    // Handle logo file upload if present
+    let logoUrl: string | undefined;
+    const file = req.file;
+
+    if (file && sponsorType === "logo") {
+      // Upload logo to S3
+      // Note: We'll generate a temporary ID for the folder structure
+      const tempId = `temp-${Date.now()}`;
+      logoUrl = await uploadService.uploadLogoToS3(
+        file.buffer,
+        file.originalname,
+        file.mimetype,
+        tempId
+      );
     }
 
     const sponsorship = await sponsorshipService.createSponsorship(campaignId, {
@@ -19,6 +48,8 @@ export const createSponsorship = async (req: Request, res: Response) => {
       message,
       amount,
       paymentMethod,
+      sponsorType,
+      logoUrl,
     });
 
     res.status(201).json(sponsorship);
@@ -103,6 +134,61 @@ export const updatePaymentStatus = async (req: Request, res: Response) => {
       : message.includes("Cannot manually change")
       ? 400
       : 400;
+    res.status(status).json({ message });
+  }
+};
+
+// Approve or reject logo sponsorship
+export const approveLogo = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?._id;
+    const sponsorshipId = req.params.sponsorshipId;
+    const { approved, rejectionReason } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+
+    if (typeof approved !== "boolean") {
+      return res
+        .status(400)
+        .json({ message: "approved field is required and must be a boolean" });
+    }
+
+    const sponsorship = await sponsorshipService.approveLogoSponsorship(
+      sponsorshipId,
+      userId.toString(),
+      approved,
+      rejectionReason
+    );
+
+    res.json(sponsorship);
+  } catch (error) {
+    const message = (error as Error).message;
+    const status = message.includes("Not authorized") ? 403 : 400;
+    res.status(status).json({ message });
+  }
+};
+
+// Get pending logo approvals for a campaign
+export const getPendingLogos = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?._id;
+    const campaignId = req.params.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+
+    const pendingLogos = await sponsorshipService.getPendingLogoApprovals(
+      campaignId,
+      userId.toString()
+    );
+
+    res.json(pendingLogos);
+  } catch (error) {
+    const message = (error as Error).message;
+    const status = message.includes("Not authorized") ? 403 : 400;
     res.status(status).json({ message });
   }
 };

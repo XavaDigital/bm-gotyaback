@@ -10,19 +10,9 @@ import {
   Col,
   message,
   Statistic,
-  Divider,
 } from "antd";
-import {
-  PlusOutlined,
-  EyeOutlined,
-  EditOutlined,
-  DollarOutlined,
-} from "@ant-design/icons";
-import type {
-  Campaign,
-  SponsorEntry,
-  ShirtLayout,
-} from "../types/campaign.types";
+import { PlusOutlined, EyeOutlined, EditOutlined } from "@ant-design/icons";
+import type { Campaign } from "../types/campaign.types";
 import campaignService from "../services/campaign.service";
 import sponsorshipService from "../services/sponsorship.service";
 import EditCampaignModal from "../components/EditCampaignModal";
@@ -98,8 +88,8 @@ const MyCampaigns: React.FC = () => {
           let positionsClaimed = 0;
           let positionsTotal = 0;
 
-          // For fixed/placement campaigns, get layout info
-          if (campaign.campaignType !== "donation") {
+          // For fixed/positional campaigns, get layout info
+          if (campaign.campaignType !== "pay-what-you-want") {
             try {
               const layout = await campaignService.getLayout(campaign._id);
               positionsTotal = layout.placements.length;
@@ -252,9 +242,9 @@ const MyCampaigns: React.FC = () => {
                         <Tag>
                           {campaign.campaignType === "fixed"
                             ? "Fixed Price"
-                            : campaign.campaignType === "placement"
-                            ? "Placement-Based"
-                            : "Donation Only"}
+                            : campaign.campaignType === "positional"
+                            ? "Positional Pricing"
+                            : "Pay What You Want"}
                         </Tag>
                       </div>
                       <div>
@@ -297,8 +287,8 @@ const MyCampaigns: React.FC = () => {
                           )}
                         </Col>
 
-                        {/* Positions for fixed/placement campaigns */}
-                        {campaign.campaignType !== "donation" &&
+                        {/* Positions for fixed/positional campaigns */}
+                        {campaign.campaignType !== "pay-what-you-want" &&
                           stats.positionsTotal > 0 && (
                             <Col span={8}>
                               <Statistic
@@ -320,8 +310,8 @@ const MyCampaigns: React.FC = () => {
                             </Col>
                           )}
 
-                        {/* Sponsor count for donation campaigns */}
-                        {campaign.campaignType === "donation" && (
+                        {/* Sponsor count for pay-what-you-want campaigns */}
+                        {campaign.campaignType === "pay-what-you-want" && (
                           <Col span={8}>
                             <Statistic
                               title="Sponsors"

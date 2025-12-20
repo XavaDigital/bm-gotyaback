@@ -27,6 +27,40 @@ export interface CampaignStats {
   remainingPositions: number;
 }
 
+// Pricing Strategy Types
+export type CampaignType = "fixed" | "positional" | "pay-what-you-want";
+export type SponsorDisplayType = "text-only" | "logo-only" | "both";
+export type LayoutStyle =
+  | "grid"
+  | "size-ordered"
+  | "amount-ordered"
+  | "word-cloud";
+export type SponsorType = "text" | "logo";
+export type LogoApprovalStatus = "pending" | "approved" | "rejected";
+export type DisplaySize = "small" | "medium" | "large" | "xlarge";
+
+export interface SizeTier {
+  size: DisplaySize;
+  minAmount: number;
+  maxAmount: number | null;
+  textFontSize: number;
+  logoWidth: number;
+}
+
+export interface PricingConfig {
+  // For fixed pricing
+  fixedPrice?: number;
+  // For positional pricing (additive: basePrice + position * pricePerPosition)
+  basePrice?: number;
+  pricePerPosition?: number;
+  // For positional pricing (multiplicative: position * priceMultiplier)
+  priceMultiplier?: number;
+  // For pay-what-you-want
+  minimumAmount?: number;
+  suggestedAmounts?: number[];
+  sizeTiers?: SizeTier[];
+}
+
 export interface Campaign {
   _id: string;
   ownerId: string | User;
@@ -35,7 +69,10 @@ export interface Campaign {
   shortDescription?: string;
   description?: string;
   garmentType: "singlet" | "tshirt" | "hoodie";
-  campaignType: "fixed" | "placement" | "donation";
+  campaignType: CampaignType;
+  sponsorDisplayType: SponsorDisplayType;
+  layoutStyle: LayoutStyle;
+  pricingConfig: PricingConfig;
   currency: "NZD" | "AUD" | "USD";
   startDate?: Date | string;
   endDate?: Date | string;
@@ -49,16 +86,23 @@ export interface Campaign {
 
 export interface Position {
   positionId: string;
+  row?: number;
+  col?: number;
   price: number;
   isTaken: boolean;
+  sponsorId?: string;
 }
 
 export interface ShirtLayout {
   _id: string;
   campaignId: string;
-  rows: number;
-  columns: number;
+  layoutType: "grid" | "flexible";
+  rows?: number; // Calculated from totalPositions / columns
+  columns?: number;
+  totalPositions?: number; // Total number of sponsor positions
+  arrangement?: "horizontal" | "vertical"; // How positions are numbered
   placements: Position[];
+  maxSponsors?: number;
 }
 
 export interface SponsorEntry {
@@ -71,6 +115,13 @@ export interface SponsorEntry {
   amount: number;
   paymentMethod: "card" | "cash";
   paymentStatus: "pending" | "paid" | "failed";
+  sponsorType: SponsorType;
+  logoUrl?: string;
+  logoApprovalStatus: LogoApprovalStatus;
+  logoRejectionReason?: string;
+  displaySize: DisplaySize;
+  calculatedFontSize?: number;
+  calculatedLogoWidth?: number;
   createdAt: Date | string;
 }
 
@@ -80,7 +131,10 @@ export interface CreateCampaignRequest {
   shortDescription?: string;
   description?: string;
   garmentType: "singlet" | "tshirt" | "hoodie";
-  campaignType: "fixed" | "placement" | "donation";
+  campaignType: CampaignType;
+  sponsorDisplayType: SponsorDisplayType;
+  layoutStyle: LayoutStyle;
+  pricingConfig: PricingConfig;
   currency?: "NZD" | "AUD" | "USD";
   startDate?: Date | string;
   endDate?: Date | string;
@@ -89,16 +143,12 @@ export interface CreateCampaignRequest {
 }
 
 export interface CreateLayoutRequest {
-  rows: number;
-  columns: number;
-  pricing: {
-    fixedPrice?: number;
-    zonePricing?: {
-      top?: number;
-      middle?: number;
-      bottom?: number;
-    };
-  };
+  totalPositions?: number; // Total number of sponsor positions (for grid layouts)
+  columns?: number; // Number of columns (for grid layouts)
+  arrangement?: "horizontal" | "vertical"; // Position numbering arrangement (for grid layouts)
+  maxSponsors?: number; // Max sponsors (for flexible layouts)
+  campaignType: CampaignType;
+  pricingConfig: PricingConfig;
 }
 
 export interface CreateSponsorshipRequest {
@@ -108,6 +158,8 @@ export interface CreateSponsorshipRequest {
   message?: string;
   amount: number;
   paymentMethod: "card" | "cash";
+  sponsorType?: SponsorType;
+  logoFile?: File;
 }
 
 export interface UpdateCampaignRequest {
@@ -122,12 +174,12 @@ export interface UpdateCampaignRequest {
 }
 
 export interface UpdatePricingRequest {
-  fixedPrice?: number;
-  zonePricing?: {
-    top?: number;
-    middle?: number;
-    bottom?: number;
-  };
+  pricingConfig: PricingConfig;
+}
+
+export interface ApproveLogoRequest {
+  approved: boolean;
+  rejectionReason?: string;
 }
 
 export interface UpdateProfileRequest {

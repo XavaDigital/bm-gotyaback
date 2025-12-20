@@ -76,9 +76,9 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
               </Text>
             )}
 
-            {/* Positions for fixed/placement campaigns */}
+            {/* Positions for fixed/positional campaigns */}
             {campaign.stats &&
-              campaign.campaignType !== "donation" &&
+              campaign.campaignType !== "pay-what-you-want" &&
               campaign.stats.totalPositions > 0 && (
                 <Text type="secondary" style={{ fontSize: 14 }}>
                   <CheckCircleOutlined /> {campaign.stats.claimedPositions} /{" "}

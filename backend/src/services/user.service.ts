@@ -101,11 +101,11 @@ export const getPublicProfile = async (slug: string) => {
         paymentStatus: "paid",
       });
 
-      // Get total positions for fixed/placement campaigns
+      // Get total positions for fixed/positional campaigns
       let totalPositions = 0;
       let claimedPositions = 0;
 
-      if (campaign.campaignType !== "donation") {
+      if (campaign.campaignType !== "pay-what-you-want") {
         try {
           const layout = await ShirtLayout.findOne({
             campaignId: campaign._id,

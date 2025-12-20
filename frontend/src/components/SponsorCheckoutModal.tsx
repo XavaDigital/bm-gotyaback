@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Form, Input, Radio, Button, message, Alert, Spin } from "antd";
+import {
+  Modal,
+  Form,
+  Input,
+  Radio,
+  Button,
+  message,
+  Alert,
+  Spin,
+  InputNumber,
+} from "antd";
 import {
   Elements,
   CardNumberElement,
@@ -11,9 +21,14 @@ import {
 import type {
   CreateSponsorshipRequest,
   CampaignPaymentConfig,
+  Campaign,
+  SponsorDisplayType,
+  SponsorType,
 } from "../types/campaign.types";
 import getStripe from "../utils/stripe";
 import paymentService from "../services/payment.service";
+import campaignService from "../services/campaign.service";
+import LogoUpload from "./LogoUpload";
 
 interface SponsorCheckoutModalProps {
   visible: boolean;
@@ -345,13 +360,35 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
     useState<CampaignPaymentConfig | null>(null);
   const [loadingConfig, setLoadingConfig] = useState(true);
   const [stripePromise, setStripePromise] = useState<Promise<any> | null>(null);
+  const [campaign, setCampaign] = useState<Campaign | null>(null);
+  const [logoFile, setLogoFile] = useState<File | undefined>(undefined);
 
-  // Fetch payment config when modal opens
+  // Fetch payment config and campaign data when modal opens
   useEffect(() => {
     if (visible && campaignId) {
       fetchPaymentConfig();
+      fetchCampaignData();
     }
   }, [visible, campaignId]);
+
+  const fetchCampaignData = async () => {
+    try {
+      const campaignData = await campaignService.getPublicCampaign(campaignId);
+      setCampaign(campaignData);
+
+      // Set default sponsor type based on campaign settings
+      if (campaignData.sponsorDisplayType === "logo-only") {
+        form.setFieldsValue({ sponsorType: "logo" });
+      } else if (campaignData.sponsorDisplayType === "text-only") {
+        form.setFieldsValue({ sponsorType: "text" });
+      } else {
+        // Default to text for "both" option
+        form.setFieldsValue({ sponsorType: "text" });
+      }
+    } catch (error: any) {
+      message.error("Failed to load campaign details");
+    }
+  };
 
   const fetchPaymentConfig = async () => {
     try {
@@ -383,11 +420,19 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
     try {
       const values = await form.validateFields();
       const finalAmount = positionId ? amount : parseFloat(values.amount);
+
+      // Validate logo upload if required
+      if (values.sponsorType === "logo" && !logoFile) {
+        message.error("Please upload a logo");
+        return;
+      }
+
       setSponsorData({
         ...values,
         campaignId,
         positionId,
         amount: finalAmount,
+        logoFile: logoFile,
       });
     } catch (error) {
       // Validation error
@@ -466,7 +511,7 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
 
           {!positionId && (
             <Form.Item
-              label={`Donation Amount (${currency})`}
+              label={`Contribution Amount (${currency})`}
               name="amount"
               rules={[
                 { required: true, message: "Please enter an amount" },
@@ -477,20 +522,61 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
                         new Error("Amount must be greater than 0")
                       );
                     }
+                    if (
+                      campaign?.pricingConfig?.minimumAmount &&
+                      value < campaign.pricingConfig.minimumAmount
+                    ) {
+                      return Promise.reject(
+                        new Error(
+                          `Minimum amount is $${campaign.pricingConfig.minimumAmount}`
+                        )
+                      );
+                    }
                     return Promise.resolve();
                   },
                 },
               ]}
+              extra={
+                campaign?.pricingConfig?.minimumAmount &&
+                `Minimum: $${campaign.pricingConfig.minimumAmount}`
+              }
             >
-              <Input
-                type="number"
+              <InputNumber
                 prefix="$"
                 placeholder="10.00"
-                min={1}
-                step={0.01}
+                min={campaign?.pricingConfig?.minimumAmount || 1}
+                step={1}
+                style={{ width: "100%" }}
               />
             </Form.Item>
           )}
+
+          {/* Suggested amounts for pay-what-you-want */}
+          {!positionId &&
+            campaign?.campaignType === "pay-what-you-want" &&
+            campaign.pricingConfig?.suggestedAmounts &&
+            campaign.pricingConfig.suggestedAmounts.length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ marginBottom: 8, fontSize: 14, color: "#666" }}>
+                  Quick Select:
+                </div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {campaign.pricingConfig.suggestedAmounts.map(
+                    (suggestedAmount) => (
+                      <Button
+                        key={suggestedAmount}
+                        onClick={() =>
+                          form.setFieldsValue({ amount: suggestedAmount })
+                        }
+                        size="small"
+                      >
+                        ${suggestedAmount}
+                      </Button>
+                    )
+                  )}
+                </div>
+              </div>
+            )}
 
           <Form.Item
             label="Your Name"
@@ -524,6 +610,52 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
               maxLength={100}
               showCount
             />
+          </Form.Item>
+
+          {/* Sponsor Type Selector - only show if campaign allows both */}
+          {campaign?.sponsorDisplayType === "both" && (
+            <Form.Item
+              label="Sponsor Type"
+              name="sponsorType"
+              rules={[
+                { required: true, message: "Please select sponsor type" },
+              ]}
+              initialValue="text"
+            >
+              <Radio.Group>
+                <Radio value="text">Text Only (Name/Message)</Radio>
+                <Radio value="logo">Logo Only</Radio>
+              </Radio.Group>
+            </Form.Item>
+          )}
+
+          {/* Logo Upload - show if campaign is logo-only OR if user selected logo type */}
+          <Form.Item
+            noStyle
+            shouldUpdate={(prevValues, currentValues) =>
+              prevValues.sponsorType !== currentValues.sponsorType
+            }
+          >
+            {({ getFieldValue }) => {
+              const sponsorType = getFieldValue("sponsorType");
+              const showLogoUpload =
+                campaign?.sponsorDisplayType === "logo-only" ||
+                (campaign?.sponsorDisplayType === "both" &&
+                  sponsorType === "logo");
+
+              return showLogoUpload ? (
+                <Form.Item
+                  label="Logo"
+                  required={
+                    campaign?.sponsorDisplayType === "logo-only" ||
+                    sponsorType === "logo"
+                  }
+                  extra="PNG, JPG, or SVG • Max 2MB • Min 200x200px • Square recommended"
+                >
+                  <LogoUpload value={logoFile} onChange={setLogoFile} />
+                </Form.Item>
+              ) : null;
+            }}
           </Form.Item>
 
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>

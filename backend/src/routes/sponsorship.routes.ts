@@ -1,11 +1,16 @@
 import { Router } from "express";
 import * as sponsorshipController from "../controllers/sponsorship.controller";
 import { protect } from "../middleware/auth.middleware";
+import { uploadLogo } from "../middleware/upload.middleware";
 
 const router = Router();
 
-// Public sponsorship submission
-router.post("/campaigns/:id/sponsor", sponsorshipController.createSponsorship);
+// Public sponsorship submission (with optional logo upload)
+router.post(
+  "/campaigns/:id/sponsor",
+  uploadLogo.single("logoFile"),
+  sponsorshipController.createSponsorship
+);
 
 // Public sponsor list (only paid sponsors)
 router.get(
@@ -28,6 +33,18 @@ router.patch(
   "/sponsorships/:sponsorshipId/payment-status",
   protect,
   sponsorshipController.updatePaymentStatus
+);
+
+// Logo approval routes
+router.post(
+  "/sponsorships/:sponsorshipId/approve-logo",
+  protect,
+  sponsorshipController.approveLogo
+);
+router.get(
+  "/campaigns/:id/pending-logos",
+  protect,
+  sponsorshipController.getPendingLogos
 );
 
 export default router;
