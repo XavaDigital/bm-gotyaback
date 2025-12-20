@@ -1,13 +1,14 @@
-import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
-import authService from '../services/auth.service';
+import React from "react";
+import { Navigate, Outlet } from "react-router-dom";
+import authService from "../services/auth.service";
 
 export const GuestGuard: React.FC = () => {
-    const user = authService.getCurrentUser();
+  const user = authService.getCurrentUser();
 
-    if (user) {
-        return <Navigate to="/" replace />;
-    }
+  if (user) {
+    // Redirect logged-in users to dashboard
+    return <Navigate to="/dashboard" replace />;
+  }
 
-    return <Outlet />;
+  return <Outlet />;
 };

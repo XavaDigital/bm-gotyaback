@@ -1,92 +1,120 @@
-import React from 'react';
-import { Card, Tag, Typography, Space, Button } from 'antd';
-import { ClockCircleOutlined, EyeOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
-import type { Campaign } from '../types/campaign.types';
+import React from "react";
+import { Card, Tag, Typography, Button, Row, Col, Space } from "antd";
+import {
+  ClockCircleOutlined,
+  EyeOutlined,
+  UserOutlined,
+  CheckCircleOutlined,
+} from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
+import type { Campaign } from "../types/campaign.types";
 
-const { Title, Text, Paragraph } = Typography;
+const { Text } = Typography;
 
 interface CampaignCardProps {
-    campaign: Campaign;
+  campaign: Campaign;
 }
 
 const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    const getStatusTag = () => {
-        if (campaign.isClosed) {
-            return <Tag color="red">Closed</Tag>;
-        }
-        if (campaign.endDate && new Date(campaign.endDate) < new Date()) {
-            return <Tag color="orange">Ended</Tag>;
-        }
-        return <Tag color="green">Active</Tag>;
-    };
+  const getStatusTag = () => {
+    if (campaign.isClosed) {
+      return <Tag color="red">Closed</Tag>;
+    }
+    if (campaign.endDate && new Date(campaign.endDate) < new Date()) {
+      return <Tag color="orange">Ended</Tag>;
+    }
+    return <Tag color="green">Active</Tag>;
+  };
 
-    const getCampaignTypeLabel = () => {
-        switch (campaign.campaignType) {
-            case 'fixed':
-                return 'Fixed Price';
-            case 'placement':
-                return 'Placement';
-            case 'donation':
-                return 'Donation';
-            default:
-                return campaign.campaignType;
-        }
-    };
-
-    const handleViewCampaign = () => {
-        navigate(`/campaign/${campaign.slug}`);
-    };
-
-    return (
-        <Card
-            hoverable
-            style={{ height: '100%' }}
-            actions={[
-                <Button
-                    type="link"
-                    icon={<EyeOutlined />}
-                    onClick={handleViewCampaign}
-                    key="view"
-                >
-                    View Campaign
-                </Button>,
-            ]}
-        >
-            <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                    <Title level={4} style={{ margin: 0 }}>
-                        {campaign.title}
-                    </Title>
-                    {getStatusTag()}
-                </div>
-
-                {campaign.description && (
-                    <Paragraph
-                        ellipsis={{ rows: 2 }}
-                        style={{ marginBottom: 8, color: '#666' }}
-                    >
-                        {campaign.description}
-                    </Paragraph>
-                )}
-
-                <Space size="small" wrap>
-                    <Tag>{getCampaignTypeLabel()}</Tag>
-                    <Tag>{campaign.garmentType}</Tag>
-                    <Tag>{campaign.currency}</Tag>
-                </Space>
-
-                {campaign.endDate && !campaign.isClosed && (
-                    <Text type="secondary" style={{ fontSize: 12 }}>
-                        <ClockCircleOutlined /> Ends: {new Date(campaign.endDate).toLocaleDateString()}
-                    </Text>
-                )}
-            </Space>
-        </Card>
+  const getRemainingDays = () => {
+    if (!campaign.endDate || campaign.isClosed) return null;
+    const end = new Date(campaign.endDate);
+    const now = new Date();
+    const diff = Math.ceil(
+      (end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
     );
+    return diff > 0 ? diff : 0;
+  };
+
+  const handleViewCampaign = () => {
+    navigate(`/campaign/${campaign.slug}`);
+  };
+
+  const remainingDays = getRemainingDays();
+
+  return (
+    <Card hoverable>
+      <Row gutter={24} align="middle">
+        {/* Left side - Campaign Info */}
+        <Col flex="auto">
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              marginBottom: 12,
+            }}
+          >
+            <h2 style={{ margin: 0, fontSize: 20 }}>{campaign.title}</h2>
+            {getStatusTag()}
+          </div>
+
+          {campaign.shortDescription && (
+            <p style={{ color: "#666", marginBottom: 12, fontSize: 14 }}>
+              {campaign.shortDescription}
+            </p>
+          )}
+
+          <Space size="large" style={{ marginTop: 8 }}>
+            {/* Sponsor count */}
+            {campaign.stats && (
+              <Text type="secondary" style={{ fontSize: 14 }}>
+                <UserOutlined /> {campaign.stats.sponsorCount}{" "}
+                {campaign.stats.sponsorCount === 1 ? "sponsor" : "sponsors"}
+              </Text>
+            )}
+
+            {/* Positions for fixed/placement campaigns */}
+            {campaign.stats &&
+              campaign.campaignType !== "donation" &&
+              campaign.stats.totalPositions > 0 && (
+                <Text type="secondary" style={{ fontSize: 14 }}>
+                  <CheckCircleOutlined /> {campaign.stats.claimedPositions} /{" "}
+                  {campaign.stats.totalPositions} positions filled
+                  {campaign.stats.remainingPositions > 0 && (
+                    <span style={{ color: "#1890ff", marginLeft: 4 }}>
+                      ({campaign.stats.remainingPositions} remaining)
+                    </span>
+                  )}
+                </Text>
+              )}
+
+            {/* Days remaining */}
+            {remainingDays !== null && (
+              <Text type="secondary" style={{ fontSize: 14 }}>
+                <ClockCircleOutlined /> {remainingDays}{" "}
+                {remainingDays === 1 ? "day" : "days"} remaining
+              </Text>
+            )}
+          </Space>
+        </Col>
+
+        {/* Right side - Action Button */}
+        <Col flex="none">
+          <Button
+            type="primary"
+            size="large"
+            icon={<EyeOutlined />}
+            onClick={handleViewCampaign}
+          >
+            View Campaign
+          </Button>
+        </Col>
+      </Row>
+    </Card>
+  );
 };
 
 export default CampaignCard;
-

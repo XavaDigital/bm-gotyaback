@@ -1,0 +1,169 @@
+/* Lexical Editor Styles */
+.editor-container {
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  background: white;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+}
+
+.editor-inner {
+  position: relative;
+}
+
+.editor-input {
+  min-height: 150px;
+  resize: none;
+  font-size: 14px;
+  position: relative;
+  tab-size: 1;
+  outline: 0;
+  padding: 10px;
+  caret-color: rgb(5, 5, 5);
+}
+
+.editor-placeholder {
+  color: #999;
+  overflow: hidden;
+  position: absolute;
+  text-overflow: ellipsis;
+  top: 10px;
+  left: 10px;
+  font-size: 14px;
+  user-select: none;
+  display: inline-block;
+  pointer-events: none;
+}
+
+.editor-paragraph {
+  margin: 0;
+  margin-bottom: 8px;
+  position: relative;
+}
+
+.editor-heading-h1 {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0;
+  margin-bottom: 12px;
+}
+
+.editor-heading-h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+  margin-bottom: 10px;
+}
+
+.editor-heading-h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  margin-bottom: 8px;
+}
+
+.editor-list-ol {
+  padding: 0;
+  margin: 0 0 8px 16px;
+  list-style-position: inside;
+}
+
+.editor-list-ul {
+  padding: 0;
+  margin: 0 0 8px 16px;
+  list-style-position: inside;
+}
+
+.editor-listitem {
+  margin: 4px 0;
+}
+
+.editor-link {
+  color: #1890ff;
+  text-decoration: none;
+}
+
+.editor-link:hover {
+  text-decoration: underline;
+}
+
+/* Rendered HTML content styles */
+.campaign-description {
+  line-height: 1.6;
+}
+
+.campaign-description h1 {
+  font-size: 2em;
+  font-weight: bold;
+  margin-top: 0.67em;
+  margin-bottom: 0.67em;
+}
+
+.campaign-description h2 {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin-top: 0.83em;
+  margin-bottom: 0.83em;
+}
+
+.campaign-description h3 {
+  font-size: 1.17em;
+  font-weight: bold;
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+
+.campaign-description p {
+  margin-top: 0;
+  margin-bottom: 1em;
+}
+
+.campaign-description ul,
+.campaign-description ol {
+  margin-top: 0;
+  margin-bottom: 1em;
+  padding-left: 2em;
+}
+
+.campaign-description li {
+  margin-bottom: 0.5em;
+}
+
+.campaign-description strong {
+  font-weight: bold;
+}
+
+.campaign-description em {
+  font-style: italic;
+}
+
+.campaign-description u {
+  text-decoration: underline;
+}
+
+.campaign-description s {
+  text-decoration: line-through;
+}
+
+.campaign-description a {
+  color: #1890ff;
+  text-decoration: none;
+}
+
+.campaign-description a:hover {
+  text-decoration: underline;
+}
+
+/* Alignment classes */
+.campaign-description .ql-align-center {
+  text-align: center;
+}
+
+.campaign-description .ql-align-right {
+  text-align: right;
+}
+
+.campaign-description .ql-align-justify {
+  text-align: justify;
+}
