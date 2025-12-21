@@ -14,6 +14,7 @@ export const createSponsorship = async (req: Request, res: Response) => {
       positionId,
       name,
       email,
+      phone,
       message,
       amount,
       paymentMethod,
@@ -21,7 +22,7 @@ export const createSponsorship = async (req: Request, res: Response) => {
     } = data;
 
     // Validation
-    if (!name || !email || !amount || !paymentMethod) {
+    if (!name || !email || !phone || !amount || !paymentMethod) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
@@ -45,6 +46,7 @@ export const createSponsorship = async (req: Request, res: Response) => {
       positionId,
       name,
       email,
+      phone,
       message,
       amount,
       paymentMethod,

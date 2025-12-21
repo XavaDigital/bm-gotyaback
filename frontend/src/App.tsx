@@ -1,5 +1,6 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { ConfigProvider } from "antd";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -15,24 +16,112 @@ import { GuestGuard } from "./components/GuestGuard";
 import authService from "./services/auth.service";
 import "./App.css";
 
+// Light theme for admin portal
+const lightTheme = {
+  token: {
+    colorPrimary: "#C8102E",
+    colorLink: "#C8102E",
+    colorLinkHover: "#A00D25",
+    fontFamily:
+      "Montserrat, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+    fontFamilyCode: "'Courier New', Courier, monospace",
+  },
+  components: {
+    Button: {
+      primaryShadow: "0 0 0 0 rgba(0,0,0,0)",
+    },
+    Typography: {
+      fontFamilyHeading:
+        "Archivo, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+    },
+  },
+};
+
+// Dark theme for public pages
+const darkTheme = {
+  token: {
+    colorPrimary: "#C8102E",
+    colorLink: "#C8102E",
+    colorLinkHover: "#A00D25",
+    colorBgContainer: "#2a2a2a",
+    colorText: "#ffffff",
+    colorTextSecondary: "#cccccc",
+    colorTextTertiary: "#999999",
+    colorBorder: "#3a3a3a",
+    fontFamily:
+      "Montserrat, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+    fontFamilyCode: "'Courier New', Courier, monospace",
+  },
+  components: {
+    Button: {
+      primaryShadow: "0 0 0 0 rgba(0,0,0,0)",
+    },
+    Typography: {
+      fontFamilyHeading:
+        "Archivo, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+    },
+  },
+};
+
 const App: React.FC = () => {
   return (
     <Router>
       <Routes>
-        {/* Public Routes (Guests only - redirect to dashboard if logged in) */}
+        {/* Public Routes (Guests only - redirect to dashboard if logged in) - Light Theme */}
         <Route element={<GuestGuard />}>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route
+            path="/login"
+            element={
+              <ConfigProvider theme={lightTheme}>
+                <Login />
+              </ConfigProvider>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <ConfigProvider theme={lightTheme}>
+                <Register />
+              </ConfigProvider>
+            }
+          />
         </Route>
 
-        {/* Public Routes (No auth required) */}
-        <Route path="/" element={<Home />} />
-        <Route path="/campaign/:slug" element={<PublicCampaign />} />
-        <Route path="/u/:slug" element={<OrganizerLandingPage />} />
+        {/* Public Routes (No auth required) - Dark Theme */}
+        <Route
+          path="/"
+          element={
+            <ConfigProvider theme={darkTheme}>
+              <Home />
+            </ConfigProvider>
+          }
+        />
+        <Route
+          path="/campaign/:slug"
+          element={
+            <ConfigProvider theme={darkTheme}>
+              <PublicCampaign />
+            </ConfigProvider>
+          }
+        />
+        <Route
+          path="/u/:slug"
+          element={
+            <ConfigProvider theme={darkTheme}>
+              <OrganizerLandingPage />
+            </ConfigProvider>
+          }
+        />
 
-        {/* Protected Routes (Authenticated users only) */}
+        {/* Protected Routes (Authenticated users only) - Light Theme */}
         <Route element={<AuthGuard />}>
-          <Route element={<AppLayout onLogout={authService.logout} />}>
+          <Route
+            element={
+              <ConfigProvider theme={lightTheme}>
+                <AppLayout onLogout={authService.logout} />
+              </ConfigProvider>
+            }
+          >
             <Route path="/campaigns/create" element={<CreateCampaign />} />
             <Route path="/dashboard" element={<MyCampaigns />} />
             <Route path="/dashboard/profile" element={<ProfileSettings />} />

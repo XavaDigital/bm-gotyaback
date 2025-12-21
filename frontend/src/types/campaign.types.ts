@@ -68,6 +68,7 @@ export interface Campaign {
   slug: string;
   shortDescription?: string;
   description?: string;
+  headerImageUrl?: string;
   garmentType: "singlet" | "tshirt" | "hoodie";
   campaignType: CampaignType;
   sponsorDisplayType: SponsorDisplayType;
@@ -111,6 +112,7 @@ export interface SponsorEntry {
   positionId?: string;
   name: string;
   email: string;
+  phone: string;
   message?: string;
   amount: number;
   paymentMethod: "card" | "cash";
@@ -130,6 +132,7 @@ export interface CreateCampaignRequest {
   title: string;
   shortDescription?: string;
   description?: string;
+  headerImageFile?: File;
   garmentType: "singlet" | "tshirt" | "hoodie";
   campaignType: CampaignType;
   sponsorDisplayType: SponsorDisplayType;
@@ -155,6 +158,7 @@ export interface CreateSponsorshipRequest {
   positionId?: string;
   name: string;
   email: string;
+  phone: string;
   message?: string;
   amount: number;
   paymentMethod: "card" | "cash";
@@ -166,6 +170,7 @@ export interface UpdateCampaignRequest {
   title?: string;
   shortDescription?: string;
   description?: string;
+  headerImageFile?: File;
   endDate?: Date | string;
   startDate?: Date | string;
   enableStripePayments?: boolean;

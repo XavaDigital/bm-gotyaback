@@ -37,13 +37,14 @@ export const calculatePositionPrice = (
 
 /**
  * Determine which size tier a sponsor falls into based on amount paid
+ * Returns null if no tiers are defined (for simple pay-what-you-want campaigns)
  */
 export const calculateSizeTier = (
   amount: number,
-  tiers: SizeTier[]
-): SizeTier => {
+  tiers: SizeTier[] | undefined
+): SizeTier | null => {
   if (!tiers || tiers.length === 0) {
-    throw new Error("No size tiers defined");
+    return null; // No tiers defined - use default sizing
   }
 
   // Sort tiers by minAmount ascending
@@ -116,19 +117,17 @@ export const validatePricingConfig = (
       throw new Error("Pay-what-you-want requires a valid minimumAmount");
     }
 
-    if (!config.sizeTiers || config.sizeTiers.length === 0) {
-      throw new Error("Pay-what-you-want requires at least one size tier");
+    // Size tiers are optional - if provided, validate them
+    if (config.sizeTiers && config.sizeTiers.length > 0) {
+      config.sizeTiers.forEach((tier, index) => {
+        if (tier.minAmount < 0) {
+          throw new Error(`Size tier ${index} has invalid minAmount`);
+        }
+        if (tier.textFontSize <= 0 || tier.logoWidth <= 0) {
+          throw new Error(`Size tier ${index} has invalid display sizes`);
+        }
+      });
     }
-
-    // Validate size tiers
-    config.sizeTiers.forEach((tier, index) => {
-      if (tier.minAmount < 0) {
-        throw new Error(`Size tier ${index} has invalid minAmount`);
-      }
-      if (tier.textFontSize <= 0 || tier.logoWidth <= 0) {
-        throw new Error(`Size tier ${index} has invalid display sizes`);
-      }
-    });
   }
 
   return true;

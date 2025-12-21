@@ -5,7 +5,12 @@ import sharp from "sharp";
  * Validate logo file type
  */
 const validateLogoFileType = (mimeType: string): boolean => {
-  const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/svg+xml"];
+  const allowedTypes = [
+    "image/png",
+    "image/jpeg",
+    "image/jpg",
+    "image/svg+xml",
+  ];
   return allowedTypes.includes(mimeType);
 };
 
@@ -134,3 +139,35 @@ export const validateLogoFile = async (
   };
 };
 
+/**
+ * Upload campaign header image to S3
+ * @param fileBuffer - The file buffer
+ * @param originalName - Original filename
+ * @param mimeType - File MIME type
+ * @param campaignId - Campaign ID for unique folder structure
+ * @returns The public URL of the uploaded header image
+ */
+export const uploadHeaderImageToS3 = async (
+  fileBuffer: Buffer,
+  originalName: string,
+  mimeType: string,
+  campaignId: string
+): Promise<string> => {
+  // Validate file type (same as logos)
+  const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
+  if (!allowedTypes.includes(mimeType)) {
+    throw new Error("Invalid file type. Only PNG and JPG files are allowed.");
+  }
+
+  // Validate file size (max 5MB for header images)
+  const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+  if (fileBuffer.length > maxSize) {
+    throw new Error("File size exceeds 5MB limit.");
+  }
+
+  // Upload to S3 in campaigns/headers/ folder
+  const folder = `campaigns/headers/${campaignId}/`;
+  const url = await uploadToS3(fileBuffer, originalName, mimeType, folder);
+
+  return url;
+};

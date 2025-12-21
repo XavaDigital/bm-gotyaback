@@ -12,10 +12,11 @@ const FlexibleLayoutRenderer: React.FC<FlexibleLayoutRendererProps> = ({
   layoutStyle,
   sponsorDisplayType,
 }) => {
-  // Filter only paid sponsors with approved logos (if logo type)
+  // Filter sponsors with approved logos (if logo type)
+  // Show both pending and paid sponsors
   const approvedSponsors = sponsors.filter((s) => {
-    if (s.paymentStatus !== "paid") return false;
-    if (s.sponsorType === "logo" && s.logoApprovalStatus !== "approved") return false;
+    if (s.sponsorType === "logo" && s.logoApprovalStatus !== "approved")
+      return false;
     return true;
   });
 
@@ -35,50 +36,60 @@ const FlexibleLayoutRenderer: React.FC<FlexibleLayoutRendererProps> = ({
 
   // Render sponsor based on type
   const renderSponsor = (sponsor: SponsorEntry) => {
-    const fontSize = sponsor.calculatedFontSize || 16;
-    const logoWidth = sponsor.calculatedLogoWidth || 80;
+    const isPending = sponsor.paymentStatus === "pending";
 
     return (
       <div
         key={sponsor._id}
         style={{
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          margin: layoutStyle === "word-cloud" ? "8px" : "12px",
-          padding: "8px",
+          marginBottom: "12px",
           transition: "transform 0.2s",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = "scale(1.1)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = "scale(1)";
+          opacity: isPending ? 0.6 : 1,
+          border: "1px solid #3a3a3a",
+          borderRadius: "8px",
+          padding: "16px 20px",
+          backgroundColor: "#2a2a2a",
+          boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
         }}
       >
-        {sponsor.sponsorType === "logo" && sponsor.logoUrl ? (
-          <img
-            src={sponsor.logoUrl}
-            alt={sponsor.name}
-            style={{
-              width: logoWidth,
-              height: "auto",
-              objectFit: "contain",
-              maxHeight: logoWidth,
-            }}
-            title={`${sponsor.name} - $${sponsor.amount}`}
-          />
-        ) : (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: sponsor.message ? "12px" : "0",
+            paddingBottom: sponsor.message ? "12px" : "0",
+            borderBottom: sponsor.message ? "1px solid #3a3a3a" : "none",
+          }}
+        >
           <div
             style={{
-              fontSize: `${fontSize}px`,
+              fontSize: "18px",
               fontWeight: "600",
-              color: "#333",
-              textAlign: "center",
+              color: "#ffffff",
             }}
-            title={sponsor.message || `${sponsor.name} - $${sponsor.amount}`}
           >
             {sponsor.name}
+          </div>
+          <div
+            style={{
+              fontSize: "18px",
+              fontWeight: "600",
+              color: "#C8102E",
+            }}
+          >
+            ${sponsor.amount}
+          </div>
+        </div>
+        {sponsor.message && (
+          <div
+            style={{
+              fontSize: "15px",
+              fontStyle: "italic",
+              color: "#cccccc",
+            }}
+          >
+            {sponsor.message}
           </div>
         )}
       </div>
@@ -93,104 +104,8 @@ const FlexibleLayoutRenderer: React.FC<FlexibleLayoutRendererProps> = ({
     );
   }
 
-  // Different layouts based on style
-  if (layoutStyle === "word-cloud") {
-    return (
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 20,
-          minHeight: 200,
-        }}
-      >
-        {sortedSponsors.map(renderSponsor)}
-      </div>
-    );
-  }
-
-  // Size-ordered or amount-ordered (grid layout)
-  return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
-        gap: 16,
-        padding: 20,
-      }}
-    >
-      {sortedSponsors.map((sponsor) => {
-        const fontSize = sponsor.calculatedFontSize || 16;
-        const logoWidth = sponsor.calculatedLogoWidth || 80;
-
-        return (
-          <div
-            key={sponsor._id}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 16,
-              border: "1px solid #e8e8e8",
-              borderRadius: 8,
-              background: "#fafafa",
-              minHeight: 120,
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
-              e.currentTarget.style.transform = "translateY(-2px)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.boxShadow = "none";
-              e.currentTarget.style.transform = "translateY(0)";
-            }}
-          >
-            {sponsor.sponsorType === "logo" && sponsor.logoUrl ? (
-              <img
-                src={sponsor.logoUrl}
-                alt={sponsor.name}
-                style={{
-                  width: logoWidth,
-                  height: "auto",
-                  objectFit: "contain",
-                  maxHeight: logoWidth,
-                }}
-              />
-            ) : (
-              <div
-                style={{
-                  fontSize: `${fontSize}px`,
-                  fontWeight: "600",
-                  color: "#333",
-                  textAlign: "center",
-                  wordBreak: "break-word",
-                }}
-              >
-                {sponsor.name}
-              </div>
-            )}
-            {sponsor.message && sponsorDisplayType !== "logo-only" && (
-              <div
-                style={{
-                  fontSize: 12,
-                  color: "#666",
-                  marginTop: 8,
-                  textAlign: "center",
-                }}
-              >
-                {sponsor.message}
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
+  // Full-width card list for all layout styles
+  return <div>{sortedSponsors.map(renderSponsor)}</div>;
 };
 
 export default FlexibleLayoutRenderer;
-

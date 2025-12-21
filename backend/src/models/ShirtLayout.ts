@@ -25,7 +25,7 @@ const shirtLayoutSchema = new mongoose.Schema({
   }, // How positions are numbered: horizontal (row-first) or vertical (column-first)
   placements: [
     {
-      positionId: String, // e.g., "R1C1", "R2C3"
+      positionId: String, // e.g., "1", "2", "3"
       row: Number,
       col: Number,
       price: Number, // Calculated based on pricing strategy

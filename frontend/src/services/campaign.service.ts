@@ -11,6 +11,25 @@ import type {
 const campaignService = {
   // Create a new campaign
   createCampaign: async (data: CreateCampaignRequest): Promise<Campaign> => {
+    // If there's a header image file, use FormData
+    if (data.headerImageFile) {
+      const formData = new FormData();
+
+      // Create a copy of data without the file
+      const { headerImageFile, ...campaignData } = data;
+
+      formData.append("data", JSON.stringify(campaignData));
+      formData.append("headerImageFile", headerImageFile);
+
+      const response = await apiClient.post<Campaign>("/campaigns", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response.data;
+    }
+
+    // Otherwise, send as JSON
     const response = await apiClient.post<Campaign>("/campaigns", data);
     return response.data;
   },
@@ -38,6 +57,29 @@ const campaignService = {
     id: string,
     data: UpdateCampaignRequest
   ): Promise<Campaign> => {
+    // If there's a header image file, use FormData
+    if (data.headerImageFile) {
+      const formData = new FormData();
+
+      // Create a copy of data without the file
+      const { headerImageFile, ...campaignData } = data;
+
+      formData.append("data", JSON.stringify(campaignData));
+      formData.append("headerImageFile", headerImageFile);
+
+      const response = await apiClient.put<Campaign>(
+        `/campaigns/${id}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      return response.data;
+    }
+
+    // Otherwise, send as JSON
     const response = await apiClient.put<Campaign>(`/campaigns/${id}`, data);
     return response.data;
   },

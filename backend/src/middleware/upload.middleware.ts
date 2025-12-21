@@ -11,8 +11,13 @@ export const uploadLogo = multer({
   },
   fileFilter: (req, file, cb) => {
     // Accept only image files
-    const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/svg+xml"];
-    
+    const allowedTypes = [
+      "image/png",
+      "image/jpeg",
+      "image/jpg",
+      "image/svg+xml",
+    ];
+
     if (!allowedTypes.includes(file.mimetype)) {
       return cb(
         new Error(
@@ -20,8 +25,27 @@ export const uploadLogo = multer({
         )
       );
     }
-    
+
     cb(null, true);
   },
 });
 
+// Header image upload configuration
+export const uploadHeaderImage = multer({
+  storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    // Accept only image files
+    const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
+
+    if (!allowedTypes.includes(file.mimetype)) {
+      return cb(
+        new Error("Invalid file type. Only PNG and JPG files are allowed.")
+      );
+    }
+
+    cb(null, true);
+  },
+});

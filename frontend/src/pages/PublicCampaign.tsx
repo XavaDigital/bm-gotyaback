@@ -12,6 +12,8 @@ import sponsorshipService from "../services/sponsorship.service";
 import ShirtLayout from "../components/ShirtLayout";
 import SponsorCheckoutModal from "../components/SponsorCheckoutModal";
 import FlexibleLayoutRenderer from "../components/FlexibleLayoutRenderer";
+import PublicHeader from "../components/PublicHeader";
+import PublicFooter from "../components/PublicFooter";
 
 const PublicCampaign: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -42,14 +44,12 @@ const PublicCampaign: React.FC = () => {
       );
       setSponsors(sponsorsData);
 
-      // Load layout if needed
-      if (campaignData.campaignType !== "pay-what-you-want") {
-        try {
-          const layoutData = await campaignService.getLayout(campaignData._id);
-          setLayout(layoutData);
-        } catch (error) {
-          console.error("No layout found");
-        }
+      // Load layout for all campaign types
+      try {
+        const layoutData = await campaignService.getLayout(campaignData._id);
+        setLayout(layoutData);
+      } catch (error) {
+        console.error("No layout found");
       }
     } catch (error: any) {
       message.error(error.response?.data?.message || "Campaign not found");
@@ -99,7 +99,14 @@ const PublicCampaign: React.FC = () => {
 
   if (loading) {
     return (
-      <div style={{ textAlign: "center", padding: 60 }}>
+      <div
+        style={{
+          textAlign: "center",
+          padding: 60,
+          background: "#1f1f1f",
+          minHeight: "100vh",
+        }}
+      >
         <Spin size="large" />
       </div>
     );
@@ -107,7 +114,14 @@ const PublicCampaign: React.FC = () => {
 
   if (!campaign) {
     return (
-      <div style={{ textAlign: "center", padding: 60 }}>
+      <div
+        style={{
+          textAlign: "center",
+          padding: 60,
+          background: "#1f1f1f",
+          minHeight: "100vh",
+        }}
+      >
         <Empty description="Campaign not found" />
       </div>
     );
@@ -123,94 +137,31 @@ const PublicCampaign: React.FC = () => {
   const takenSpots = layout?.placements.filter((p) => p.isTaken).length || 0;
 
   return (
-    <div style={{ maxWidth: 1200, margin: "40px auto", padding: "0 20px" }}>
-      <Card style={{ marginBottom: 24 }}>
+    <div
+      style={{
+        background: "#1f1f1f",
+        minHeight: "100vh",
+      }}
+    >
+      <div
+        style={{
+          maxWidth: 900,
+          margin: "0 auto",
+          padding: "0 20px",
+        }}
+      >
+        <PublicHeader />
+
+        {/* Title and Time Remaining Row */}
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "start",
+            alignItems: "center",
+            marginBottom: 24,
           }}
         >
-          <div>
-            <h1 style={{ marginBottom: 8 }}>{campaign.title}</h1>
-            {campaign.description ? (
-              <div
-                className="campaign-description"
-                dangerouslySetInnerHTML={{ __html: campaign.description }}
-                style={{ fontSize: 16, marginBottom: 16 }}
-              />
-            ) : (
-              <p style={{ color: "#888", fontSize: 16 }}>No description</p>
-            )}
-            <div style={{ marginTop: 16 }}>
-              <Tag>{campaign.garmentType}</Tag>
-              <Tag color="blue">
-                {campaign.campaignType === "fixed"
-                  ? "Fixed Price"
-                  : campaign.campaignType === "positional"
-                  ? "Positional Pricing"
-                  : "Pay What You Want"}
-              </Tag>
-              <Tag color="purple">
-                {campaign.sponsorDisplayType === "text-only"
-                  ? "Text Only"
-                  : campaign.sponsorDisplayType === "logo-only"
-                  ? "Logo Only"
-                  : "Text & Logos"}
-              </Tag>
-              {isClosed ? (
-                <Tag color="red">Campaign Closed</Tag>
-              ) : (
-                <Tag color="green">Active</Tag>
-              )}
-            </div>
-
-            {/* Pricing Information */}
-            <div
-              style={{
-                marginTop: 16,
-                padding: 12,
-                background: "#f5f5f5",
-                borderRadius: 8,
-              }}
-            >
-              <strong>Pricing:</strong>{" "}
-              {campaign.campaignType === "fixed" &&
-                campaign.pricingConfig?.fixedPrice && (
-                  <span>
-                    All positions {campaign.currency} $
-                    {campaign.pricingConfig.fixedPrice}
-                  </span>
-                )}
-              {campaign.campaignType === "positional" &&
-                campaign.pricingConfig && (
-                  <span>
-                    From {campaign.currency} ${campaign.pricingConfig.basePrice}
-                    {campaign.pricingConfig.pricePerPosition &&
-                      ` (increases by $${campaign.pricingConfig.pricePerPosition} per position)`}
-                  </span>
-                )}
-              {campaign.campaignType === "pay-what-you-want" &&
-                campaign.pricingConfig?.minimumAmount && (
-                  <span>
-                    Minimum {campaign.currency} $
-                    {campaign.pricingConfig.minimumAmount}
-                    {campaign.pricingConfig.suggestedAmounts &&
-                      campaign.pricingConfig.suggestedAmounts.length > 0 && (
-                        <span style={{ color: "#666", marginLeft: 8 }}>
-                          (Suggested:{" "}
-                          {campaign.pricingConfig.suggestedAmounts
-                            .map((a) => `$${a}`)
-                            .join(", ")}
-                          )
-                        </span>
-                      )}
-                  </span>
-                )}
-            </div>
-          </div>
-
+          <h1 style={{ margin: 0, color: "#ffffff" }}>{campaign.title}</h1>
           {!isClosed && deadline && (
             <Card variant="borderless" style={{ textAlign: "center" }}>
               <Statistic.Timer
@@ -226,288 +177,372 @@ const PublicCampaign: React.FC = () => {
             </Card>
           )}
         </div>
-      </Card>
 
-      {layout && layout.layoutType === "grid" && (
-        <Card
-          title="Select Your Sponsorship Spot"
-          style={{ marginBottom: 24 }}
-          extra={
-            <div style={{ fontSize: 14 }}>
-              {takenSpots} / {totalSpots} spots filled
-            </div>
-          }
-        >
-          {isClosed ? (
-            <div style={{ textAlign: "center", padding: 40, color: "#888" }}>
-              <h3>This campaign has ended</h3>
-              <p>No more sponsorships can be accepted.</p>
-            </div>
-          ) : (
-            <>
-              <div
-                style={{
-                  marginBottom: 16,
-                  padding: 12,
-                  backgroundColor: "#f0f0f0",
-                  borderRadius: 4,
-                }}
-              >
-                <strong>Legend:</strong>
-                <span style={{ marginLeft: 16 }}>
-                  <span
-                    style={{
-                      display: "inline-block",
-                      width: 16,
-                      height: 16,
-                      backgroundColor: "#52c41a",
-                      borderRadius: 2,
-                      marginRight: 4,
-                    }}
-                  />
-                  Available
-                </span>
-                <span style={{ marginLeft: 16 }}>
-                  <span
-                    style={{
-                      display: "inline-block",
-                      width: 16,
-                      height: 16,
-                      backgroundColor: "#d9d9d9",
-                      borderRadius: 2,
-                      marginRight: 4,
-                    }}
-                  />
-                  Taken
-                </span>
-              </div>
-              <ShirtLayout
-                layout={layout}
-                selectedPosition={selectedPosition}
-                onPositionSelect={handlePositionSelect}
-                currency={campaign.currency}
-                showPriceGradient={campaign.campaignType === "positional"}
-                sponsors={sponsors}
-              />
-              <div
-                style={{
-                  marginTop: 24,
-                  textAlign: "center",
-                  backgroundColor: "#f9f9f9",
-                  padding: 20,
-                  borderRadius: 8,
-                }}
-              >
-                <h4 style={{ marginBottom: 12, color: "#333" }}>
-                  Not looking for a spot on the shirt?
-                </h4>
-                <p style={{ marginBottom: 16, color: "#666" }}>
-                  You can still support this campaign by making a general
-                  donation of any amount.
-                </p>
-                <Button
-                  type="primary"
-                  onClick={() => {
-                    setSelectedPosition(undefined);
-                    setSelectedAmount(0);
-                    setCheckoutVisible(true);
-                  }}
-                >
-                  Make a General Donation
-                </Button>
-              </div>
-            </>
-          )}
-        </Card>
-      )}
+        {/* Header Image */}
+        {campaign.headerImageUrl && (
+          <div style={{ marginBottom: 24 }}>
+            <img
+              src={campaign.headerImageUrl}
+              alt={campaign.title}
+              style={{
+                width: "100%",
+                height: "auto",
+                borderRadius: 8,
+                objectFit: "cover",
+              }}
+            />
+          </div>
+        )}
 
-      {/* Pay What You Want Section */}
-      {layout && layout.layoutType === "flexible" && (
-        <Card
-          title="Become a Sponsor"
-          style={{ marginBottom: 24 }}
-          extra={
-            layout.maxSponsors && (
+        {/* Description - Full Width */}
+        {campaign.description && (
+          <Card style={{ marginBottom: 24 }}>
+            <div
+              className="campaign-description"
+              dangerouslySetInnerHTML={{ __html: campaign.description }}
+              style={{ fontSize: 16 }}
+            />
+          </Card>
+        )}
+
+        {layout && layout.layoutType === "grid" && (
+          <Card
+            title={
+              <span style={{ fontSize: "24px", fontWeight: "600" }}>
+                Select Your Sponsorship Spot
+              </span>
+            }
+            style={{ marginBottom: 24 }}
+            extra={
               <div style={{ fontSize: 14 }}>
-                {sponsors.length} / {layout.maxSponsors} sponsors
+                {takenSpots} / {totalSpots} spots filled
               </div>
-            )
-          }
-        >
-          {isClosed ? (
-            <div style={{ textAlign: "center", padding: 40, color: "#888" }}>
-              <h3>This campaign has ended</h3>
-              <p>No more sponsorships can be accepted.</p>
-            </div>
-          ) : layout.maxSponsors && sponsors.length >= layout.maxSponsors ? (
-            <div style={{ textAlign: "center", padding: 40, color: "#888" }}>
-              <h3>Sponsor Limit Reached</h3>
-              <p>This campaign has reached its maximum number of sponsors.</p>
-            </div>
-          ) : (
-            <>
-              <div style={{ marginBottom: 24 }}>
-                <p style={{ fontSize: 16, marginBottom: 16 }}>
-                  Choose your contribution amount. Your sponsor display size
-                  will be based on your contribution tier.
-                </p>
-
-                {/* Size Tiers Display */}
-                {campaign.pricingConfig?.sizeTiers &&
-                  campaign.pricingConfig.sizeTiers.length > 0 && (
-                    <div style={{ marginBottom: 16 }}>
-                      <strong>Size Tiers:</strong>
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: 12,
-                          marginTop: 12,
-                          flexWrap: "wrap",
-                        }}
-                      >
-                        {campaign.pricingConfig.sizeTiers.map((tier, index) => (
-                          <div
-                            key={index}
-                            style={{
-                              flex: "1 1 200px",
-                              padding: 12,
-                              border: "1px solid #d9d9d9",
-                              borderRadius: 8,
-                              background: "#fafafa",
-                            }}
-                          >
-                            <div
-                              style={{
-                                fontWeight: "bold",
-                                textTransform: "capitalize",
-                                marginBottom: 4,
-                              }}
-                            >
-                              {tier.size}
-                            </div>
-                            <div style={{ fontSize: 14, color: "#666" }}>
-                              ${tier.minAmount} -{" "}
-                              {tier.maxAmount ? `$${tier.maxAmount}` : "∞"}
-                            </div>
-                            {campaign.sponsorDisplayType !== "logo-only" &&
-                              tier.textFontSize && (
-                                <div
-                                  style={{
-                                    fontSize: 12,
-                                    color: "#999",
-                                    marginTop: 4,
-                                  }}
-                                >
-                                  Font: {tier.textFontSize}px
-                                </div>
-                              )}
-                            {campaign.sponsorDisplayType !== "text-only" &&
-                              tier.logoWidth && (
-                                <div
-                                  style={{
-                                    fontSize: 12,
-                                    color: "#999",
-                                    marginTop: 4,
-                                  }}
-                                >
-                                  Logo: {tier.logoWidth}px
-                                </div>
-                              )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+            }
+          >
+            {isClosed ? (
+              <div style={{ textAlign: "center", padding: 40, color: "#888" }}>
+                <h3>This campaign has ended</h3>
+                <p>No more sponsorships can be accepted.</p>
               </div>
-
-              <div style={{ textAlign: "center" }}>
-                <Button
-                  type="primary"
-                  size="large"
-                  onClick={() => {
-                    setSelectedPosition(undefined);
-                    setSelectedAmount(
-                      campaign.pricingConfig?.minimumAmount || 0
-                    );
-                    setCheckoutVisible(true);
-                  }}
-                >
-                  Become a Sponsor
-                </Button>
-              </div>
-            </>
-          )}
-        </Card>
-      )}
-
-      <Card title={`Our Sponsors (${sponsors.length})`}>
-        {sponsors.length === 0 ? (
-          <Empty
-            description="No sponsors yet. Be the first!"
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-          />
-        ) : campaign.campaignType === "pay-what-you-want" &&
-          layout?.layoutType === "flexible" ? (
-          /* Flexible layout for pay-what-you-want */
-          <FlexibleLayoutRenderer
-            sponsors={sponsors}
-            layoutStyle={campaign.layoutStyle}
-            sponsorDisplayType={campaign.sponsorDisplayType}
-          />
-        ) : (
-          /* Traditional list for grid layouts */
-          <List
-            dataSource={sponsors}
-            renderItem={(sponsor) => (
-              <List.Item>
+            ) : (
+              <>
                 <div
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    width: "100%",
+                    marginBottom: 16,
+                    padding: 12,
+                    backgroundColor: "#1f1f1f",
+                    borderRadius: 4,
+                    border: "1px solid #3a3a3a",
                   }}
                 >
-                  {sponsor.sponsorType === "logo" &&
-                  sponsor.logoUrl &&
-                  sponsor.logoApprovalStatus === "approved" ? (
-                    <img
-                      src={sponsor.logoUrl}
-                      alt={sponsor.name}
+                  <strong style={{ color: "#ffffff" }}>Legend:</strong>
+                  <span style={{ marginLeft: 16, color: "#ffffff" }}>
+                    <span
                       style={{
-                        width: 60,
-                        height: 60,
-                        objectFit: "contain",
-                        border: "1px solid #e8e8e8",
-                        borderRadius: 4,
-                        padding: 4,
+                        display: "inline-block",
+                        width: 16,
+                        height: 16,
+                        backgroundColor: "#52c41a",
+                        borderRadius: 2,
+                        marginRight: 4,
                       }}
                     />
-                  ) : null}
-                  <List.Item.Meta
-                    title={sponsor.name}
-                    description={sponsor.message || "No message"}
-                  />
-                  {sponsor.positionId && <Tag>{sponsor.positionId}</Tag>}
+                    Available
+                  </span>
+                  <span style={{ marginLeft: 16, color: "#ffffff" }}>
+                    <span
+                      style={{
+                        display: "inline-block",
+                        width: 16,
+                        height: 16,
+                        backgroundColor: "#d9d9d9",
+                        borderRadius: 2,
+                        marginRight: 4,
+                      }}
+                    />
+                    Taken
+                  </span>
                 </div>
-              </List.Item>
+                <ShirtLayout
+                  layout={layout}
+                  selectedPosition={selectedPosition}
+                  onPositionSelect={handlePositionSelect}
+                  currency={campaign.currency}
+                  showPriceGradient={campaign.campaignType === "positional"}
+                  sponsors={sponsors}
+                />
+                <div
+                  style={{
+                    marginTop: 24,
+                    textAlign: "center",
+                    backgroundColor: "#1f1f1f",
+                    padding: 24,
+                    borderRadius: 8,
+                    border: "1px solid #3a3a3a",
+                  }}
+                >
+                  <h4
+                    style={{
+                      marginBottom: 12,
+                      color: "#ffffff",
+                      fontSize: "28px",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Not looking for a spot on the shirt?
+                  </h4>
+                  <p
+                    style={{
+                      marginBottom: 20,
+                      color: "#cccccc",
+                      fontSize: "18px",
+                    }}
+                  >
+                    You can still support this campaign by making a general
+                    donation of any amount.
+                  </p>
+                  <Button
+                    type="primary"
+                    onClick={() => {
+                      setSelectedPosition(undefined);
+                      setSelectedAmount(0);
+                      setCheckoutVisible(true);
+                    }}
+                    style={{
+                      height: "60px",
+                      fontSize: "20px",
+                      padding: "0 48px",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Make a General Donation
+                  </Button>
+                </div>
+              </>
             )}
-          />
+          </Card>
         )}
-      </Card>
 
-      <SponsorCheckoutModal
-        visible={checkoutVisible}
-        onCancel={() => {
-          setCheckoutVisible(false);
-          setSelectedPosition(undefined);
-        }}
-        onSubmit={handleSponsorshipSubmit}
-        positionId={selectedPosition}
-        amount={selectedAmount}
-        currency={campaign.currency}
-        campaignId={campaign._id}
-      />
+        {/* Pay What You Want Section */}
+        {layout && layout.layoutType === "flexible" && (
+          <Card
+            title={
+              <span style={{ fontSize: "24px", fontWeight: "600" }}>
+                Become a Sponsor
+              </span>
+            }
+            style={{ marginBottom: 24 }}
+            extra={
+              layout.maxSponsors && (
+                <div style={{ fontSize: 14 }}>
+                  {sponsors.length} / {layout.maxSponsors} sponsors
+                </div>
+              )
+            }
+          >
+            {isClosed ? (
+              <div style={{ textAlign: "center", padding: 40, color: "#888" }}>
+                <h3>This campaign has ended</h3>
+                <p>No more sponsorships can be accepted.</p>
+              </div>
+            ) : layout.maxSponsors && sponsors.length >= layout.maxSponsors ? (
+              <div style={{ textAlign: "center", padding: 40, color: "#888" }}>
+                <h3>Sponsor Limit Reached</h3>
+                <p>This campaign has reached its maximum number of sponsors.</p>
+              </div>
+            ) : (
+              <>
+                <div style={{ marginBottom: 24 }}>
+                  <p style={{ fontSize: 16, marginBottom: 16 }}>
+                    {campaign.pricingConfig?.sizeTiers &&
+                    campaign.pricingConfig.sizeTiers.length > 0
+                      ? "Choose your contribution amount. Your sponsor display size will be based on your contribution tier."
+                      : `Choose your contribution amount. Minimum contribution: $${
+                          campaign.pricingConfig?.minimumAmount || 0
+                        }`}
+                  </p>
+
+                  {/* Size Tiers Display - only show if tiers are defined */}
+                  {campaign.pricingConfig?.sizeTiers &&
+                    campaign.pricingConfig.sizeTiers.length > 0 && (
+                      <div style={{ marginBottom: 16 }}>
+                        <strong>Size Tiers:</strong>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 12,
+                            marginTop: 12,
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          {campaign.pricingConfig.sizeTiers.map(
+                            (tier, index) => (
+                              <div
+                                key={index}
+                                style={{
+                                  flex: "1 1 200px",
+                                  padding: 12,
+                                  border: "1px solid #d9d9d9",
+                                  borderRadius: 8,
+                                  background: "#fafafa",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    fontWeight: "bold",
+                                    textTransform: "capitalize",
+                                    marginBottom: 4,
+                                  }}
+                                >
+                                  {tier.size}
+                                </div>
+                                <div style={{ fontSize: 14, color: "#666" }}>
+                                  ${tier.minAmount} -{" "}
+                                  {tier.maxAmount ? `$${tier.maxAmount}` : "∞"}
+                                </div>
+                                {campaign.sponsorDisplayType !== "logo-only" &&
+                                  tier.textFontSize && (
+                                    <div
+                                      style={{
+                                        fontSize: 12,
+                                        color: "#999",
+                                        marginTop: 4,
+                                      }}
+                                    >
+                                      Font: {tier.textFontSize}px
+                                    </div>
+                                  )}
+                                {campaign.sponsorDisplayType !== "text-only" &&
+                                  tier.logoWidth && (
+                                    <div
+                                      style={{
+                                        fontSize: 12,
+                                        color: "#999",
+                                        marginTop: 4,
+                                      }}
+                                    >
+                                      Logo: {tier.logoWidth}px
+                                    </div>
+                                  )}
+                              </div>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    )}
+                </div>
+
+                <div style={{ textAlign: "center" }}>
+                  <Button
+                    type="primary"
+                    size="large"
+                    onClick={() => {
+                      setSelectedPosition(undefined);
+                      setSelectedAmount(
+                        campaign.pricingConfig?.minimumAmount || 0
+                      );
+                      setCheckoutVisible(true);
+                    }}
+                    style={{
+                      height: "60px",
+                      fontSize: "20px",
+                      padding: "0 48px",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Become a Sponsor
+                  </Button>
+                </div>
+              </>
+            )}
+          </Card>
+        )}
+
+        <Card
+          title={
+            <span style={{ fontSize: "24px", fontWeight: "600" }}>
+              Our Sponsors ({sponsors.length})
+            </span>
+          }
+        >
+          {sponsors.length === 0 ? (
+            <Empty
+              description="No sponsors yet. Be the first!"
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+            />
+          ) : campaign.campaignType === "pay-what-you-want" &&
+            layout?.layoutType === "flexible" ? (
+            /* Flexible layout for pay-what-you-want */
+            <FlexibleLayoutRenderer
+              sponsors={sponsors}
+              layoutStyle={campaign.layoutStyle}
+              sponsorDisplayType={campaign.sponsorDisplayType}
+            />
+          ) : (
+            /* Traditional list for grid layouts */
+            <List
+              dataSource={sponsors}
+              renderItem={(sponsor) => (
+                <List.Item
+                  style={{
+                    opacity: sponsor.paymentStatus === "pending" ? 0.6 : 1,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      width: "100%",
+                    }}
+                  >
+                    {sponsor.sponsorType === "logo" &&
+                    sponsor.logoUrl &&
+                    sponsor.logoApprovalStatus === "approved" ? (
+                      <img
+                        src={sponsor.logoUrl}
+                        alt={sponsor.name}
+                        style={{
+                          width: 60,
+                          height: 60,
+                          objectFit: "contain",
+                          border: "1px solid #e8e8e8",
+                          borderRadius: 4,
+                          padding: 4,
+                        }}
+                      />
+                    ) : null}
+                    <List.Item.Meta
+                      title={sponsor.name}
+                      description={sponsor.message || "No message"}
+                    />
+                    {sponsor.positionId && <Tag>{sponsor.positionId}</Tag>}
+                    {sponsor.paymentStatus === "pending" && (
+                      <Tag color="orange">Pending Payment</Tag>
+                    )}
+                  </div>
+                </List.Item>
+              )}
+            />
+          )}
+        </Card>
+
+        <SponsorCheckoutModal
+          visible={checkoutVisible}
+          onCancel={() => {
+            setCheckoutVisible(false);
+            setSelectedPosition(undefined);
+          }}
+          onSubmit={handleSponsorshipSubmit}
+          positionId={selectedPosition}
+          amount={selectedAmount}
+          currency={campaign.currency}
+          campaignId={campaign._id}
+          campaign={campaign}
+        />
+
+        <PublicFooter />
+      </div>
     </div>
   );
 };

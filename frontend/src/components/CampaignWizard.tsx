@@ -13,8 +13,12 @@ import {
   Alert,
   Row,
   Col,
+  Upload,
+  message,
 } from "antd";
+import { UploadOutlined } from "@ant-design/icons";
 import type { FormInstance } from "antd";
+import type { UploadFile } from "antd/es/upload/interface";
 import RichTextEditor from "./RichTextEditor";
 
 const { RangePicker } = DatePicker;
@@ -46,6 +50,12 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
   const [campaignData, setCampaignData] = useState<any>(initialCampaignData);
   const [layoutData, setLayoutData] = useState<any>(initialLayoutData);
   const [form] = Form.useForm();
+  const [headerImageFile, setHeaderImageFile] = useState<File | undefined>(
+    undefined
+  );
+  const [headerImageFileList, setHeaderImageFileList] = useState<UploadFile[]>(
+    []
+  );
 
   // Custom styles for form labels
   const formLabelStyle = `
@@ -215,6 +225,11 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
       // For edit mode, pricing is already in campaignData.pricing from step 2
       // No need to do anything special - it's already accumulated
 
+      // Add header image file if present
+      if (headerImageFile) {
+        finalCampaignData.headerImageFile = headerImageFile;
+      }
+
       console.log("Final campaignData to submit:", finalCampaignData);
       console.log("Final layoutData to submit:", finalLayoutData);
 
@@ -256,6 +271,53 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
           </Form.Item>
 
           <Form.Item
+            label="Header Image"
+            extra="Optional banner image displayed at the top of your campaign page (max 5MB, PNG or JPG)"
+          >
+            <Upload
+              accept="image/png,image/jpeg,image/jpg"
+              maxCount={1}
+              fileList={headerImageFileList}
+              beforeUpload={(file) => {
+                // Validate file type
+                const isImage =
+                  file.type === "image/png" ||
+                  file.type === "image/jpeg" ||
+                  file.type === "image/jpg";
+                if (!isImage) {
+                  message.error("You can only upload PNG or JPG files!");
+                  return Upload.LIST_IGNORE;
+                }
+
+                // Validate file size (5MB)
+                const isLt5M = file.size / 1024 / 1024 < 5;
+                if (!isLt5M) {
+                  message.error("Image must be smaller than 5MB!");
+                  return Upload.LIST_IGNORE;
+                }
+
+                setHeaderImageFile(file);
+                setHeaderImageFileList([
+                  {
+                    uid: file.uid,
+                    name: file.name,
+                    status: "done",
+                    url: URL.createObjectURL(file),
+                  },
+                ]);
+                return false; // Prevent auto upload
+              }}
+              onRemove={() => {
+                setHeaderImageFile(undefined);
+                setHeaderImageFileList([]);
+              }}
+              listType="picture"
+            >
+              <Button icon={<UploadOutlined />}>Select Image</Button>
+            </Upload>
+          </Form.Item>
+
+          <Form.Item
             label="Garment Type"
             name="garmentType"
             rules={[
@@ -281,7 +343,9 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
           form={form}
           layout="vertical"
           initialValues={{
-            campaignType: campaignData.campaignType,
+            campaignType:
+              campaignData.campaignType ||
+              (mode === "create" ? "positional" : undefined),
             sponsorDisplayType: campaignData.sponsorDisplayType || "text-only",
             layoutStyle: campaignData.layoutStyle || "grid",
           }}
@@ -602,14 +666,177 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                     ]}
                     extra="How sponsors will be arranged on the shirt"
                   >
-                    <Radio.Group disabled={mode === "edit"}>
-                      <Radio value="size-ordered">
-                        Size Ordered (Largest First)
-                      </Radio>
-                      <Radio value="amount-ordered">
-                        Amount Ordered (Highest Payers First)
-                      </Radio>
-                      <Radio value="word-cloud">Word Cloud (Artistic)</Radio>
+                    <Radio.Group
+                      style={{ width: "100%" }}
+                      disabled={mode === "edit"}
+                    >
+                      <Form.Item noStyle shouldUpdate>
+                        {({ getFieldValue }) => {
+                          const selectedLayoutStyle =
+                            getFieldValue("layoutStyle");
+
+                          return (
+                            <Row gutter={16}>
+                              <Col span={8}>
+                                <Card
+                                  style={{
+                                    height: "100%",
+                                    cursor:
+                                      mode === "edit"
+                                        ? "not-allowed"
+                                        : "pointer",
+                                    borderColor:
+                                      selectedLayoutStyle === "size-ordered"
+                                        ? "#1890ff"
+                                        : undefined,
+                                    borderWidth:
+                                      selectedLayoutStyle === "size-ordered"
+                                        ? 2
+                                        : 1,
+                                    backgroundColor:
+                                      selectedLayoutStyle === "size-ordered"
+                                        ? "#e6f7ff"
+                                        : undefined,
+                                    opacity: mode === "edit" ? 0.6 : 1,
+                                  }}
+                                  hoverable={mode !== "edit"}
+                                >
+                                  <Radio
+                                    value="size-ordered"
+                                    style={{ display: "none" }}
+                                  />
+                                  <div
+                                    onClick={() => {
+                                      if (mode !== "edit") {
+                                        form.setFieldsValue({
+                                          layoutStyle: "size-ordered",
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    <strong style={{ fontSize: "16px" }}>
+                                      Size Ordered
+                                    </strong>
+                                    <p
+                                      style={{
+                                        color: "#888",
+                                        marginTop: 8,
+                                        marginBottom: 0,
+                                      }}
+                                    >
+                                      Largest First
+                                    </p>
+                                  </div>
+                                </Card>
+                              </Col>
+                              <Col span={8}>
+                                <Card
+                                  style={{
+                                    height: "100%",
+                                    cursor:
+                                      mode === "edit"
+                                        ? "not-allowed"
+                                        : "pointer",
+                                    borderColor:
+                                      selectedLayoutStyle === "amount-ordered"
+                                        ? "#1890ff"
+                                        : undefined,
+                                    borderWidth:
+                                      selectedLayoutStyle === "amount-ordered"
+                                        ? 2
+                                        : 1,
+                                    backgroundColor:
+                                      selectedLayoutStyle === "amount-ordered"
+                                        ? "#e6f7ff"
+                                        : undefined,
+                                    opacity: mode === "edit" ? 0.6 : 1,
+                                  }}
+                                  hoverable={mode !== "edit"}
+                                >
+                                  <Radio
+                                    value="amount-ordered"
+                                    style={{ display: "none" }}
+                                  />
+                                  <div
+                                    onClick={() => {
+                                      if (mode !== "edit") {
+                                        form.setFieldsValue({
+                                          layoutStyle: "amount-ordered",
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    <strong style={{ fontSize: "16px" }}>
+                                      Amount Ordered
+                                    </strong>
+                                    <p
+                                      style={{
+                                        color: "#888",
+                                        marginTop: 8,
+                                        marginBottom: 0,
+                                      }}
+                                    >
+                                      Highest Payers First
+                                    </p>
+                                  </div>
+                                </Card>
+                              </Col>
+                              <Col span={8}>
+                                <Card
+                                  style={{
+                                    height: "100%",
+                                    cursor:
+                                      mode === "edit"
+                                        ? "not-allowed"
+                                        : "pointer",
+                                    borderColor:
+                                      selectedLayoutStyle === "word-cloud"
+                                        ? "#1890ff"
+                                        : undefined,
+                                    borderWidth:
+                                      selectedLayoutStyle === "word-cloud"
+                                        ? 2
+                                        : 1,
+                                    backgroundColor:
+                                      selectedLayoutStyle === "word-cloud"
+                                        ? "#e6f7ff"
+                                        : undefined,
+                                    opacity: mode === "edit" ? 0.6 : 1,
+                                  }}
+                                  hoverable={mode !== "edit"}
+                                >
+                                  <Radio
+                                    value="word-cloud"
+                                    style={{ display: "none" }}
+                                  />
+                                  <div
+                                    onClick={() => {
+                                      if (mode !== "edit") {
+                                        form.setFieldsValue({
+                                          layoutStyle: "word-cloud",
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    <strong style={{ fontSize: "16px" }}>
+                                      Word Cloud
+                                    </strong>
+                                    <p
+                                      style={{
+                                        color: "#888",
+                                        marginTop: 8,
+                                        marginBottom: 0,
+                                      }}
+                                    >
+                                      Artistic
+                                    </p>
+                                  </div>
+                                </Card>
+                              </Col>
+                            </Row>
+                          );
+                        }}
+                      </Form.Item>
                     </Radio.Group>
                   </Form.Item>
                 );
@@ -1277,7 +1504,7 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                 message="Pay What You Want Configuration"
                 description={
                   mode === "create"
-                    ? "Sponsors choose their contribution amount. Size is based on payment tier."
+                    ? "Sponsors can contribute any amount they choose (above the minimum). All sponsors will be displayed at a standard size."
                     : "Pricing cannot be changed for pay-what-you-want campaigns after creation."
                 }
                 type="info"
@@ -1297,7 +1524,7 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                             message: "Please enter minimum amount",
                           },
                         ]}
-                        extra="Minimum contribution required"
+                        extra="Minimum contribution required from sponsors"
                       >
                         <InputNumber
                           min={1}
@@ -1311,33 +1538,16 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                       <Form.Item
                         label="Maximum Sponsors (Optional)"
                         name="maxSponsors"
-                        extra="Leave empty for unlimited"
+                        extra="Leave empty for unlimited sponsors"
                       >
                         <InputNumber
                           min={1}
                           style={{ width: "100%" }}
-                          placeholder="50"
+                          placeholder="Leave empty for unlimited"
                         />
                       </Form.Item>
                     </Col>
                   </Row>
-                  <Alert
-                    message="Default Size Tiers"
-                    description={
-                      <div>
-                        <p>Default tiers will be created:</p>
-                        <ul style={{ marginBottom: 0 }}>
-                          <li>Small: $10-$24 (Font: 12px, Logo: 50px)</li>
-                          <li>Medium: $25-$49 (Font: 16px, Logo: 80px)</li>
-                          <li>Large: $50-$99 (Font: 24px, Logo: 120px)</li>
-                          <li>X-Large: $100+ (Font: 32px, Logo: 150px)</li>
-                        </ul>
-                      </div>
-                    }
-                    type="info"
-                    showIcon
-                    style={{ marginTop: 16 }}
-                  />
                 </>
               )}
             </>

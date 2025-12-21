@@ -28,7 +28,7 @@ export interface PricingConfig {
 }
 
 export interface PlacementPosition {
-  positionId: string; // e.g., "A1", "B5"
+  positionId: string; // e.g., "1", "2", "3"
   row: number;
   col: number;
   price: number;

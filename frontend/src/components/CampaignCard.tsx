@@ -45,7 +45,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
   const remainingDays = getRemainingDays();
 
   return (
-    <Card hoverable>
+    <Card hoverable onClick={handleViewCampaign} style={{ cursor: "pointer" }}>
       <Row gutter={24} align="middle">
         {/* Left side - Campaign Info */}
         <Col flex="auto">
@@ -107,7 +107,10 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
             type="primary"
             size="large"
             icon={<EyeOutlined />}
-            onClick={handleViewCampaign}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleViewCampaign();
+            }}
           >
             View Campaign
           </Button>

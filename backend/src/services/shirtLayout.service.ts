@@ -22,7 +22,7 @@ export const generatePositions = (
       for (let col = 0; col < columns; col++) {
         if (positionNumber > totalPositions) break;
 
-        const positionId = `R${row + 1}C${col + 1}`;
+        const positionId = positionNumber.toString();
         let price = 0;
 
         if (campaignType === "fixed" && pricing.fixedPrice) {
@@ -50,7 +50,7 @@ export const generatePositions = (
       for (let row = 0; row < rows; row++) {
         if (positionNumber > totalPositions) break;
 
-        const positionId = `R${row + 1}C${col + 1}`;
+        const positionId = positionNumber.toString();
         let price = 0;
 
         if (campaignType === "fixed" && pricing.fixedPrice) {

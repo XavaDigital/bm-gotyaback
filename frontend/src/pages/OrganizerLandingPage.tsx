@@ -15,6 +15,8 @@ import userService from "../services/user.service";
 import authService from "../services/auth.service";
 import OrganizerProfileHeader from "../components/OrganizerProfileHeader";
 import CampaignCard from "../components/CampaignCard";
+import PublicHeader from "../components/PublicHeader";
+import PublicFooter from "../components/PublicFooter";
 import type { OrganizerPublicProfile } from "../types/campaign.types";
 
 const { Title } = Typography;
@@ -55,7 +57,7 @@ const OrganizerLandingPage: React.FC = () => {
     return (
       <div
         style={{
-          background: "#f5f5f5",
+          background: "#1f1f1f",
           minHeight: "100vh",
           display: "flex",
           alignItems: "center",
@@ -71,7 +73,7 @@ const OrganizerLandingPage: React.FC = () => {
     return (
       <div
         style={{
-          background: "#f5f5f5",
+          background: "#1f1f1f",
           minHeight: "100vh",
           display: "flex",
           alignItems: "center",
@@ -84,8 +86,10 @@ const OrganizerLandingPage: React.FC = () => {
   }
 
   return (
-    <div style={{ background: "#f5f5f5", minHeight: "100vh" }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: 24 }}>
+    <div style={{ background: "#1f1f1f", minHeight: "100vh" }}>
+      <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 20px" }}>
+        <PublicHeader />
+
         {/* Edit Button for Owner */}
         {isOwner && (
           <div style={{ textAlign: "right", marginBottom: 16 }}>
@@ -102,11 +106,13 @@ const OrganizerLandingPage: React.FC = () => {
         {/* Organizer Profile Header */}
         <OrganizerProfileHeader profile={data.profile} />
 
-        <Divider />
+        <Divider style={{ borderColor: "#3a3a3a" }} />
 
         {/* Active Campaigns Section */}
         <div>
-          <Title level={3}>Active Campaigns</Title>
+          <Title level={3} style={{ color: "#ffffff" }}>
+            Active Campaigns
+          </Title>
           {data.campaigns.length === 0 ? (
             <Empty description="No active campaigns at the moment" />
           ) : (
@@ -119,6 +125,8 @@ const OrganizerLandingPage: React.FC = () => {
             </div>
           )}
         </div>
+
+        <PublicFooter />
       </div>
     </div>
   );

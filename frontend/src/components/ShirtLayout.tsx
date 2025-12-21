@@ -117,14 +117,14 @@ const ShirtLayout: React.FC<ShirtLayoutProps> = ({
               backgroundColor: getPositionColor(position),
               border: "2px solid #fff",
               borderRadius: "4px",
-              padding: "12px",
+              padding: "6px",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
               cursor: getPositionCursor(position),
               transition: "all 0.3s",
-              minHeight: "80px",
+              minHeight: "60px",
               opacity: position.isTaken && !readonly ? 0.5 : 1,
             }}
             onMouseEnter={(e) => {
@@ -143,12 +143,12 @@ const ShirtLayout: React.FC<ShirtLayoutProps> = ({
               style={{
                 color: "#fff",
                 fontWeight: "bold",
-                fontSize: "10px",
-                marginBottom: "4px",
+                fontSize: "9px",
+                marginBottom: "2px",
                 opacity: 0.8,
               }}
             >
-              {position.positionId}
+              Position {position.positionId}
             </div>
 
             {/* Sponsor content or price */}

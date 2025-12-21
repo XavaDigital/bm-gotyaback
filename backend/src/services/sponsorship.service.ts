@@ -12,6 +12,7 @@ export const createSponsorship = async (
     positionId?: string;
     name: string;
     email: string;
+    phone: string;
     message?: string;
     amount: number;
     paymentMethod: "card" | "cash";
@@ -62,20 +63,41 @@ export const createSponsorship = async (
   let calculatedFontSize: number | undefined;
   let calculatedLogoWidth: number | undefined;
 
-  if (
-    campaign.campaignType === "pay-what-you-want" &&
-    campaign.pricingConfig?.sizeTiers
-  ) {
-    const tier = calculateSizeTier(
-      sponsorData.amount,
-      campaign.pricingConfig.sizeTiers as any
-    );
-    displaySize = tier.size;
+  if (campaign.campaignType === "pay-what-you-want") {
+    if (
+      campaign.pricingConfig?.sizeTiers &&
+      campaign.pricingConfig.sizeTiers.length > 0
+    ) {
+      // Use size tiers if defined
+      const tier = calculateSizeTier(
+        sponsorData.amount,
+        campaign.pricingConfig.sizeTiers as any
+      );
 
-    const sponsorType = sponsorData.sponsorType || "text";
-    const sizes = calculateDisplaySizes(sponsorData.amount, tier, sponsorType);
-    calculatedFontSize = sizes.fontSize;
-    calculatedLogoWidth = sizes.logoWidth;
+      if (tier) {
+        displaySize = tier.size;
+        const sponsorType = sponsorData.sponsorType || "text";
+        const sizes = calculateDisplaySizes(
+          sponsorData.amount,
+          tier,
+          sponsorType
+        );
+        calculatedFontSize = sizes.fontSize;
+        calculatedLogoWidth = sizes.logoWidth;
+      }
+    } else {
+      // No size tiers - use simple proportional sizing based on amount
+      // Default: medium size for all sponsors
+      displaySize = "medium";
+      const sponsorType = sponsorData.sponsorType || "text";
+
+      // Simple proportional sizing: base size + amount-based scaling
+      if (sponsorType === "text") {
+        calculatedFontSize = 16; // Default medium text size
+      } else {
+        calculatedLogoWidth = 80; // Default medium logo size
+      }
+    }
   }
 
   // Determine logo approval status
@@ -88,6 +110,7 @@ export const createSponsorship = async (
       positionId: sponsorData.positionId,
       name: sponsorData.name,
       email: sponsorData.email,
+      phone: sponsorData.phone,
       message: sponsorData.message,
       amount: sponsorData.amount,
       paymentMethod: sponsorData.paymentMethod,
@@ -200,14 +223,13 @@ export const updatePaymentStatus = async (
   return sponsorship;
 };
 
-// Get public sponsor list (only paid sponsors with approved logos, limited info)
+// Get public sponsor list (all sponsors with approved logos, limited info)
 export const getPublicSponsors = async (campaignId: string) => {
   const sponsors = await SponsorEntry.find({
     campaignId,
-    paymentStatus: "paid",
-    logoApprovalStatus: "approved", // Only show approved logos
+    logoApprovalStatus: "approved", // Only show approved logos (or text-only sponsors)
   }).select(
-    "name message positionId createdAt sponsorType logoUrl displaySize calculatedFontSize calculatedLogoWidth"
+    "name message positionId createdAt sponsorType logoUrl displaySize calculatedFontSize calculatedLogoWidth paymentStatus amount"
   );
 
   return sponsors;

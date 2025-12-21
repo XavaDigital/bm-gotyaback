@@ -21,6 +21,7 @@ const sponsorshipService = {
           positionId: data.positionId,
           name: data.name,
           email: data.email,
+          phone: data.phone,
           message: data.message,
           amount: data.amount,
           paymentMethod: data.paymentMethod,

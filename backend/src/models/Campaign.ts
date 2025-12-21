@@ -11,6 +11,7 @@ const campaignSchema = new mongoose.Schema(
     slug: { type: String, required: true, unique: true },
     shortDescription: { type: String, maxlength: 200 },
     description: { type: String },
+    headerImageUrl: { type: String },
     garmentType: {
       type: String,
       enum: ["singlet", "tshirt", "hoodie"],

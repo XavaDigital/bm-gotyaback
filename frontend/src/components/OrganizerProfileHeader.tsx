@@ -49,27 +49,43 @@ const OrganizerProfileHeader: React.FC<OrganizerProfileHeaderProps> = ({
 
             {/* Name and Links */}
             <div>
-              <Title level={2} style={{ margin: 0 }}>
+              <Title level={2} style={{ margin: 0, color: "#ffffff" }}>
                 {profile.displayName || "Organizer"}
               </Title>
               <Space size="middle" style={{ marginTop: 8 }}>
                 {profile.websiteUrl && (
-                  <Link href={profile.websiteUrl} target="_blank">
+                  <Link
+                    href={profile.websiteUrl}
+                    target="_blank"
+                    style={{ color: "#C8102E" }}
+                  >
                     <GlobalOutlined /> Website
                   </Link>
                 )}
                 {profile.socialLinks?.facebook && (
-                  <Link href={profile.socialLinks.facebook} target="_blank">
+                  <Link
+                    href={profile.socialLinks.facebook}
+                    target="_blank"
+                    style={{ color: "#C8102E" }}
+                  >
                     <FacebookOutlined /> Facebook
                   </Link>
                 )}
                 {profile.socialLinks?.twitter && (
-                  <Link href={profile.socialLinks.twitter} target="_blank">
+                  <Link
+                    href={profile.socialLinks.twitter}
+                    target="_blank"
+                    style={{ color: "#C8102E" }}
+                  >
                     <TwitterOutlined /> Twitter
                   </Link>
                 )}
                 {profile.socialLinks?.instagram && (
-                  <Link href={profile.socialLinks.instagram} target="_blank">
+                  <Link
+                    href={profile.socialLinks.instagram}
+                    target="_blank"
+                    style={{ color: "#C8102E" }}
+                  >
                     <InstagramOutlined /> Instagram
                   </Link>
                 )}
@@ -80,10 +96,12 @@ const OrganizerProfileHeader: React.FC<OrganizerProfileHeaderProps> = ({
           {/* Bio */}
           {profile.bio && (
             <div>
-              <Title level={4}>About</Title>
+              <Title level={4} style={{ color: "#ffffff" }}>
+                About
+              </Title>
               <div
                 className="campaign-description"
-                style={{ padding: 0, color: "#000000" }}
+                style={{ padding: 0, color: "#cccccc" }}
                 dangerouslySetInnerHTML={{ __html: profile.bio }}
               />
             </div>
