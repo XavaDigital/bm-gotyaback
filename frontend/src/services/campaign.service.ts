@@ -117,6 +117,22 @@ const campaignService = {
     );
     return response.data;
   },
+
+  // Duplicate campaign
+  duplicateCampaign: async (
+    id: string,
+    newData: {
+      title?: string;
+      startDate?: Date | string;
+      endDate?: Date | string;
+    }
+  ): Promise<Campaign> => {
+    const response = await apiClient.post<Campaign>(
+      `/campaigns/${id}/duplicate`,
+      newData
+    );
+    return response.data;
+  },
 };
 
 export default campaignService;

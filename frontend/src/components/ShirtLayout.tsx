@@ -96,6 +96,176 @@ const ShirtLayout: React.FC<ShirtLayoutProps> = ({
     return "pointer";
   };
 
+  // Group positions by tier (for sections layout)
+  const hasTiers = layout.placements.some((p) => p.tier !== undefined);
+  const tierGroups: { tier: number | undefined; positions: Position[] }[] = [];
+
+  if (hasTiers) {
+    // Group positions by tier
+    layout.placements.forEach((position) => {
+      const tierNum = position.tier;
+      let group = tierGroups.find((g) => g.tier === tierNum);
+      if (!group) {
+        group = { tier: tierNum, positions: [] };
+        tierGroups.push(group);
+      }
+      group.positions.push(position);
+    });
+  }
+
+  // Render a single position
+  const renderPosition = (position: Position) => {
+    const sponsor = getSponsorForPosition(position.positionId);
+
+    return (
+      <div
+        key={position.positionId}
+        onClick={() => handlePositionClick(position)}
+        style={{
+          backgroundColor: getPositionColor(position),
+          border: "2px solid #fff",
+          borderRadius: "4px",
+          padding: "6px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: getPositionCursor(position),
+          transition: "all 0.3s",
+          minHeight: "60px",
+          opacity: position.isTaken && !readonly ? 0.5 : 1,
+        }}
+        onMouseEnter={(e) => {
+          if (!readonly && !position.isTaken) {
+            e.currentTarget.style.transform = "scale(1.05)";
+            e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.2)";
+          }
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "scale(1)";
+          e.currentTarget.style.boxShadow = "none";
+        }}
+      >
+        {/* Position ID - always show at top */}
+        <div
+          style={{
+            color: "#fff",
+            fontWeight: "bold",
+            fontSize: "9px",
+            marginBottom: "2px",
+            opacity: 0.8,
+          }}
+        >
+          Position {position.positionId}
+        </div>
+
+        {/* Sponsor content or price */}
+        {sponsor ? (
+          <>
+            {/* Logo sponsor */}
+            {sponsor.sponsorType === "logo" &&
+            sponsor.logoUrl &&
+            sponsor.logoApprovalStatus === "approved" ? (
+              <img
+                src={sponsor.logoUrl}
+                alt={sponsor.name}
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "50px",
+                  objectFit: "contain",
+                }}
+              />
+            ) : (
+              /* Text sponsor */
+              <>
+                <div
+                  style={{
+                    color: "#fff",
+                    fontSize: "12px",
+                    fontWeight: "600",
+                    textAlign: "center",
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {sponsor.name}
+                </div>
+                {sponsor.message && (
+                  <div
+                    style={{
+                      color: "#fff",
+                      fontSize: "9px",
+                      marginTop: "2px",
+                      textAlign: "center",
+                      opacity: 0.9,
+                    }}
+                  >
+                    {sponsor.message}
+                  </div>
+                )}
+              </>
+            )}
+          </>
+        ) : (
+          /* Empty position - show price */
+          <div style={{ color: "#fff", fontSize: "14px", fontWeight: "600" }}>
+            {currency} ${position.price}
+          </div>
+        )}
+
+        {/* Status indicator */}
+        {position.isTaken && !sponsor && (
+          <div style={{ color: "#fff", fontSize: "10px", marginTop: "4px" }}>
+            TAKEN
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Render with tier groups if tiers exist, otherwise render normally
+  if (hasTiers && tierGroups.length > 0) {
+    return (
+      <div style={{ maxWidth: "600px", margin: "0 auto" }}>
+        {tierGroups.map((group, groupIndex) => (
+          <div
+            key={group.tier || "no-tier"}
+            style={{
+              marginBottom: groupIndex < tierGroups.length - 1 ? "32px" : 0,
+            }}
+          >
+            {/* Tier label */}
+            {group.tier !== undefined && (
+              <div
+                style={{
+                  marginBottom: "12px",
+                  padding: "8px 12px",
+                  backgroundColor: "#8c8c8c",
+                  color: "#fff",
+                  borderRadius: "4px",
+                  fontWeight: "600",
+                  fontSize: "14px",
+                }}
+              >
+                Tier {group.tier} - {currency} ${group.positions[0]?.price || 0}
+              </div>
+            )}
+            {/* Grid for this tier */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: `repeat(${layout.columns}, 1fr)`,
+                gap: "8px",
+              }}
+            >
+              {group.positions.map(renderPosition)}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Default rendering without tiers
   return (
     <div
       style={{
@@ -106,117 +276,7 @@ const ShirtLayout: React.FC<ShirtLayoutProps> = ({
         margin: "0 auto",
       }}
     >
-      {layout.placements.map((position) => {
-        const sponsor = getSponsorForPosition(position.positionId);
-
-        return (
-          <div
-            key={position.positionId}
-            onClick={() => handlePositionClick(position)}
-            style={{
-              backgroundColor: getPositionColor(position),
-              border: "2px solid #fff",
-              borderRadius: "4px",
-              padding: "6px",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: getPositionCursor(position),
-              transition: "all 0.3s",
-              minHeight: "60px",
-              opacity: position.isTaken && !readonly ? 0.5 : 1,
-            }}
-            onMouseEnter={(e) => {
-              if (!readonly && !position.isTaken) {
-                e.currentTarget.style.transform = "scale(1.05)";
-                e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.2)";
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "scale(1)";
-              e.currentTarget.style.boxShadow = "none";
-            }}
-          >
-            {/* Position ID - always show at top */}
-            <div
-              style={{
-                color: "#fff",
-                fontWeight: "bold",
-                fontSize: "9px",
-                marginBottom: "2px",
-                opacity: 0.8,
-              }}
-            >
-              Position {position.positionId}
-            </div>
-
-            {/* Sponsor content or price */}
-            {sponsor ? (
-              <>
-                {/* Logo sponsor */}
-                {sponsor.sponsorType === "logo" &&
-                sponsor.logoUrl &&
-                sponsor.logoApprovalStatus === "approved" ? (
-                  <img
-                    src={sponsor.logoUrl}
-                    alt={sponsor.name}
-                    style={{
-                      maxWidth: "100%",
-                      maxHeight: "50px",
-                      objectFit: "contain",
-                    }}
-                  />
-                ) : (
-                  /* Text sponsor */
-                  <>
-                    <div
-                      style={{
-                        color: "#fff",
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        textAlign: "center",
-                        wordBreak: "break-word",
-                      }}
-                    >
-                      {sponsor.name}
-                    </div>
-                    {sponsor.message && (
-                      <div
-                        style={{
-                          color: "#fff",
-                          fontSize: "9px",
-                          marginTop: "2px",
-                          textAlign: "center",
-                          opacity: 0.9,
-                        }}
-                      >
-                        {sponsor.message}
-                      </div>
-                    )}
-                  </>
-                )}
-              </>
-            ) : (
-              /* Empty position - show price */
-              <div
-                style={{ color: "#fff", fontSize: "14px", fontWeight: "600" }}
-              >
-                {currency} ${position.price}
-              </div>
-            )}
-
-            {/* Status indicator */}
-            {position.isTaken && !sponsor && (
-              <div
-                style={{ color: "#fff", fontSize: "10px", marginTop: "4px" }}
-              >
-                TAKEN
-              </div>
-            )}
-          </div>
-        );
-      })}
+      {layout.placements.map(renderPosition)}
     </div>
   );
 };

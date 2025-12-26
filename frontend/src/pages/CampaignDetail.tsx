@@ -11,12 +11,15 @@ import {
   Modal,
   Statistic,
   Badge,
+  Alert,
 } from "antd";
 import {
   CloseCircleOutlined,
   ExportOutlined,
   EditOutlined,
   BellOutlined,
+  CopyOutlined,
+  WarningOutlined,
 } from "@ant-design/icons";
 import type {
   Campaign,
@@ -26,6 +29,7 @@ import type {
 import campaignService from "../services/campaign.service";
 import sponsorshipService from "../services/sponsorship.service";
 import EditCampaignModal from "../components/EditCampaignModal";
+import DuplicateCampaignModal from "../components/DuplicateCampaignModal";
 import ShirtLayoutComponent from "../components/ShirtLayout";
 import LogoApprovalCard from "../components/LogoApprovalCard";
 import FlexibleLayoutRenderer from "../components/FlexibleLayoutRenderer";
@@ -39,8 +43,12 @@ const CampaignDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [closingCampaign, setClosingCampaign] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [isDuplicateModalVisible, setIsDuplicateModalVisible] = useState(false);
   const [pendingLogos, setPendingLogos] = useState<SponsorEntry[]>([]);
   const [loadingPendingLogos, setLoadingPendingLogos] = useState(false);
+  const [creatingLayout, setCreatingLayout] = useState(false);
+  const [activatingCampaign, setActivatingCampaign] = useState(false);
+  const [draftingCampaign, setDraftingCampaign] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -106,6 +114,57 @@ const CampaignDetail: React.FC = () => {
     loadCampaignData();
   };
 
+  const handleCreateLayout = async () => {
+    if (!campaign) return;
+
+    try {
+      setCreatingLayout(true);
+
+      // Determine layout parameters based on campaign type
+      if (campaign.campaignType === "pay-what-you-want") {
+        await campaignService.createLayout(campaign._id, {
+          maxSponsors: 0, // unlimited
+          campaignType: campaign.campaignType,
+          pricingConfig: campaign.pricingConfig,
+        });
+      } else {
+        // For sections layout, use the existing priceTiers
+        // For other layouts, provide default pricing if missing
+        let pricingConfig = campaign.pricingConfig;
+
+        // If it's a positional campaign without sections and missing pricing, add defaults
+        if (
+          campaign.campaignType === "positional" &&
+          campaign.layoutStyle !== "sections" &&
+          !pricingConfig?.basePrice &&
+          !pricingConfig?.priceMultiplier
+        ) {
+          pricingConfig = {
+            basePrice: 10,
+            pricePerPosition: 5,
+          };
+        }
+
+        // Default grid layout for fixed/positional
+        await campaignService.createLayout(campaign._id, {
+          totalPositions: 20,
+          columns: 5,
+          arrangement: "horizontal",
+          campaignType: campaign.campaignType,
+          pricingConfig: pricingConfig,
+        });
+      }
+
+      message.success("Layout created successfully!");
+      await loadCampaignData(); // Reload to show the layout
+    } catch (error: any) {
+      console.error("Layout creation error:", error);
+      message.error(error.response?.data?.message || "Failed to create layout");
+    } finally {
+      setCreatingLayout(false);
+    }
+  };
+
   const handleCloseCampaign = () => {
     Modal.confirm({
       title: "Close Campaign?",
@@ -125,6 +184,54 @@ const CampaignDetail: React.FC = () => {
           );
         } finally {
           setClosingCampaign(false);
+        }
+      },
+    });
+  };
+
+  const handleActivateCampaign = () => {
+    Modal.confirm({
+      title: "Activate Campaign?",
+      content:
+        "Are you sure you want to activate this campaign? It will become publicly visible and sponsors can start joining.",
+      okText: "Yes, Activate Campaign",
+      okType: "primary",
+      onOk: async () => {
+        setActivatingCampaign(true);
+        try {
+          await campaignService.updateCampaign(id!, { status: "active" });
+          message.success("Campaign activated successfully!");
+          loadCampaignData();
+        } catch (error: any) {
+          message.error(
+            error.response?.data?.message || "Failed to activate campaign"
+          );
+        } finally {
+          setActivatingCampaign(false);
+        }
+      },
+    });
+  };
+
+  const handleDraftCampaign = () => {
+    Modal.confirm({
+      title: "Move Campaign to Draft?",
+      content:
+        "Are you sure you want to move this campaign back to draft mode? It will be hidden from the public until you activate it again.",
+      okText: "Yes, Move to Draft",
+      okType: "default",
+      onOk: async () => {
+        setDraftingCampaign(true);
+        try {
+          await campaignService.updateCampaign(id!, { status: "draft" });
+          message.success("Campaign moved to draft successfully!");
+          loadCampaignData();
+        } catch (error: any) {
+          message.error(
+            error.response?.data?.message || "Failed to move campaign to draft"
+          );
+        } finally {
+          setDraftingCampaign(false);
         }
       },
     });
@@ -287,7 +394,24 @@ const CampaignDetail: React.FC = () => {
           >
             View Public Page
           </Button>
-          {!campaign.isClosed && (
+          <Button
+            icon={<CopyOutlined />}
+            onClick={() => setIsDuplicateModalVisible(true)}
+            style={{ marginRight: 8 }}
+          >
+            Duplicate
+          </Button>
+          {campaign.status === "draft" && (
+            <Button
+              type="primary"
+              onClick={handleActivateCampaign}
+              loading={activatingCampaign}
+              style={{ marginRight: 8 }}
+            >
+              Activate Campaign
+            </Button>
+          )}
+          {!campaign.isClosed && campaign.status === "active" && (
             <>
               <Button
                 type="primary"
@@ -296,6 +420,13 @@ const CampaignDetail: React.FC = () => {
                 style={{ marginRight: 8 }}
               >
                 Edit Campaign
+              </Button>
+              <Button
+                onClick={handleDraftCampaign}
+                loading={draftingCampaign}
+                style={{ marginRight: 8 }}
+              >
+                Move to Draft
               </Button>
               <Button
                 danger
@@ -309,6 +440,35 @@ const CampaignDetail: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Missing Layout Warning */}
+      {!layout &&
+        (campaign.campaignType === "fixed" ||
+          campaign.campaignType === "positional" ||
+          campaign.campaignType === "pay-what-you-want") && (
+          <Alert
+            message="Layout Missing"
+            description={
+              <div>
+                <p>
+                  This campaign is missing a layout configuration. Sponsors
+                  cannot join until a layout is created.
+                </p>
+                <Button
+                  type="primary"
+                  onClick={handleCreateLayout}
+                  loading={creatingLayout}
+                  icon={<WarningOutlined />}
+                >
+                  Create Layout Now
+                </Button>
+              </div>
+            }
+            type="error"
+            showIcon
+            style={{ marginBottom: 24 }}
+          />
+        )}
 
       <Card title="Campaign Statistics" style={{ marginBottom: 24 }}>
         <div style={{ display: "flex", gap: 24 }}>
@@ -389,14 +549,16 @@ const CampaignDetail: React.FC = () => {
       <Card title="Campaign Details" style={{ marginBottom: 24 }}>
         <Descriptions bordered column={2}>
           <Descriptions.Item label="Status">
-            {campaign.isClosed ? (
+            {campaign.status === "draft" ? (
+              <Tag color="orange">Draft</Tag>
+            ) : campaign.isClosed || campaign.status === "closed" ? (
               <Tag color="red">Closed</Tag>
             ) : (
               <Tag color="green">Active</Tag>
             )}
           </Descriptions.Item>
           <Descriptions.Item label="Campaign Type">
-            {campaign.campaignType}
+            <Tag color="blue">{campaign.campaignType}</Tag>
           </Descriptions.Item>
           <Descriptions.Item label="Garment">
             {campaign.garmentType}
@@ -418,8 +580,202 @@ const CampaignDetail: React.FC = () => {
               ? new Date(campaign.endDate).toLocaleDateString()
               : "No end date"}
           </Descriptions.Item>
+          <Descriptions.Item label="Start Date">
+            {campaign.startDate
+              ? new Date(campaign.startDate).toLocaleDateString()
+              : "Not set"}
+          </Descriptions.Item>
+          <Descriptions.Item label="Short Description" span={2}>
+            {campaign.shortDescription || "None"}
+          </Descriptions.Item>
+          {campaign.description && (
+            <Descriptions.Item label="Description" span={2}>
+              <div
+                dangerouslySetInnerHTML={{ __html: campaign.description }}
+                style={{ maxHeight: "200px", overflow: "auto" }}
+              />
+            </Descriptions.Item>
+          )}
         </Descriptions>
       </Card>
+
+      {/* Campaign Settings */}
+      <Card title="Campaign Settings" style={{ marginBottom: 24 }}>
+        <Descriptions bordered column={2}>
+          <Descriptions.Item label="Sponsor Display Type">
+            <Tag color="purple">{campaign.sponsorDisplayType}</Tag>
+          </Descriptions.Item>
+          <Descriptions.Item label="Layout Style">
+            <Tag color="cyan">{campaign.layoutStyle}</Tag>
+          </Descriptions.Item>
+          {campaign.layoutOrder && (
+            <Descriptions.Item label="Layout Order">
+              <Tag>
+                {campaign.layoutOrder === "asc" ? "Ascending" : "Descending"}
+              </Tag>
+            </Descriptions.Item>
+          )}
+          <Descriptions.Item label="Stripe Payments">
+            {campaign.enableStripePayments ? (
+              <Tag color="green">Enabled</Tag>
+            ) : (
+              <Tag color="red">Disabled</Tag>
+            )}
+          </Descriptions.Item>
+          <Descriptions.Item label="Offline Payments">
+            {campaign.allowOfflinePayments ? (
+              <Tag color="green">Allowed</Tag>
+            ) : (
+              <Tag color="red">Not Allowed</Tag>
+            )}
+          </Descriptions.Item>
+        </Descriptions>
+      </Card>
+
+      {/* Pricing Configuration */}
+      <Card title="Pricing Configuration" style={{ marginBottom: 24 }}>
+        <Descriptions bordered column={2}>
+          {campaign.campaignType === "fixed" &&
+            campaign.pricingConfig.fixedPrice && (
+              <Descriptions.Item label="Fixed Price" span={2}>
+                <strong style={{ fontSize: "18px", color: "#3f8600" }}>
+                  {campaign.currency} ${campaign.pricingConfig.fixedPrice}
+                </strong>
+              </Descriptions.Item>
+            )}
+          {campaign.campaignType === "positional" && (
+            <>
+              {campaign.pricingConfig.basePrice !== undefined && (
+                <Descriptions.Item label="Base Price">
+                  {campaign.currency} ${campaign.pricingConfig.basePrice}
+                </Descriptions.Item>
+              )}
+              {campaign.pricingConfig.pricePerPosition !== undefined && (
+                <Descriptions.Item label="Price Per Position">
+                  {campaign.currency} ${campaign.pricingConfig.pricePerPosition}
+                </Descriptions.Item>
+              )}
+              {campaign.pricingConfig.priceMultiplier !== undefined && (
+                <Descriptions.Item label="Price Multiplier">
+                  {campaign.pricingConfig.priceMultiplier}x
+                </Descriptions.Item>
+              )}
+              {campaign.pricingConfig.priceTiers &&
+                campaign.pricingConfig.priceTiers.length > 0 && (
+                  <Descriptions.Item label="Price Tiers" span={2}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                      }}
+                    >
+                      {campaign.pricingConfig.priceTiers.map((tier) => (
+                        <div
+                          key={tier.tierNumber}
+                          style={{
+                            padding: "8px",
+                            background: "#f5f5f5",
+                            borderRadius: "4px",
+                          }}
+                        >
+                          <strong>Tier {tier.tierNumber}:</strong>{" "}
+                          {campaign.currency} ${tier.price}
+                          <Tag style={{ marginLeft: "8px" }}>
+                            {tier.sponsorDisplayType}
+                          </Tag>
+                        </div>
+                      ))}
+                    </div>
+                  </Descriptions.Item>
+                )}
+            </>
+          )}
+          {campaign.campaignType === "pay-what-you-want" && (
+            <>
+              {campaign.pricingConfig.minimumAmount !== undefined && (
+                <Descriptions.Item label="Minimum Amount">
+                  {campaign.currency} ${campaign.pricingConfig.minimumAmount}
+                </Descriptions.Item>
+              )}
+              {campaign.pricingConfig.suggestedAmounts &&
+                campaign.pricingConfig.suggestedAmounts.length > 0 && (
+                  <Descriptions.Item label="Suggested Amounts" span={2}>
+                    {campaign.pricingConfig.suggestedAmounts.map(
+                      (amount, idx) => (
+                        <Tag key={idx} color="blue" style={{ margin: "4px" }}>
+                          {campaign.currency} ${amount}
+                        </Tag>
+                      )
+                    )}
+                  </Descriptions.Item>
+                )}
+              {campaign.pricingConfig.sizeTiers &&
+                campaign.pricingConfig.sizeTiers.length > 0 && (
+                  <Descriptions.Item label="Size Tiers" span={2}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                      }}
+                    >
+                      {campaign.pricingConfig.sizeTiers.map((tier, idx) => (
+                        <div
+                          key={idx}
+                          style={{
+                            padding: "8px",
+                            background: "#f5f5f5",
+                            borderRadius: "4px",
+                          }}
+                        >
+                          <Tag color="purple">{tier.size}</Tag>
+                          <span style={{ marginLeft: "8px" }}>
+                            {campaign.currency} ${tier.minAmount} -{" "}
+                            {tier.maxAmount ? `$${tier.maxAmount}` : "∞"}
+                          </span>
+                          <span style={{ marginLeft: "8px", color: "#666" }}>
+                            (Text: {tier.textFontSize}px, Logo: {tier.logoWidth}
+                            px)
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </Descriptions.Item>
+                )}
+            </>
+          )}
+        </Descriptions>
+      </Card>
+
+      {/* Layout Configuration */}
+      {layout && (
+        <Card title="Layout Configuration" style={{ marginBottom: 24 }}>
+          <Descriptions bordered column={2}>
+            <Descriptions.Item label="Layout Type">
+              <Tag color="geekblue">{layout.layoutType}</Tag>
+            </Descriptions.Item>
+            {layout.layoutType === "grid" && (
+              <>
+                <Descriptions.Item label="Grid Size">
+                  {layout.rows} rows × {layout.columns} columns
+                </Descriptions.Item>
+                <Descriptions.Item label="Total Positions">
+                  {layout.totalPositions}
+                </Descriptions.Item>
+                <Descriptions.Item label="Arrangement">
+                  <Tag>{layout.arrangement}</Tag>
+                </Descriptions.Item>
+              </>
+            )}
+            {layout.layoutType === "flexible" && layout.maxSponsors && (
+              <Descriptions.Item label="Max Sponsors">
+                {layout.maxSponsors}
+              </Descriptions.Item>
+            )}
+          </Descriptions>
+        </Card>
+      )}
 
       {/* Layout Display */}
       {layout && (
@@ -502,6 +858,19 @@ const CampaignDetail: React.FC = () => {
           campaign={campaign}
           onCancel={() => setIsEditModalVisible(false)}
           onSuccess={handleEditSuccess}
+        />
+      )}
+
+      {/* Duplicate Campaign Modal */}
+      {campaign && (
+        <DuplicateCampaignModal
+          visible={isDuplicateModalVisible}
+          campaign={campaign}
+          onCancel={() => setIsDuplicateModalVisible(false)}
+          onSuccess={(newCampaign) => {
+            setIsDuplicateModalVisible(false);
+            navigate(`/campaigns/${newCampaign._id}`);
+          }}
         />
       )}
     </div>

@@ -22,15 +22,18 @@ const FlexibleLayoutRenderer: React.FC<FlexibleLayoutRendererProps> = ({
 
   // Sort sponsors based on layout style
   const sortedSponsors = [...approvedSponsors].sort((a, b) => {
-    if (layoutStyle === "size-ordered") {
-      // Largest first (by display size)
+    if (layoutStyle === "ordered" || layoutStyle === "list") {
+      // Sort by amount paid (order will be determined by layoutOrder in the future)
+      return b.amount - a.amount;
+    } else if (layoutStyle === "size-ordered") {
+      // Largest first (by display size) - legacy support
       const sizeOrder = { xlarge: 4, large: 3, medium: 2, small: 1 };
       return sizeOrder[b.displaySize] - sizeOrder[a.displaySize];
     } else if (layoutStyle === "amount-ordered") {
-      // Highest payers first
+      // Highest payers first - legacy support
       return b.amount - a.amount;
     }
-    // For word-cloud, keep original order (or randomize)
+    // For word-cloud and cloud, keep original order (or randomize)
     return 0;
   });
 

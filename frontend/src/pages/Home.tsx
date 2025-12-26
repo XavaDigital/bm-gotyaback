@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Button, Alert } from "antd";
+import { useNavigate } from "react-router-dom";
 import apiClient from "../services/apiClient";
 
 const Home: React.FC = () => {
+  const navigate = useNavigate();
   const [apiStatus, setApiStatus] = useState<string>(
     "Checking backend connection..."
   );
@@ -25,10 +27,13 @@ const Home: React.FC = () => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       setUser(JSON.parse(storedUser));
+      // Redirect logged-in users to dashboard
+      navigate("/dashboard");
+      return;
     }
 
     checkConnection();
-  }, []);
+  }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -44,13 +49,13 @@ const Home: React.FC = () => {
       <div style={{ marginBottom: "20px" }}>
         {isConnected !== null && (
           <Alert
-            title={apiStatus}
+            message={apiStatus}
             type={isConnected ? "success" : "error"}
             showIcon
           />
         )}
         {isConnected === null && (
-          <Alert title={apiStatus} type="info" showIcon />
+          <Alert message={apiStatus} type="info" showIcon />
         )}
       </div>
 

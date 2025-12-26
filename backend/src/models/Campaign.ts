@@ -32,10 +32,20 @@ const campaignSchema = new mongoose.Schema(
     },
 
     // Layout Style
+    // Positional: "ordered", "sections", "cloud"
+    // Fixed: "cloud", "list"
+    // Pay-what-you-want: "word-cloud", "list"
     layoutStyle: {
       type: String,
-      enum: ["grid", "size-ordered", "amount-ordered", "word-cloud"],
-      default: "grid",
+      enum: ["ordered", "sections", "cloud", "list", "word-cloud"],
+      default: "ordered",
+    },
+
+    // Layout Order (for ordered and list layouts)
+    layoutOrder: {
+      type: String,
+      enum: ["asc", "desc"],
+      default: "asc",
     },
 
     // Pricing Configuration (varies by campaign type)
@@ -68,6 +78,19 @@ const campaignSchema = new mongoose.Schema(
             logoWidth: { type: Number }, // px for logo sponsors
           },
         ],
+
+        // Price tiers for "sections" layout style (positional pricing)
+        priceTiers: [
+          {
+            tierNumber: { type: Number, required: true },
+            price: { type: Number, required: true },
+            sponsorDisplayType: {
+              type: String,
+              enum: ["text-only", "logo-only", "both"],
+              required: true,
+            },
+          },
+        ],
       },
       default: {},
     },
@@ -75,6 +98,11 @@ const campaignSchema = new mongoose.Schema(
     currency: { type: String, enum: ["NZD", "AUD", "USD"], default: "NZD" },
     startDate: { type: Date },
     endDate: { type: Date },
+    status: {
+      type: String,
+      enum: ["draft", "active", "closed"],
+      default: "active",
+    },
     isClosed: { type: Boolean, default: false },
     enableStripePayments: { type: Boolean, default: false },
     allowOfflinePayments: { type: Boolean, default: true },

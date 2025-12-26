@@ -19,7 +19,10 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
   const navigate = useNavigate();
 
   const getStatusTag = () => {
-    if (campaign.isClosed) {
+    if (campaign.status === "draft") {
+      return <Tag color="orange">Draft</Tag>;
+    }
+    if (campaign.status === "closed" || campaign.isClosed) {
       return <Tag color="red">Closed</Tag>;
     }
     if (campaign.endDate && new Date(campaign.endDate) < new Date()) {

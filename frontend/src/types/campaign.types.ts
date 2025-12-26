@@ -30,11 +30,17 @@ export interface CampaignStats {
 // Pricing Strategy Types
 export type CampaignType = "fixed" | "positional" | "pay-what-you-want";
 export type SponsorDisplayType = "text-only" | "logo-only" | "both";
+// Layout styles:
+// Positional: "ordered", "sections", "cloud"
+// Fixed: "cloud", "list"
+// Pay-what-you-want: "word-cloud", "list"
 export type LayoutStyle =
-  | "grid"
-  | "size-ordered"
-  | "amount-ordered"
+  | "ordered"
+  | "sections"
+  | "cloud"
+  | "list"
   | "word-cloud";
+export type LayoutOrder = "asc" | "desc";
 export type SponsorType = "text" | "logo";
 export type LogoApprovalStatus = "pending" | "approved" | "rejected";
 export type DisplaySize = "small" | "medium" | "large" | "xlarge";
@@ -45,6 +51,13 @@ export interface SizeTier {
   maxAmount: number | null;
   textFontSize: number;
   logoWidth: number;
+}
+
+// Tier configuration for "sections" layout style
+export interface PriceTier {
+  tierNumber: number; // 1, 2, 3, etc.
+  price: number; // Price for this tier
+  sponsorDisplayType: "text-only" | "logo-only" | "both"; // What types of sponsors are allowed in this tier
 }
 
 export interface PricingConfig {
@@ -59,6 +72,8 @@ export interface PricingConfig {
   minimumAmount?: number;
   suggestedAmounts?: number[];
   sizeTiers?: SizeTier[];
+  // Price tiers for "sections" layout style (positional pricing)
+  priceTiers?: PriceTier[];
 }
 
 export interface Campaign {
@@ -73,10 +88,12 @@ export interface Campaign {
   campaignType: CampaignType;
   sponsorDisplayType: SponsorDisplayType;
   layoutStyle: LayoutStyle;
+  layoutOrder?: LayoutOrder;
   pricingConfig: PricingConfig;
   currency: "NZD" | "AUD" | "USD";
   startDate?: Date | string;
   endDate?: Date | string;
+  status: "draft" | "active" | "closed";
   isClosed: boolean;
   enableStripePayments: boolean;
   allowOfflinePayments: boolean;
@@ -92,6 +109,7 @@ export interface Position {
   price: number;
   isTaken: boolean;
   sponsorId?: string;
+  tier?: number; // For sections layout - which tier this position belongs to
 }
 
 export interface ShirtLayout {
@@ -137,6 +155,7 @@ export interface CreateCampaignRequest {
   campaignType: CampaignType;
   sponsorDisplayType: SponsorDisplayType;
   layoutStyle: LayoutStyle;
+  layoutOrder?: LayoutOrder;
   pricingConfig: PricingConfig;
   currency?: "NZD" | "AUD" | "USD";
   startDate?: Date | string;
@@ -176,6 +195,7 @@ export interface UpdateCampaignRequest {
   enableStripePayments?: boolean;
   allowOfflinePayments?: boolean;
   garmentType?: "singlet" | "tshirt" | "hoodie";
+  status?: "draft" | "active" | "closed";
 }
 
 export interface UpdatePricingRequest {

@@ -10,12 +10,19 @@ import {
   Col,
   message,
   Statistic,
+  Modal,
 } from "antd";
-import { PlusOutlined, EyeOutlined, EditOutlined } from "@ant-design/icons";
+import {
+  PlusOutlined,
+  EyeOutlined,
+  EditOutlined,
+  CopyOutlined,
+} from "@ant-design/icons";
 import type { Campaign } from "../types/campaign.types";
 import campaignService from "../services/campaign.service";
 import sponsorshipService from "../services/sponsorship.service";
 import EditCampaignModal from "../components/EditCampaignModal";
+import DuplicateCampaignModal from "../components/DuplicateCampaignModal";
 
 interface CampaignStats {
   totalPledged: number;
@@ -34,6 +41,15 @@ const MyCampaigns: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [duplicatingCampaign, setDuplicatingCampaign] =
+    useState<Campaign | null>(null);
+  const [isDuplicateModalVisible, setIsDuplicateModalVisible] = useState(false);
+  const [activatingCampaignId, setActivatingCampaignId] = useState<
+    string | null
+  >(null);
+  const [draftingCampaignId, setDraftingCampaignId] = useState<string | null>(
+    null
+  );
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -138,6 +154,58 @@ const MyCampaigns: React.FC = () => {
     setEditingCampaign(null);
   };
 
+  const handleActivateCampaign = async (campaignId: string) => {
+    Modal.confirm({
+      title: "Activate Campaign?",
+      content:
+        "Are you sure you want to activate this campaign? It will become publicly visible and sponsors can start joining.",
+      okText: "Yes, Activate",
+      okType: "primary",
+      onOk: async () => {
+        try {
+          setActivatingCampaignId(campaignId);
+          await campaignService.updateCampaign(campaignId, {
+            status: "active",
+          });
+          message.success("Campaign activated successfully!");
+          loadCampaigns();
+        } catch (error: any) {
+          message.error(
+            error.response?.data?.message || "Failed to activate campaign"
+          );
+        } finally {
+          setActivatingCampaignId(null);
+        }
+      },
+    });
+  };
+
+  const handleDraftCampaign = async (campaignId: string) => {
+    Modal.confirm({
+      title: "Move Campaign to Draft?",
+      content:
+        "Are you sure you want to move this campaign back to draft mode? It will be hidden from the public until you activate it again.",
+      okText: "Yes, Move to Draft",
+      okType: "default",
+      onOk: async () => {
+        try {
+          setDraftingCampaignId(campaignId);
+          await campaignService.updateCampaign(campaignId, {
+            status: "draft",
+          });
+          message.success("Campaign moved to draft successfully!");
+          loadCampaigns();
+        } catch (error: any) {
+          message.error(
+            error.response?.data?.message || "Failed to move campaign to draft"
+          );
+        } finally {
+          setDraftingCampaignId(null);
+        }
+      },
+    });
+  };
+
   const getRemainingDays = (endDate?: string | Date) => {
     if (!endDate) return null;
     const end = new Date(endDate);
@@ -215,7 +283,9 @@ const MyCampaigns: React.FC = () => {
                       <h2 style={{ margin: 0, fontSize: 20 }}>
                         {campaign.title}
                       </h2>
-                      {campaign.isClosed ? (
+                      {campaign.status === "draft" ? (
+                        <Tag color="orange">Draft</Tag>
+                      ) : campaign.status === "closed" || campaign.isClosed ? (
                         <Tag color="red">Closed</Tag>
                       ) : (
                         <Tag color="green">Active</Tag>
@@ -358,13 +428,44 @@ const MyCampaigns: React.FC = () => {
                       >
                         View Details
                       </Button>
+                      {campaign.status === "draft" && (
+                        <Button
+                          type="primary"
+                          onClick={() => handleActivateCampaign(campaign._id)}
+                          loading={activatingCampaignId === campaign._id}
+                          block
+                        >
+                          Activate Campaign
+                        </Button>
+                      )}
+                      {campaign.status === "active" && !campaign.isClosed && (
+                        <Button
+                          onClick={() => handleDraftCampaign(campaign._id)}
+                          loading={draftingCampaignId === campaign._id}
+                          block
+                        >
+                          Move to Draft
+                        </Button>
+                      )}
                       <Button
                         icon={<EditOutlined />}
                         onClick={() => handleEditClick(campaign)}
-                        disabled={campaign.isClosed}
+                        disabled={
+                          campaign.isClosed || campaign.status === "draft"
+                        }
                         block
                       >
                         Edit Campaign
+                      </Button>
+                      <Button
+                        icon={<CopyOutlined />}
+                        onClick={() => {
+                          setDuplicatingCampaign(campaign);
+                          setIsDuplicateModalVisible(true);
+                        }}
+                        block
+                      >
+                        Duplicate
                       </Button>
                     </div>
                   </Col>
@@ -380,6 +481,21 @@ const MyCampaigns: React.FC = () => {
         campaign={editingCampaign}
         onCancel={handleEditCancel}
         onSuccess={handleEditSuccess}
+      />
+
+      <DuplicateCampaignModal
+        visible={isDuplicateModalVisible}
+        campaign={duplicatingCampaign}
+        onCancel={() => {
+          setIsDuplicateModalVisible(false);
+          setDuplicatingCampaign(null);
+        }}
+        onSuccess={(newCampaign) => {
+          setIsDuplicateModalVisible(false);
+          setDuplicatingCampaign(null);
+          message.success("Campaign duplicated! Redirecting...");
+          navigate(`/campaigns/${newCampaign._id}`);
+        }}
       />
     </div>
   );

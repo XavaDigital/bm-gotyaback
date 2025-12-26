@@ -8,6 +8,13 @@ export interface SizeTier {
   logoWidth: number; // px for logo sponsors
 }
 
+// Tier configuration for "sections" layout style
+export interface PriceTier {
+  tierNumber: number; // 1, 2, 3, etc.
+  price: number; // Price for this tier
+  sponsorDisplayType: "text-only" | "logo-only" | "both"; // What types of sponsors are allowed in this tier
+}
+
 export interface PricingConfig {
   // For fixed pricing
   fixedPrice?: number;
@@ -25,6 +32,9 @@ export interface PricingConfig {
 
   // Size tiers for pay-what-you-want
   sizeTiers?: SizeTier[];
+
+  // Price tiers for "sections" layout style (positional pricing)
+  priceTiers?: PriceTier[];
 }
 
 export interface PlacementPosition {
@@ -39,11 +49,17 @@ export interface PlacementPosition {
 // Campaign Types
 export type CampaignType = "fixed" | "positional" | "pay-what-you-want";
 export type SponsorDisplayType = "text-only" | "logo-only" | "both";
+// Layout styles:
+// Positional: "ordered", "sections", "cloud"
+// Fixed: "cloud", "list"
+// Pay-what-you-want: "word-cloud", "list"
 export type LayoutStyle =
-  | "grid"
-  | "size-ordered"
-  | "amount-ordered"
+  | "ordered"
+  | "sections"
+  | "cloud"
+  | "list"
   | "word-cloud";
+export type LayoutOrder = "asc" | "desc";
 
 // Sponsor Types
 export type SponsorType = "text" | "logo";

@@ -44,7 +44,8 @@ export const createCampaign = async (userId: string, campaignData: any) => {
   if (campaignData.pricingConfig && campaignData.campaignType) {
     validatePricingConfig(
       campaignData.campaignType,
-      campaignData.pricingConfig
+      campaignData.pricingConfig,
+      campaignData.layoutStyle
     );
   }
 
@@ -140,7 +141,8 @@ export const updateCampaign = async (
   // Validate pricing config if being updated
   if (updates.pricingConfig) {
     const campaignType = updates.campaignType || campaign.campaignType;
-    validatePricingConfig(campaignType, updates.pricingConfig);
+    const layoutStyle = updates.layoutStyle || campaign.layoutStyle;
+    validatePricingConfig(campaignType, updates.pricingConfig, layoutStyle);
   }
 
   // Prevent changing ownerId
@@ -278,4 +280,92 @@ export const updateCampaignPricing = async (
 
   await layout.save();
   return true;
+};
+
+export const duplicateCampaign = async (
+  campaignId: string,
+  userId: string,
+  newData: { title?: string; startDate?: Date; endDate?: Date }
+) => {
+  // Get the original campaign
+  const originalCampaign = await Campaign.findById(campaignId);
+
+  if (!originalCampaign) {
+    throw new Error("Campaign not found");
+  }
+
+  // Verify ownership
+  const ownerId =
+    typeof originalCampaign.ownerId === "object" && originalCampaign.ownerId._id
+      ? originalCampaign.ownerId._id.toString()
+      : originalCampaign.ownerId.toString();
+
+  if (ownerId !== userId) {
+    throw new Error("Not authorized to duplicate this campaign");
+  }
+
+  // Create a copy of the campaign data
+  const campaignData = {
+    title: newData.title || `${originalCampaign.title} (Copy)`,
+    shortDescription: originalCampaign.shortDescription,
+    description: originalCampaign.description,
+    headerImageUrl: originalCampaign.headerImageUrl,
+    garmentType: originalCampaign.garmentType,
+    campaignType: originalCampaign.campaignType,
+    sponsorDisplayType: originalCampaign.sponsorDisplayType,
+    layoutStyle: originalCampaign.layoutStyle,
+    layoutOrder: originalCampaign.layoutOrder,
+    pricingConfig: originalCampaign.pricingConfig,
+    currency: originalCampaign.currency,
+    startDate: newData.startDate,
+    endDate: newData.endDate,
+    status: "draft", // Set duplicated campaigns to draft
+    enableStripePayments: originalCampaign.enableStripePayments,
+    allowOfflinePayments: originalCampaign.allowOfflinePayments,
+  };
+
+  // Create the new campaign using the existing createCampaign function
+  const newCampaign = await createCampaign(userId, campaignData);
+
+  // Get the original layout if it exists
+  const ShirtLayout = mongoose.model("ShirtLayout");
+  const originalLayout = await ShirtLayout.findOne({
+    campaignId: originalCampaign._id,
+  });
+
+  // If there's a layout, duplicate it for the new campaign
+  if (originalLayout) {
+    const layoutData: any = {
+      campaignId: (newCampaign as any)._id,
+      layoutType: originalLayout.layoutType,
+      maxSponsors: originalLayout.maxSponsors,
+    };
+
+    // Copy grid-specific properties if it's a grid layout
+    if (originalLayout.layoutType === "grid") {
+      layoutData.rows = originalLayout.rows;
+      layoutData.columns = originalLayout.columns;
+      layoutData.totalPositions = originalLayout.totalPositions;
+      layoutData.arrangement = originalLayout.arrangement;
+
+      // Create placements with the same structure but no sponsors
+      layoutData.placements = originalLayout.placements.map(
+        (placement: any) => ({
+          positionId: placement.positionId,
+          row: placement.row,
+          col: placement.col,
+          price: placement.price,
+          isTaken: false, // Reset to not taken
+          // Don't copy sponsorId
+        })
+      );
+    } else {
+      // For flexible layouts, just create an empty placements array
+      layoutData.placements = [];
+    }
+
+    await ShirtLayout.create(layoutData);
+  }
+
+  return newCampaign;
 };

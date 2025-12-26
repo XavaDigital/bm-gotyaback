@@ -159,10 +159,12 @@ const EditCampaignModal: React.FC<EditCampaignModalProps> = ({
         // - Campaign is grid-based (fixed or positional)
         // - No sponsors exist yet
         // - Pricing values are actually provided
+        // - NOT a "sections" layout (pricing is defined in tiers)
         if (
           campaign.campaignType !== "pay-what-you-want" &&
           !hasSponsors &&
-          submittedCampaignData.pricing
+          submittedCampaignData.pricing &&
+          campaign.layoutStyle !== "sections"
         ) {
           console.log(
             "Attempting to update pricing:",
@@ -211,7 +213,9 @@ const EditCampaignModal: React.FC<EditCampaignModalProps> = ({
           console.log("Sending pricing update:", pricingData);
           await campaignService.updatePricing(campaign._id, pricingData);
         } else {
-          console.log("Skipping pricing update - conditions not met");
+          console.log(
+            "Skipping pricing update - conditions not met or sections layout"
+          );
         }
 
         message.success("Campaign updated successfully");

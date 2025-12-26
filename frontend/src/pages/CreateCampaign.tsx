@@ -11,9 +11,14 @@ const CreateCampaign: React.FC = () => {
   const handleSubmit = async (campaignData: any, layoutData: any) => {
     try {
       setLoading(true);
+      console.log("=== CreateCampaign handleSubmit ===");
+      console.log("campaignData:", campaignData);
+      console.log("layoutData:", layoutData);
+
       const campaign = await campaignService.createCampaign(
         campaignData as any
       );
+      console.log("Campaign created:", campaign);
 
       // Create layout based on campaign type
       if (
@@ -22,6 +27,14 @@ const CreateCampaign: React.FC = () => {
       ) {
         // Grid layout for fixed and positional pricing
         if (layoutData.totalPositions && layoutData.columns) {
+          console.log("Creating grid layout with:", {
+            totalPositions: layoutData.totalPositions,
+            columns: layoutData.columns,
+            arrangement: layoutData.arrangement || "horizontal",
+            campaignType: campaign.campaignType,
+            pricingConfig: campaign.pricingConfig,
+          });
+
           await campaignService.createLayout(campaign._id, {
             totalPositions: layoutData.totalPositions,
             columns: layoutData.columns,
@@ -29,19 +42,32 @@ const CreateCampaign: React.FC = () => {
             campaignType: campaign.campaignType,
             pricingConfig: campaign.pricingConfig,
           });
+          console.log("Grid layout created successfully");
+        } else {
+          console.error("Missing layout data for grid campaign:", layoutData);
+          message.warning(
+            "Campaign created but layout is missing. Please contact support."
+          );
         }
       } else if (campaign.campaignType === "pay-what-you-want") {
         // Flexible layout for pay-what-you-want
+        console.log(
+          "Creating flexible layout with maxSponsors:",
+          layoutData.maxSponsors
+        );
+
         await campaignService.createLayout(campaign._id, {
           maxSponsors: layoutData.maxSponsors || 0, // 0 = unlimited
           campaignType: campaign.campaignType,
           pricingConfig: campaign.pricingConfig,
         });
+        console.log("Flexible layout created successfully");
       }
 
       message.success("Campaign created successfully!");
       navigate(`/campaigns/${campaign._id}`);
     } catch (error: any) {
+      console.error("Campaign creation error:", error);
       message.error(
         error.response?.data?.message || "Failed to create campaign"
       );

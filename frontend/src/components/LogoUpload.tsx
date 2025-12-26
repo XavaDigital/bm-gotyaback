@@ -21,6 +21,7 @@ const LogoUpload: React.FC<LogoUploadProps> = ({
   const [previewUrl, setPreviewUrl] = useState<string | undefined>(
     value ? URL.createObjectURL(value) : undefined
   );
+  const [fileList, setFileList] = useState<any[]>([]);
 
   const validateFile = (file: RcFile): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -81,35 +82,30 @@ const LogoUpload: React.FC<LogoUploadProps> = ({
     });
   };
 
-  const handleChange: UploadProps["onChange"] = async (info) => {
-    const { file } = info;
-
-    if (file.status === "removed") {
-      setPreviewUrl(undefined);
-      onChange?.(undefined);
-      return;
+  const handleBeforeUpload = async (file: RcFile) => {
+    const isValid = await validateFile(file);
+    if (isValid) {
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+      setFileList([file]);
+      onChange?.(file as File);
     }
+    return false; // Prevent auto upload
+  };
 
-    if (file.originFileObj) {
-      const isValid = await validateFile(file.originFileObj as RcFile);
-      if (isValid) {
-        const url = URL.createObjectURL(file.originFileObj);
-        setPreviewUrl(url);
-        onChange?.(file.originFileObj as File);
-      }
-    }
+  const handleRemove = () => {
+    setPreviewUrl(undefined);
+    setFileList([]);
+    onChange?.(undefined);
   };
 
   const uploadProps: UploadProps = {
     name: "logo",
     multiple: false,
     maxCount: 1,
-    beforeUpload: () => false, // Prevent auto upload
-    onChange: handleChange,
-    onRemove: () => {
-      setPreviewUrl(undefined);
-      onChange?.(undefined);
-    },
+    fileList: fileList,
+    beforeUpload: handleBeforeUpload,
+    onRemove: handleRemove,
   };
 
   return (
@@ -120,15 +116,24 @@ const LogoUpload: React.FC<LogoUploadProps> = ({
             src={previewUrl}
             alt="Logo preview"
             style={{ maxWidth: 200, maxHeight: 200, marginBottom: 16 }}
+            preview={true}
           />
-          <div>
-            <Upload {...uploadProps} showUploadList={true}>
-              <a>Change Logo</a>
+          <div
+            style={{ display: "flex", gap: "12px", justifyContent: "center" }}
+          >
+            <Upload {...uploadProps} showUploadList={false}>
+              <a style={{ cursor: "pointer" }}>Change Logo</a>
             </Upload>
+            <a
+              style={{ cursor: "pointer", color: "#ff4d4f" }}
+              onClick={handleRemove}
+            >
+              Remove
+            </a>
           </div>
         </div>
       ) : (
-        <Dragger {...uploadProps}>
+        <Dragger {...uploadProps} showUploadList={false}>
           <p className="ant-upload-drag-icon">
             <InboxOutlined />
           </p>
@@ -146,4 +151,3 @@ const LogoUpload: React.FC<LogoUploadProps> = ({
 };
 
 export default LogoUpload;
-

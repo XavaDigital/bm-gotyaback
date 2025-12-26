@@ -127,6 +127,66 @@ const PublicCampaign: React.FC = () => {
     );
   }
 
+  // Show "Coming Soon" for draft campaigns
+  if (campaign.status === "draft") {
+    return (
+      <div
+        style={{
+          background: "#1f1f1f",
+          minHeight: "100vh",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 900,
+            margin: "0 auto",
+            padding: "0 20px",
+          }}
+        >
+          <PublicHeader />
+
+          <div
+            style={{
+              textAlign: "center",
+              padding: "80px 20px",
+              marginTop: 60,
+            }}
+          >
+            <Card>
+              <div style={{ padding: "40px 20px" }}>
+                <h1
+                  style={{ fontSize: 48, marginBottom: 16, color: "#1890ff" }}
+                >
+                  Coming Soon
+                </h1>
+                <h2 style={{ fontSize: 24, marginBottom: 24, fontWeight: 400 }}>
+                  {campaign.title}
+                </h2>
+                <p style={{ fontSize: 16, color: "#666", marginBottom: 32 }}>
+                  This campaign is currently in draft mode and will be available
+                  soon. Check back later!
+                </p>
+                {campaign.startDate && (
+                  <div style={{ marginTop: 24 }}>
+                    <Tag
+                      color="blue"
+                      style={{ fontSize: 14, padding: "8px 16px" }}
+                    >
+                      Expected Launch:{" "}
+                      {new Date(campaign.startDate).toLocaleDateString()}
+                    </Tag>
+                  </div>
+                )}
+              </div>
+            </Card>
+          </div>
+
+          <PublicFooter />
+        </div>
+      </div>
+    );
+  }
+
   const isClosed =
     campaign.isClosed ||
     (campaign.endDate && new Date() > new Date(campaign.endDate));
@@ -516,7 +576,6 @@ const PublicCampaign: React.FC = () => {
                       title={sponsor.name}
                       description={sponsor.message || "No message"}
                     />
-                    {sponsor.positionId && <Tag>{sponsor.positionId}</Tag>}
                     {sponsor.paymentStatus === "pending" && (
                       <Tag color="orange">Pending Payment</Tag>
                     )}

@@ -87,30 +87,56 @@ export const calculateDisplaySizes = (
 };
 
 /**
- * Validate pricing config based on campaign type
+ * Validate pricing config based on campaign type and layout style
  */
 export const validatePricingConfig = (
   campaignType: string,
-  config: PricingConfig
+  config: PricingConfig,
+  layoutStyle?: string
 ): boolean => {
+  console.log("=== VALIDATE PRICING CONFIG ===");
+  console.log("campaignType:", campaignType);
+  console.log("layoutStyle:", layoutStyle);
+  console.log("config:", JSON.stringify(config, null, 2));
+
   if (campaignType === "fixed") {
     if (!config.fixedPrice || config.fixedPrice <= 0) {
       throw new Error("Fixed pricing requires a valid fixedPrice");
     }
   } else if (campaignType === "positional") {
-    // Must have either multiplicative OR additive pricing
-    const hasMultiplicative =
-      config.priceMultiplier && config.priceMultiplier > 0;
-    const hasAdditive =
-      config.basePrice !== undefined &&
-      config.basePrice >= 0 &&
-      config.pricePerPosition !== undefined &&
-      config.pricePerPosition >= 0;
+    // For "sections" layout, validate priceTiers instead of standard pricing
+    if (layoutStyle === "sections") {
+      if (!config.priceTiers || config.priceTiers.length === 0) {
+        throw new Error(
+          "Tiered sections layout requires at least one price tier"
+        );
+      }
 
-    if (!hasMultiplicative && !hasAdditive) {
-      throw new Error(
-        "Positional pricing requires either priceMultiplier or (basePrice + pricePerPosition)"
-      );
+      // Validate each tier
+      config.priceTiers.forEach((tier, index) => {
+        if (!tier.price || tier.price <= 0) {
+          throw new Error(`Tier ${index + 1} has invalid price`);
+        }
+        if (!tier.sponsorDisplayType) {
+          throw new Error(`Tier ${index + 1} is missing sponsor display type`);
+        }
+      });
+    } else {
+      // Standard positional pricing validation
+      // Must have either multiplicative OR additive pricing
+      const hasMultiplicative =
+        config.priceMultiplier && config.priceMultiplier > 0;
+      const hasAdditive =
+        config.basePrice !== undefined &&
+        config.basePrice >= 0 &&
+        config.pricePerPosition !== undefined &&
+        config.pricePerPosition >= 0;
+
+      if (!hasMultiplicative && !hasAdditive) {
+        throw new Error(
+          "Positional pricing requires either priceMultiplier or (basePrice + pricePerPosition)"
+        );
+      }
     }
   } else if (campaignType === "pay-what-you-want") {
     if (!config.minimumAmount || config.minimumAmount <= 0) {

@@ -14,6 +14,12 @@ export const createCampaign = async (req: Request, res: Response) => {
     const data =
       typeof req.body.data === "string" ? JSON.parse(req.body.data) : req.body;
 
+    console.log("=== CREATE CAMPAIGN CONTROLLER ===");
+    console.log("Received data:", JSON.stringify(data, null, 2));
+    console.log("campaignType:", data.campaignType);
+    console.log("layoutStyle:", data.layoutStyle);
+    console.log("pricingConfig:", JSON.stringify(data.pricingConfig, null, 2));
+
     // Handle header image upload if present
     let headerImageUrl: string | undefined;
     const file = req.file;
@@ -165,5 +171,29 @@ export const getMyCampaigns = async (req: Request, res: Response) => {
     res.json(campaigns);
   } catch (error) {
     res.status(400).json({ message: (error as Error).message });
+  }
+};
+
+export const duplicateCampaign = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?._id;
+
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+
+    const { title, startDate, endDate } = req.body;
+
+    const newCampaign = await campaignService.duplicateCampaign(
+      req.params.id,
+      userId.toString(),
+      { title, startDate, endDate }
+    );
+
+    res.status(201).json(newCampaign);
+  } catch (error) {
+    const message = (error as Error).message;
+    const status = message.includes("Not authorized") ? 403 : 400;
+    res.status(status).json({ message });
   }
 };

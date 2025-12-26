@@ -31,6 +31,7 @@ const shirtLayoutSchema = new mongoose.Schema({
       price: Number, // Calculated based on pricing strategy
       isTaken: { type: Boolean, default: false },
       sponsorId: { type: mongoose.Schema.Types.ObjectId, ref: "SponsorEntry" },
+      tier: Number, // For sections layout - which tier this position belongs to (1, 2, 3, etc.)
     },
   ],
 

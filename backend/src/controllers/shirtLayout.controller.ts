@@ -47,12 +47,9 @@ export const createLayout = async (req: Request, res: Response) => {
     } else {
       // Create grid layout for fixed and positional
       if (!totalPositions || !columns) {
-        return res
-          .status(400)
-          .json({
-            message:
-              "Total positions and columns are required for grid layouts",
-          });
+        return res.status(400).json({
+          message: "Total positions and columns are required for grid layouts",
+        });
       }
 
       layout = await shirtLayoutService.createLayout(
@@ -61,7 +58,8 @@ export const createLayout = async (req: Request, res: Response) => {
         columns,
         campaignType,
         pricingConfig || campaign.pricingConfig,
-        arrangement || "horizontal"
+        arrangement || "horizontal",
+        campaign.layoutStyle // Pass layoutStyle from campaign
       );
     }
 
