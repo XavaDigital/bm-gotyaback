@@ -1,41 +1,40 @@
-feat: Add password reset workflow with Mailgun email integration [CHANGE-002]
+feat: Implement advanced layout renderers for flexible campaign displays [CHANGE-003]
 
-Implements complete password reset functionality with secure token-based
-authentication and Mailgun email service integration.
+Implements complete set of sponsor display renderers for pay-what-you-want
+campaigns with size-ordered, amount-ordered, and word cloud layouts.
 
-See CHANGELOG.md [CHANGE-002] for complete details.
+See CHANGELOG.md [CHANGE-003] for complete details.
 
-BACKEND CHANGES:
-- Add password reset token fields to User model (hashed storage, 1hr expiry)
-- Implement POST /api/auth/forgot-password endpoint
-- Implement POST /api/auth/reset-password endpoint
-- Create email service with Mailgun API integration (mailgun.js@12.4.1)
-- Add smart fallback: console logging when Mailgun not configured
-- Secure token generation (32-byte crypto random, SHA-256 hashed)
-- Email enumeration attack prevention
+COMPONENTS ADDED:
+- TextSponsor: Reusable text sponsor display with tooltip support
+- LogoSponsor: Reusable logo sponsor display with tooltip support
+- SizeOrderedRenderer: Sorts sponsors by display size (xlarge → small)
+- AmountOrderedRenderer: Sorts sponsors by amount paid (highest first)
+- WordCloudRenderer: Artistic spiral positioning algorithm
 
-FRONTEND CHANGES:
-- Add ForgotPassword page with dark theme and email input
-- Add ResetPassword page with password validation
-- Add "Forgot Password?" link to Login page
-- Add routes /forgot-password and /reset-password
-- Improve error handling: show real errors in dev, generic in production
+REFACTORING:
+- FlexibleLayoutRenderer: Refactored to delegation pattern (112 → 53 lines)
+- Removed inline rendering logic, added switch-based delegation
+- Maintains backward compatibility, no breaking changes
 
-SECURITY:
-- Remove .env.production files from git tracking (only placeholders exposed)
-- Resolve GitHub secret scanning false positives (3 alerts)
-- Update docs to use <placeholder> format for MongoDB URIs
-- Implement secure password reset flow with token hashing
+FEATURES:
+- Dark theme styling (#2a2a2a, #3a3a3a backgrounds, #C8102E accents)
+- Logo approval filtering (only approved logos displayed)
+- Pending payment states (60% opacity)
+- Hover effects with scale transforms
+- Support for text-only, logo-only, and mixed display types
+- Tooltip integration for sponsor messages
+- Empty state handling
+
+TECHNICAL:
+- Word cloud uses spiral positioning: angle = index * 0.5, radius = 20 + index * 15
+- Dynamic container sizing with boundary checking
+- React hooks: useEffect, useRef, useState for positioning
+- TypeScript type safety for all components
+- No new dependencies (uses existing React and Ant Design)
 
 DOCUMENTATION:
-- Add MAILGUN_SETUP.md (comprehensive setup guide)
-- Add MAILGUN_QUICK_START.md (5-minute quick start)
-- Add SECURITY_FIX.md (security alert resolution)
-- Update deployment docs with new placeholder format
+- Update ROADMAP_STATUS.md: Mark "Advanced Layout Renderers" as COMPLETE
 
-DEPENDENCIES:
-- Add mailgun.js@12.4.1
-- Add form-data@4.0.5
-
-Files: 6 added, 17 modified, 2 deleted
+Files: 5 added, 3 modified
 
