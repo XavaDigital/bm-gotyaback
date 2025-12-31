@@ -12,6 +12,7 @@ Common issues and solutions for deploying to AWS App Runner.
 
 **Solution 1 - Automatic (Recommended):**
 The updated deployment scripts now automatically create repositories. Just run:
+
 ```bash
 # Windows
 .\deploy-combined.ps1
@@ -22,6 +23,7 @@ The updated deployment scripts now automatically create repositories. Just run:
 
 **Solution 2 - Manual:**
 Create the repository manually:
+
 ```bash
 # For single instance
 aws ecr create-repository --repository-name bm-gotyaback-combined --region us-east-1
@@ -40,10 +42,13 @@ aws ecr create-repository --repository-name bm-gotyaback-frontend --region us-ea
 **Problem:** AWS CLI is not configured.
 
 **Solution:**
+
 ```bash
 aws configure
 ```
+
 Enter your:
+
 - AWS Access Key ID
 - AWS Secret Access Key
 - Default region (e.g., us-east-1)
@@ -54,6 +59,7 @@ Enter your:
 **Problem:** Your AWS user doesn't have the required permissions.
 
 **Solution:** Ensure your IAM user has these policies:
+
 - `AmazonEC2ContainerRegistryFullAccess`
 - `AWSAppRunnerFullAccess`
 - Or create a custom policy with ECR and App Runner permissions
@@ -67,6 +73,7 @@ Enter your:
 **Problem:** Docker is not installed or not in PATH.
 
 **Solution:**
+
 1. Install Docker Desktop
 2. Start Docker Desktop
 3. Verify: `docker --version`
@@ -76,6 +83,7 @@ Enter your:
 **Problem:** Docker Desktop is not running.
 
 **Solution:**
+
 1. Start Docker Desktop
 2. Wait for it to fully start
 3. Try again
@@ -85,6 +93,7 @@ Enter your:
 **Problem:** Too much context being sent to Docker.
 
 **Solution:** The `.dockerignore` file should exclude unnecessary files. Verify it exists and contains:
+
 ```
 **/node_modules
 backend/dist
@@ -104,6 +113,7 @@ frontend/dist
 **Solution:** Verify all required environment variables are set:
 
 **Required for all deployments:**
+
 ```
 MONGO_URI=mongodb+srv://...
 JWT_SECRET=your-secret
@@ -116,11 +126,13 @@ STRIPE_PUBLIC_KEY=pk_...
 ```
 
 **Additional for single instance:**
+
 ```
 PORT=3000
 ```
 
 **Additional for two instances (frontend):**
+
 ```
 VITE_API_URL=https://backend-url/api
 VITE_STRIPE_PUBLIC_KEY=pk_...
@@ -135,6 +147,7 @@ VITE_STRIPE_PUBLIC_KEY=pk_...
 **Single instance:** Health check path should be `/health`
 
 **Two instances:**
+
 - Backend: `/api` or `/health`
 - Frontend: `/` (default)
 
@@ -145,6 +158,7 @@ Check CloudWatch logs for errors.
 **Problem:** Application is crashing or not listening on correct port.
 
 **Solution:**
+
 1. Check CloudWatch logs: `/aws/apprunner/your-service-name`
 2. Verify port configuration:
    - Single instance: Port 8080
@@ -161,6 +175,7 @@ Check CloudWatch logs for errors.
 **Problem:** Incorrect MongoDB credentials.
 
 **Solution:**
+
 1. Verify `MONGO_URI` is correct
 2. Check username and password
 3. Ensure user has read/write permissions
@@ -170,6 +185,7 @@ Check CloudWatch logs for errors.
 **Problem:** MongoDB Atlas network access not configured.
 
 **Solution:**
+
 1. Go to MongoDB Atlas → Network Access
 2. Add IP address: `0.0.0.0/0` (allow from anywhere)
 3. Wait 1-2 minutes for changes to propagate
@@ -179,11 +195,12 @@ Check CloudWatch logs for errors.
 **Problem:** Network access restrictions or incorrect URI.
 
 **Solution:**
+
 1. Verify MongoDB Atlas cluster is running
 2. Check Network Access whitelist
 3. Verify connection string format:
    ```
-   mongodb+srv://username:password@cluster.mongodb.net/database?retryWrites=true&w=majority
+   mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<database>?retryWrites=true&w=majority
    ```
 
 ---
@@ -195,6 +212,7 @@ Check CloudWatch logs for errors.
 **Problem:** Webhook URL not configured or incorrect.
 
 **Solution:**
+
 1. Go to Stripe Dashboard → Webhooks
 2. Verify endpoint URL:
    - Single instance: `https://your-url/api/payment/webhook`
@@ -207,11 +225,12 @@ Check CloudWatch logs for errors.
 **Problem:** CORS not configured (two instances only).
 
 **Solution:** Verify backend CORS configuration includes frontend URL:
+
 ```javascript
 cors({
   origin: process.env.FRONTEND_URL,
-  credentials: true
-})
+  credentials: true,
+});
 ```
 
 ---
@@ -223,6 +242,7 @@ cors({
 **Problem:** S3 bucket permissions or incorrect credentials.
 
 **Solution:**
+
 1. Verify IAM user has S3 permissions
 2. Check bucket policy allows uploads
 3. Verify `AWS_S3_ACCESS_KEY` and `AWS_S3_SECRET_ACCESS_KEY`
@@ -232,6 +252,7 @@ cors({
 **Problem:** Bucket not public or incorrect URL.
 
 **Solution:**
+
 1. Make bucket public or configure bucket policy
 2. Verify `AWS_S3_SERVER_URL` is correct:
    ```
@@ -247,6 +268,7 @@ cors({
 **Problem:** Backend not configured to allow frontend origin.
 
 **Solution:**
+
 1. Set `FRONTEND_URL` environment variable in backend
 2. Verify CORS middleware is configured
 3. Redeploy backend
@@ -258,11 +280,13 @@ cors({
 ### How to view logs
 
 **AWS Console:**
+
 1. Go to CloudWatch → Log groups
 2. Find `/aws/apprunner/your-service-name`
 3. View log streams
 
 **AWS CLI:**
+
 ```bash
 # Tail logs (follow)
 aws logs tail /aws/apprunner/your-service-name --follow
@@ -280,6 +304,7 @@ aws logs tail /aws/apprunner/your-service-name --since 1h
 **Problem:** Browser cache or deployment not triggered.
 
 **Solution:**
+
 1. Hard refresh browser (Ctrl+Shift+R or Cmd+Shift+R)
 2. Verify new image was pushed to ECR
 3. Trigger manual deployment in App Runner console
@@ -290,6 +315,7 @@ aws logs tail /aws/apprunner/your-service-name --since 1h
 **Problem:** App Runner didn't pull new image.
 
 **Solution:**
+
 1. Verify image tag is `:latest`
 2. Manually trigger deployment:
    ```bash
@@ -305,6 +331,7 @@ aws logs tail /aws/apprunner/your-service-name --since 1h
 **Problem:** Resources not optimized or unexpected usage.
 
 **Solution:**
+
 1. Check App Runner instance size (reduce if possible)
 2. Verify auto-scaling settings
 3. Check CloudWatch metrics for actual usage
@@ -348,4 +375,3 @@ Before asking for help, verify:
 ---
 
 **Most issues are related to environment variables or network access. Double-check these first!** 🔍
-

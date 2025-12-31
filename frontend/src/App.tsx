@@ -4,12 +4,15 @@ import { ConfigProvider } from "antd";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import CreateCampaign from "./pages/CreateCampaign";
 import MyCampaigns from "./pages/MyCampaigns";
 import CampaignDetail from "./pages/CampaignDetail";
 import PublicCampaign from "./pages/PublicCampaign";
 import ProfileSettings from "./pages/ProfileSettings";
 import OrganizerLandingPage from "./pages/OrganizerLandingPage";
+import LogoApproval from "./pages/LogoApproval";
 import { AppLayout } from "./components/AppLayout";
 import { AuthGuard } from "./components/AuthGuard";
 import { GuestGuard } from "./components/GuestGuard";
@@ -59,12 +62,12 @@ const App: React.FC = () => {
   return (
     <Router>
       <Routes>
-        {/* Public Routes (Guests only - redirect to dashboard if logged in) - Light Theme */}
+        {/* Public Routes (Guests only - redirect to dashboard if logged in) - Dark Theme */}
         <Route element={<GuestGuard />}>
           <Route
             path="/login"
             element={
-              <ConfigProvider theme={lightTheme}>
+              <ConfigProvider theme={darkTheme}>
                 <Login />
               </ConfigProvider>
             }
@@ -72,8 +75,24 @@ const App: React.FC = () => {
           <Route
             path="/register"
             element={
-              <ConfigProvider theme={lightTheme}>
+              <ConfigProvider theme={darkTheme}>
                 <Register />
+              </ConfigProvider>
+            }
+          />
+          <Route
+            path="/forgot-password"
+            element={
+              <ConfigProvider theme={darkTheme}>
+                <ForgotPassword />
+              </ConfigProvider>
+            }
+          />
+          <Route
+            path="/reset-password"
+            element={
+              <ConfigProvider theme={darkTheme}>
+                <ResetPassword />
               </ConfigProvider>
             }
           />
@@ -118,6 +137,10 @@ const App: React.FC = () => {
             <Route path="/dashboard" element={<MyCampaigns />} />
             <Route path="/dashboard/profile" element={<ProfileSettings />} />
             <Route path="/campaigns/:id" element={<CampaignDetail />} />
+            <Route
+              path="/campaigns/:id/logo-approval"
+              element={<LogoApproval />}
+            />
           </Route>
         </Route>
       </Routes>

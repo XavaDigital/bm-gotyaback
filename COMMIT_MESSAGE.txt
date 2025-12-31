@@ -1,27 +1,41 @@
-refactor: reorganize project structure and add AWS deployment infrastructure [CHANGE-001]
+feat: Add password reset workflow with Mailgun email integration [CHANGE-002]
 
-Major project reorganization to improve maintainability and add comprehensive
-AWS App Runner deployment support with both single and two-instance options.
+Implements complete password reset functionality with secure token-based
+authentication and Mailgun email service integration.
 
-See CHANGELOG.md [CHANGE-001] for complete details.
+See CHANGELOG.md [CHANGE-002] for complete details.
 
-Summary of changes:
-- Organized all documentation into docs/ directory (18 files)
-- Moved deployment scripts to scripts/ directory (6 files)
-- Created docker/ directory for Docker configurations
-- Added comprehensive deployment guides and troubleshooting docs
-- Implemented single-instance deployment (~$25/month cost savings)
-- Added Docker multi-stage builds for optimized images
-- Enhanced backend with /health endpoint and graceful shutdown
-- Updated frontend build configuration for production
-- Created detailed README with architecture and cost comparisons
+BACKEND CHANGES:
+- Add password reset token fields to User model (hashed storage, 1hr expiry)
+- Implement POST /api/auth/forgot-password endpoint
+- Implement POST /api/auth/reset-password endpoint
+- Create email service with Mailgun API integration (mailgun.js@12.4.1)
+- Add smart fallback: console logging when Mailgun not configured
+- Secure token generation (32-byte crypto random, SHA-256 hashed)
+- Email enumeration attack prevention
 
-Key improvements:
-- 50% cost reduction with single-instance deployment option
-- Automated deployment scripts for Windows and Mac/Linux
-- Complete AWS App Runner setup documentation
-- Health check endpoints for both deployment strategies
-- Production-ready Docker configurations
+FRONTEND CHANGES:
+- Add ForgotPassword page with dark theme and email input
+- Add ResetPassword page with password validation
+- Add "Forgot Password?" link to Login page
+- Add routes /forgot-password and /reset-password
+- Improve error handling: show real errors in dev, generic in production
 
-Files: 45 added, 6 modified, 6 moved (+4,853/-21 lines)
+SECURITY:
+- Remove .env.production files from git tracking (only placeholders exposed)
+- Resolve GitHub secret scanning false positives (3 alerts)
+- Update docs to use <placeholder> format for MongoDB URIs
+- Implement secure password reset flow with token hashing
+
+DOCUMENTATION:
+- Add MAILGUN_SETUP.md (comprehensive setup guide)
+- Add MAILGUN_QUICK_START.md (5-minute quick start)
+- Add SECURITY_FIX.md (security alert resolution)
+- Update deployment docs with new placeholder format
+
+DEPENDENCIES:
+- Add mailgun.js@12.4.1
+- Add form-data@4.0.5
+
+Files: 6 added, 17 modified, 2 deleted
 

@@ -16,7 +16,7 @@ This is a condensed guide to get you deployed quickly. For detailed instructions
 2. Create free cluster
 3. Create database user (username + password)
 4. Network Access → Add IP: `0.0.0.0/0` (allow all)
-5. Copy connection string: `mongodb+srv://username:password@cluster.mongodb.net/dbname`
+5. Copy connection string: `mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<dbname>`
 
 ## Step 2: Configure AWS CLI (2 minutes)
 
@@ -133,16 +133,18 @@ Wait 5-10 minutes. **Save the service URL** (e.g., `https://abc123.us-east-1.aws
 ## Step 8: Deploy Frontend (10 minutes)
 
 1. Update `frontend/.env.production`:
+
    ```
    VITE_API_URL=https://YOUR_BACKEND_URL/api
    VITE_STRIPE_PUBLIC_KEY=pk_test_...
    ```
 
 2. Rebuild and push frontend:
+
    ```powershell
    # Windows
    .\deploy-to-ecr.ps1 -Frontend
-   
+
    # Mac/Linux
    ./deploy-to-ecr.sh frontend
    ```
@@ -160,6 +162,7 @@ Wait 5-10 minutes. **Save the service URL** (e.g., `https://abc123.us-east-1.aws
 ## Step 9: Final Configuration (2 minutes)
 
 Update backend App Runner service:
+
 - Environment variables → `FRONTEND_URL`: Add your frontend URL
 - Click **Deploy**
 
@@ -189,15 +192,18 @@ Your application is now running on AWS App Runner!
 ## Common Issues
 
 ### "Service failed to start"
+
 - Check logs in App Runner console
 - Verify MongoDB connection string
 - Ensure all environment variables are set
 
 ### "CORS error"
+
 - Verify `FRONTEND_URL` in backend matches your frontend URL exactly
 - Redeploy backend after updating
 
 ### "Cannot connect to database"
+
 - Check MongoDB Atlas network access allows `0.0.0.0/0`
 - Verify connection string format
 - Check username/password (URL encode special characters)
@@ -219,4 +225,3 @@ Your application is now running on AWS App Runner!
 See the detailed guide: `AWS_APPRUNNER_DEPLOYMENT_GUIDE.md`
 
 Or check the troubleshooting section in the full guide.
-

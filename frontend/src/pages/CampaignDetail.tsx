@@ -287,6 +287,17 @@ const CampaignDetail: React.FC = () => {
           >
             View Public Page
           </Button>
+          {campaign.sponsorDisplayType !== "text-only" && (
+            <Badge count={pendingLogos.length} offset={[-5, 5]}>
+              <Button
+                onClick={() => navigate(`/campaigns/${id}/logo-approval`)}
+                style={{ marginRight: 8 }}
+                icon={<BellOutlined />}
+              >
+                Logo Approvals
+              </Button>
+            </Badge>
+          )}
           {!campaign.isClosed && (
             <>
               <Button

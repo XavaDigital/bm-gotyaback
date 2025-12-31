@@ -1,21 +1,28 @@
 import React, { useState, useEffect } from "react";
 import { Form, Input, Button, Card, Typography, message, Alert } from "antd";
-import { useNavigate, Link } from "react-router-dom";
-import {
-  LockOutlined,
-  MailOutlined,
-  ArrowLeftOutlined,
-} from "@ant-design/icons";
-import authService from "../services/auth.service";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { LockOutlined, ArrowLeftOutlined } from "@ant-design/icons";
+import apiClient from "../services/apiClient";
 import beastmodeLogo from "../assets/beastmode-logo.png";
 
 const { Title, Text } = Typography;
 
-const Login: React.FC = () => {
+const ResetPassword: React.FC = () => {
   const [loading, setLoading] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [token, setToken] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Get token from URL
+    const tokenFromUrl = searchParams.get("token");
+    if (!tokenFromUrl) {
+      message.error("Invalid or missing reset token");
+      navigate("/login");
+    } else {
+      setToken(tokenFromUrl);
+    }
+
     // Override body styles for full-width dark page
     const body = document.body;
     const html = document.documentElement;
@@ -41,21 +48,38 @@ const Login: React.FC = () => {
       body.style.width = originalStyles.width;
       html.style.width = originalStyles.htmlWidth;
     };
-  }, []);
+  }, [searchParams, navigate]);
 
   const onFinish = async (values: any) => {
+    if (!token) {
+      message.error("Invalid reset token");
+      return;
+    }
+
+    if (values.password !== values.confirmPassword) {
+      message.error("Passwords do not match!");
+      return;
+    }
+
     setLoading(true);
     try {
-      await authService.login(values);
-      message.success("Login successful!");
-      navigate("/dashboard");
+      await apiClient.post("/auth/reset-password", {
+        token,
+        password: values.password,
+      });
+      message.success("Password reset successful! You can now login.");
+      navigate("/login");
     } catch (error: any) {
-      const msg = error.response?.data?.message || "Login failed";
+      const msg = error.response?.data?.message || "Password reset failed. Token may be invalid or expired.";
       message.error(msg);
     } finally {
       setLoading(false);
     }
   };
+
+  if (!token) {
+    return null;
+  }
 
   return (
     <div
@@ -96,14 +120,14 @@ const Login: React.FC = () => {
         </div>
         <Button
           icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/login")}
           style={{
             background: "transparent",
             borderColor: "#ffffff",
             color: "#ffffff",
           }}
         >
-          Back to Home
+          Back to Login
         </Button>
       </div>
 
@@ -127,80 +151,42 @@ const Login: React.FC = () => {
           }}
           bodyStyle={{ padding: 40 }}
         >
-          {/* Development Mode Alert */}
+          {/* Title */}
+          <div style={{ textAlign: "center", marginBottom: 32 }}>
+            <Title level={2} style={{ color: "#ffffff", marginBottom: 8 }}>
+              Reset Your Password
+            </Title>
+            <Text style={{ fontSize: 16, color: "#cccccc" }}>
+              Enter your new password below
+            </Text>
+          </div>
+
+          {/* Info Alert */}
           <Alert
-            message="Development Mode"
-            description={
-              <div>
-                <Text strong style={{ color: "#ffffff" }}>
-                  Test Account:
-                </Text>
-                <div style={{ marginTop: 12 }}>
-                  <div style={{ marginBottom: 8 }}>
-                    <Text style={{ color: "#cccccc" }}>Email: </Text>
-                    <Text copyable style={{ color: "#ffffff" }}>
-                      user@gmail.com
-                    </Text>
-                  </div>
-                  <div>
-                    <Text style={{ color: "#cccccc" }}>Password: </Text>
-                    <Text copyable style={{ color: "#ffffff" }}>
-                      qweqweqwe
-                    </Text>
-                  </div>
-                </div>
-              </div>
-            }
+            message="Password Requirements"
+            description="Password must be at least 6 characters long"
             type="info"
             showIcon
             style={{
-              marginBottom: 32,
+              marginBottom: 24,
               background: "#1f1f1f",
               border: "1px solid #3a3a3a",
             }}
           />
 
-          {/* Title */}
-          <div style={{ textAlign: "center", marginBottom: 32 }}>
-            <Title level={2} style={{ color: "#ffffff", marginBottom: 8 }}>
-              Welcome Back
-            </Title>
-            <Text style={{ fontSize: 16, color: "#cccccc" }}>
-              Login to manage your campaigns
-            </Text>
-          </div>
-
-          {/* Login Form */}
-          <Form name="login" onFinish={onFinish} layout="vertical" size="large">
-            <Form.Item
-              name="email"
-              label={<span style={{ color: "#ffffff" }}>Email</span>}
-              rules={[
-                { required: true, message: "Please input your email!" },
-                { type: "email", message: "Please enter a valid email!" },
-              ]}
-            >
-              <Input
-                prefix={<MailOutlined style={{ color: "#999999" }} />}
-                placeholder="Email Address"
-                style={{
-                  background: "#1f1f1f",
-                  border: "1px solid #3a3a3a",
-                  color: "#ffffff",
-                }}
-              />
-            </Form.Item>
-
+          {/* Reset Password Form */}
+          <Form name="reset-password" onFinish={onFinish} layout="vertical" size="large">
             <Form.Item
               name="password"
-              label={<span style={{ color: "#ffffff" }}>Password</span>}
+              label={<span style={{ color: "#ffffff" }}>New Password</span>}
               rules={[
-                { required: true, message: "Please input your password!" },
+                { required: true, message: "Please input your new password!" },
+                { min: 6, message: "Password must be at least 6 characters!" },
               ]}
             >
               <Input.Password
                 prefix={<LockOutlined style={{ color: "#999999" }} />}
-                placeholder="Password"
+                placeholder="New Password"
                 style={{
                   background: "#1f1f1f",
                   border: "1px solid #3a3a3a",
@@ -209,16 +195,25 @@ const Login: React.FC = () => {
               />
             </Form.Item>
 
-            <div style={{ textAlign: "right", marginBottom: 16 }}>
-              <Link
-                to="/forgot-password"
-                style={{ color: "#C8102E", fontSize: 14 }}
-              >
-                Forgot Password?
-              </Link>
-            </div>
+            <Form.Item
+              name="confirmPassword"
+              label={<span style={{ color: "#ffffff" }}>Confirm Password</span>}
+              rules={[
+                { required: true, message: "Please confirm your password!" },
+              ]}
+            >
+              <Input.Password
+                prefix={<LockOutlined style={{ color: "#999999" }} />}
+                placeholder="Confirm Password"
+                style={{
+                  background: "#1f1f1f",
+                  border: "1px solid #3a3a3a",
+                  color: "#ffffff",
+                }}
+              />
+            </Form.Item>
 
-            <Form.Item style={{ marginBottom: 16 }}>
+            <Form.Item style={{ marginBottom: 0 }}>
               <Button
                 type="primary"
                 htmlType="submit"
@@ -230,19 +225,9 @@ const Login: React.FC = () => {
                   fontWeight: 600,
                 }}
               >
-                Log In
+                Reset Password
               </Button>
             </Form.Item>
-
-            <div style={{ textAlign: "center" }}>
-              <Text style={{ color: "#cccccc" }}>Don't have an account? </Text>
-              <Link
-                to="/register"
-                style={{ color: "#C8102E", fontWeight: 600 }}
-              >
-                Register now
-              </Link>
-            </div>
           </Form>
         </Card>
       </div>
@@ -264,4 +249,5 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login;
+export default ResetPassword;
+
