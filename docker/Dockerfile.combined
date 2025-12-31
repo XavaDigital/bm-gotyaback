@@ -1,0 +1,77 @@
+# Combined Frontend + Backend Dockerfile for Single App Runner Instance
+# This serves the React frontend via Nginx and proxies API requests to the Node.js backend
+
+# Stage 1: Build Backend
+FROM node:20-alpine AS backend-builder
+
+WORKDIR /app/backend
+
+# Copy backend package files
+COPY backend/package*.json ./
+
+# Install ALL dependencies (including devDependencies for build)
+RUN npm ci
+
+# Copy backend source
+COPY backend/ ./
+
+# Build TypeScript
+RUN npm run build
+
+# Stage 2: Build Frontend
+FROM node:20-alpine AS frontend-builder
+
+WORKDIR /app/frontend
+
+# Copy frontend package files
+COPY frontend/package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy frontend source
+COPY frontend/ ./
+
+# Build the application
+RUN npm run build
+
+# Stage 3: Production - Nginx + Node.js
+FROM node:20-alpine
+
+# Install Nginx and supervisor (to run both services)
+RUN apk add --no-cache nginx supervisor
+
+# Set up backend
+WORKDIR /app/backend
+
+# Copy backend package files and install production dependencies
+COPY backend/package*.json ./
+RUN npm ci --only=production
+
+# Copy built backend from builder
+COPY --from=backend-builder /app/backend/dist ./dist
+
+# Copy frontend build to Nginx directory
+COPY --from=frontend-builder /app/frontend/dist /usr/share/nginx/html
+
+# Copy Nginx configuration
+COPY docker/nginx.combined.conf /etc/nginx/http.d/default.conf
+
+# Create supervisor configuration
+RUN mkdir -p /var/log/supervisor
+COPY docker/supervisord.conf /etc/supervisord.conf
+
+# Create health check script
+RUN echo '#!/bin/sh' > /health-check.sh && \
+    echo 'curl -f http://localhost:8080/api || exit 1' >> /health-check.sh && \
+    chmod +x /health-check.sh
+
+# Expose port
+EXPOSE 8080
+
+# Set NODE_ENV
+ENV NODE_ENV=production
+
+# Start supervisor (manages both Nginx and Node.js)
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
+

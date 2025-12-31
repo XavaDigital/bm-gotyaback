@@ -1,0 +1,30 @@
+# Combined deployment .dockerignore
+node_modules
+npm-debug.log
+.env
+.env.local
+.env.*.local
+.git
+.gitignore
+.DS_Store
+coverage
+.vscode
+.idea
+*.log
+backend/dist
+frontend/dist
+backend/node_modules
+frontend/node_modules
+
+# Deployment files
+deploy-to-ecr.sh
+deploy-to-ecr.ps1
+*.md
+!README.md
+
+# Keep only what we need
+!backend/
+!frontend/
+!nginx.combined.conf
+!supervisord.conf
+

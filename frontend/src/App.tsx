@@ -30,10 +30,6 @@ const lightTheme = {
     Button: {
       primaryShadow: "0 0 0 0 rgba(0,0,0,0)",
     },
-    Typography: {
-      fontFamilyHeading:
-        "Archivo, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
-    },
   },
 };
 
@@ -55,10 +51,6 @@ const darkTheme = {
   components: {
     Button: {
       primaryShadow: "0 0 0 0 rgba(0,0,0,0)",
-    },
-    Typography: {
-      fontFamilyHeading:
-        "Archivo, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
     },
   },
 };

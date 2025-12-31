@@ -1,0 +1,62 @@
+# Root .dockerignore for combined deployment
+# This is used when building Dockerfile.combined
+
+# Node modules (will be installed during build)
+**/node_modules
+**/npm-debug.log
+
+# Build outputs (will be generated during build)
+backend/dist
+frontend/dist
+frontend/build
+
+# Environment files
+.env
+.env.local
+.env.*.local
+**/.env
+**/.env.local
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs
+**/*.log
+
+# Test coverage
+coverage
+.nyc_output
+
+# Documentation (not needed in image)
+*.md
+!README.md
+
+# Deployment scripts (not needed in image)
+deploy-to-ecr.sh
+deploy-to-ecr.ps1
+deploy-combined.sh
+deploy-combined.ps1
+
+# Docker files (not needed in image)
+Dockerfile
+backend/Dockerfile
+frontend/Dockerfile
+docker-compose.yml
+
+# Misc
+.cache
+.temp
+tmp
+

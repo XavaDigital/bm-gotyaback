@@ -10,8 +10,27 @@ import * as paymentController from "./controllers/payment.controller";
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// CORS configuration
+const allowedOrigins = process.env.FRONTEND_URL
+  ? [process.env.FRONTEND_URL, "http://localhost:5173", "http://localhost:3000"]
+  : ["http://localhost:5173", "http://localhost:3000"];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, Postman, etc.)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.some((allowed) => origin.startsWith(allowed))) {
+        callback(null, true);
+      } else {
+        console.warn(`CORS blocked origin: ${origin}`);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  })
+);
 
 // IMPORTANT: Webhook must be mounted BEFORE express.json() to receive raw body
 app.post(

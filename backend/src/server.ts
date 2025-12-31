@@ -1,15 +1,17 @@
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 
 // Load environment variables FIRST before importing anything else
 dotenv.config();
 
-import app from './app';
-import connectDB from './config/db';
+import app from "./app";
+import connectDB from "./config/db";
 
 connectDB();
 
-const PORT = process.env.PORT || 5000;
+// Use port 8080 for App Runner compatibility, fallback to 5000 for local dev
+const PORT = parseInt(process.env.PORT || "8080", 10);
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
 });

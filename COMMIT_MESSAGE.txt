@@ -1,0 +1,27 @@
+refactor: reorganize project structure and add AWS deployment infrastructure [CHANGE-001]
+
+Major project reorganization to improve maintainability and add comprehensive
+AWS App Runner deployment support with both single and two-instance options.
+
+See CHANGELOG.md [CHANGE-001] for complete details.
+
+Summary of changes:
+- Organized all documentation into docs/ directory (18 files)
+- Moved deployment scripts to scripts/ directory (6 files)
+- Created docker/ directory for Docker configurations
+- Added comprehensive deployment guides and troubleshooting docs
+- Implemented single-instance deployment (~$25/month cost savings)
+- Added Docker multi-stage builds for optimized images
+- Enhanced backend with /health endpoint and graceful shutdown
+- Updated frontend build configuration for production
+- Created detailed README with architecture and cost comparisons
+
+Key improvements:
+- 50% cost reduction with single-instance deployment option
+- Automated deployment scripts for Windows and Mac/Linux
+- Complete AWS App Runner setup documentation
+- Health check endpoints for both deployment strategies
+- Production-ready Docker configurations
+
+Files: 45 added, 6 modified, 6 moved (+4,853/-21 lines)
+
