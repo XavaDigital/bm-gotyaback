@@ -180,6 +180,33 @@ export const closeCampaign = async (campaignId: string, userId: string) => {
   return campaign;
 };
 
+export const reopenCampaign = async (campaignId: string, userId: string) => {
+  const campaign = await Campaign.findById(campaignId);
+
+  if (!campaign) {
+    throw new Error("Campaign not found");
+  }
+
+  // Verify ownership - handle populated ownerId
+  const ownerId =
+    typeof campaign.ownerId === "object" && campaign.ownerId._id
+      ? campaign.ownerId._id.toString()
+      : campaign.ownerId.toString();
+
+  if (ownerId !== userId) {
+    throw new Error("Not authorized to reopen this campaign");
+  }
+
+  if (!campaign.isClosed) {
+    throw new Error("Campaign is not closed");
+  }
+
+  campaign.isClosed = false;
+  await campaign.save();
+
+  return campaign;
+};
+
 export const getUserCampaigns = async (userId: string) => {
   const campaigns = await Campaign.find({ ownerId: userId }).sort({
     createdAt: -1,

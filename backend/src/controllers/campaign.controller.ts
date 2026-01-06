@@ -153,6 +153,26 @@ export const closeCampaign = async (req: Request, res: Response) => {
   }
 };
 
+export const reopenCampaign = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?._id;
+
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+
+    const campaign = await campaignService.reopenCampaign(
+      req.params.id,
+      userId.toString()
+    );
+    res.json(campaign);
+  } catch (error) {
+    const message = (error as Error).message;
+    const status = message.includes("Not authorized") ? 403 : 400;
+    res.status(status).json({ message });
+  }
+};
+
 export const getMyCampaigns = async (req: Request, res: Response) => {
   try {
     const userId = req.user?._id;

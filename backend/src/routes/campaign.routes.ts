@@ -26,6 +26,7 @@ router.put(
 );
 router.put("/:id/pricing", protect, campaignController.updatePricing);
 router.post("/:id/close", protect, campaignController.closeCampaign);
+router.post("/:id/reopen", protect, campaignController.reopenCampaign);
 
 // Shirt layout routes
 router.post("/:id/layout", protect, shirtLayoutController.createLayout);
