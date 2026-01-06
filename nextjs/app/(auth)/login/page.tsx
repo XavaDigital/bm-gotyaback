@@ -47,12 +47,55 @@ export default function LoginPage() {
   };
 
   return (
-    <Card className="shadow-xl">
-      <div className="text-center mb-6">
-        <Title level={2} className="!mb-2">
+    <Card
+      style={{
+        background: '#2a2a2a',
+        border: '2px solid #3a3a3a',
+        borderRadius: 12,
+      }}
+      bodyStyle={{ padding: 40 }}
+    >
+      {/* Development Mode Alert */}
+      <Alert
+        message="Development Mode"
+        description={
+          <div>
+            <Text strong style={{ color: '#ffffff' }}>
+              Test Account:
+            </Text>
+            <div style={{ marginTop: 12 }}>
+              <div style={{ marginBottom: 8 }}>
+                <Text style={{ color: '#cccccc' }}>Email: </Text>
+                <Text copyable style={{ color: '#ffffff' }}>
+                  user@gmail.com
+                </Text>
+              </div>
+              <div>
+                <Text style={{ color: '#cccccc' }}>Password: </Text>
+                <Text copyable style={{ color: '#ffffff' }}>
+                  qweqweqwe
+                </Text>
+              </div>
+            </div>
+          </div>
+        }
+        type="info"
+        showIcon
+        style={{
+          marginBottom: 32,
+          background: '#1f1f1f',
+          border: '1px solid #3a3a3a',
+        }}
+      />
+
+      {/* Title */}
+      <div style={{ textAlign: 'center', marginBottom: 32 }}>
+        <Title level={2} style={{ color: '#ffffff', marginBottom: 8 }}>
           Welcome Back
         </Title>
-        <Text type="secondary">Sign in to your Got Ya Back account</Text>
+        <Text style={{ fontSize: 16, color: '#cccccc' }}>
+          Login to manage your campaigns
+        </Text>
       </div>
 
       {error && (
@@ -61,10 +104,11 @@ export default function LoginPage() {
           type="error"
           closable
           onClose={() => setError(null)}
-          className="mb-4"
+          style={{ marginBottom: 24 }}
         />
       )}
 
+      {/* Login Form */}
       <Form
         form={form}
         name="login"
@@ -74,63 +118,64 @@ export default function LoginPage() {
       >
         <Form.Item
           name="email"
-          label="Email"
+          label={<span style={{ color: '#ffffff' }}>Email</span>}
           rules={[
             { required: true, message: 'Please enter your email' },
             { type: 'email', message: 'Please enter a valid email' },
           ]}
         >
           <Input
-            prefix={<UserOutlined />}
-            placeholder="your@email.com"
+            prefix={<UserOutlined style={{ color: '#999999' }} />}
+            placeholder="Email Address"
             autoComplete="email"
+            style={{
+              background: '#1f1f1f',
+              border: '1px solid #3a3a3a',
+              color: '#ffffff',
+            }}
           />
         </Form.Item>
 
         <Form.Item
           name="password"
-          label="Password"
+          label={<span style={{ color: '#ffffff' }}>Password</span>}
           rules={[{ required: true, message: 'Please enter your password' }]}
         >
           <Input.Password
-            prefix={<LockOutlined />}
-            placeholder="Enter your password"
+            prefix={<LockOutlined style={{ color: '#999999' }} />}
+            placeholder="Password"
             autoComplete="current-password"
+            style={{
+              background: '#1f1f1f',
+              border: '1px solid #3a3a3a',
+              color: '#ffffff',
+            }}
           />
         </Form.Item>
 
-        <Form.Item>
+        <Form.Item style={{ marginBottom: 16 }}>
           <Button
             type="primary"
             htmlType="submit"
             loading={loading}
-            icon={<LoginOutlined />}
             block
+            style={{
+              height: 48,
+              fontSize: 16,
+              fontWeight: 600,
+            }}
           >
-            Sign In
+            Log In
           </Button>
         </Form.Item>
+
+        <div style={{ textAlign: 'center' }}>
+          <Text style={{ color: '#cccccc' }}>Don't have an account? </Text>
+          <Link href="/register" style={{ color: '#C8102E', fontWeight: 600 }}>
+            Register now
+          </Link>
+        </div>
       </Form>
-
-      <Divider plain>
-        <Text type="secondary">Don't have an account?</Text>
-      </Divider>
-
-      <div className="text-center">
-        <Link href="/register">
-          <Button type="link" size="large">
-            Create an account
-          </Button>
-        </Link>
-      </div>
-
-      <div className="text-center mt-4">
-        <Link href="/">
-          <Button type="text">
-            ← Back to Home
-          </Button>
-        </Link>
-      </div>
     </Card>
   );
 }
