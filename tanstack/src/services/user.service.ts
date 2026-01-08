@@ -1,5 +1,5 @@
 import apiClient from './apiClient';
-import type { UpdateProfileRequest, OrganizerProfile, OrganizerPublicProfile } from '../types/campaign.types';
+import type { UpdateProfileRequest, OrganizerProfile, OrganizerPublicProfile } from '~/types/campaign.types';
 
 const userService = {
     // Update user's organizer profile

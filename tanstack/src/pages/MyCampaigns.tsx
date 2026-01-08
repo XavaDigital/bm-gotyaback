@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useRouteContext } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
 import { Card, Button, Empty, Spin, Tag, Row, Col, message, Statistic } from 'antd';
 import { PlusOutlined, EyeOutlined, EditOutlined } from '@ant-design/icons';
-import type { Campaign } from '../types/campaign.types';
-import campaignService from '../services/campaign.service';
-import sponsorshipService from '../services/sponsorship.service';
-import EditCampaignModal from '../components/EditCampaignModal';
+import type { Campaign } from '~/types/campaign.types';
+import campaignService from '~/services/campaign.service';
+import sponsorshipService from '~/services/sponsorship.service';
+import EditCampaignModal from '~/components/EditCampaignModal';
+import { Route } from '~/routes/dashboard.index';
 
 interface CampaignStats {
     totalPledged: number;
@@ -17,33 +19,31 @@ interface CampaignStats {
 }
 
 const MyCampaigns: React.FC = () => {
-    const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+    // Get initial data from loader
+    const loaderData = Route.useLoaderData();
+
+    // Use TanStack Query for data fetching
+    // Use placeholderData instead of initialData so it always refetches on mount
+    const { data: campaigns = [], isLoading, refetch } = useQuery({
+        queryKey: ['my-campaigns'],
+        queryFn: async () => {
+            const data = await campaignService.getMyCampaigns();
+            return data;
+        },
+        placeholderData: loaderData?.campaigns || [],
+        staleTime: 0, // Always refetch on mount
+    });
+
     const [campaignStats, setCampaignStats] = useState<Map<string, CampaignStats>>(new Map());
-    const [loading, setLoading] = useState(true);
     const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
-        loadCampaigns();
-    }, []);
-
-    const loadCampaigns = async () => {
-        try {
-            const data = await campaignService.getMyCampaigns();
-            setCampaigns(data);
-
-            // Load stats for each campaign
-            await loadCampaignStats(data);
-        } catch (error: any) {
-            // Don't show error message if it's a 401 (handled by interceptor)
-            if (error.response?.status !== 401) {
-                message.error(error.response?.data?.message || 'Failed to load campaigns');
-            }
-        } finally {
-            setLoading(false);
+        if (campaigns.length > 0) {
+            loadCampaignStats(campaigns);
         }
-    };
+    }, [campaigns]);
 
     const loadCampaignStats = async (campaigns: Campaign[]) => {
         const statsMap = new Map<string, CampaignStats>();
@@ -66,12 +66,10 @@ const MyCampaigns: React.FC = () => {
 
                     // For fixed/positional campaigns, get layout info
                     if (campaign.campaignType !== 'pay-what-you-want') {
-                        try {
-                            const layout = await campaignService.getLayout(campaign._id);
+                        const layout = await campaignService.getLayout(campaign._id);
+                        if (layout) {
                             positionsTotal = layout.placements.length;
                             positionsClaimed = layout.placements.filter((p) => p.isTaken).length;
-                        } catch (error) {
-                            // Layout might not exist yet
                         }
                     }
 
@@ -100,7 +98,7 @@ const MyCampaigns: React.FC = () => {
     const handleEditSuccess = () => {
         setIsEditModalVisible(false);
         setEditingCampaign(null);
-        loadCampaigns();
+        refetch(); // Refetch campaigns using TanStack Query
         message.success('Campaign updated successfully');
     };
 
@@ -118,7 +116,7 @@ const MyCampaigns: React.FC = () => {
         return days > 0 ? days : 0;
     };
 
-    if (loading) {
+    if (isLoading) {
         return (
             <div style={{ textAlign: 'center', padding: 60 }}>
                 <Spin size="large" />
@@ -126,7 +124,7 @@ const MyCampaigns: React.FC = () => {
         );
     }
 
-    if (campaigns.length === 0) {
+    if (!campaigns || campaigns.length === 0) {
         return (
             <div style={{ padding: 40 }}>
                 <Empty

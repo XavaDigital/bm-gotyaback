@@ -5,23 +5,32 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build && tsc --noEmit",
-    "preview": "vite preview",
-    "start": "node .output/server/index.mjs",
+    "build": "vite build",
+    "start": "vite preview",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@tanstack/react-router": "^1.145.7",
-    "@tanstack/react-router-devtools": "^1.145.7",
-    "@tanstack/react-start": "^1.145.9",
+    "@ant-design/icons": "^6.1.0",
+    "@lexical/code": "^0.39.0",
+    "@lexical/html": "^0.39.0",
+    "@lexical/link": "^0.39.0",
+    "@lexical/list": "^0.39.0",
+    "@lexical/react": "^0.39.0",
+    "@lexical/rich-text": "^0.39.0",
+    "@lexical/utils": "^0.39.0",
+    "@stripe/react-stripe-js": "^5.4.1",
+    "@stripe/stripe-js": "^8.6.0",
+    "@tanstack/react-query": "^5.90.16",
+    "@tanstack/react-router": "^1.145.11",
+    "@tanstack/react-router-devtools": "^1.145.11",
+    "@tanstack/react-start": "^1.145.11",
+    "antd": "^6.1.1",
+    "axios": "^1.13.2",
+    "lexical": "^0.39.0",
+    "quill": "^2.0.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "antd": "^6.1.1",
-    "@ant-design/icons": "^6.1.0",
-    "axios": "^1.13.2",
-    "@stripe/stripe-js": "^8.6.0",
-    "@stripe/react-stripe-js": "^5.4.1",
-    "quill": "^2.0.3"
+    "vinxi": "^0.5.10"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
@@ -33,4 +42,3 @@
     "vite-tsconfig-paths": "^5.1.4"
   }
 }
-

@@ -1,14 +1,11 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
-import authService from '../services/auth.service'
-import MyCampaigns from '../pages/MyCampaigns'
+import { createFileRoute, Outlet } from '@tanstack/react-router'
+import { requireAuth } from '~/utils/auth-helpers'
 
 export const Route = createFileRoute('/dashboard')({
-  beforeLoad: () => {
-    const user = authService.getCurrentUser()
-    if (!user) {
-      throw redirect({ to: '/login' })
-    }
+  beforeLoad: async () => {
+    // Server-side authentication check
+    await requireAuth()
   },
-  component: MyCampaigns,
+  component: () => <Outlet />,
 })
 

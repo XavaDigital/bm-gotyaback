@@ -1,5 +1,5 @@
 import React from 'react';
-import beastmodeLogo from '../assets/beastmode-logo.png';
+import beastmodeLogo from '~/assets/beastmode-logo.png';
 
 const PublicHeader: React.FC = () => {
     return (

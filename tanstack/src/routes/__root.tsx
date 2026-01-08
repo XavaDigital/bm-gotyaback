@@ -1,13 +1,24 @@
-import { createRootRoute, Outlet, useRouterState } from '@tanstack/react-router'
-import { HeadContent, Scripts } from '@tanstack/react-router'
+import { createRootRoute, Outlet, useRouterState, HeadContent, Scripts } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ConfigProvider } from 'antd'
 import * as React from 'react'
+import type { ReactNode } from 'react'
 import 'antd/dist/reset.css'
-import '../index.css'
-import '../App.css'
-import { AppLayout } from '../components/AppLayout'
-import authService from '../services/auth.service'
+import '~/index.css'
+import '~/App.css'
+import { AppLayout } from '~/components/AppLayout'
+import authService from '~/services/auth.service'
+
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      refetchOnWindowFocus: false,
+    },
+  },
+})
 
 // Light theme for admin portal
 const lightTheme = {
@@ -63,7 +74,6 @@ export const Route = createRootRoute({
       },
     ],
   }),
-  shellComponent: RootDocument,
   component: RootComponent,
 })
 
@@ -88,32 +98,47 @@ function RootComponent() {
   // Public pages (including home) and auth pages use dark theme
   if (isAuthPage || isPublicPage) {
     return (
-      <ConfigProvider theme={darkTheme}>
-        <Outlet />
-      </ConfigProvider>
+      <RootDocument>
+        <QueryClientProvider client={queryClient}>
+          <ConfigProvider theme={darkTheme}>
+            <Outlet />
+            <TanStackRouterDevtools position="bottom-right" />
+          </ConfigProvider>
+        </QueryClientProvider>
+      </RootDocument>
     )
   }
 
   // Protected pages use light theme and AppLayout
   if (isProtectedPage) {
     return (
-      <ConfigProvider theme={lightTheme}>
-        <AppLayout onLogout={authService.logout}>
-          <Outlet />
-        </AppLayout>
-      </ConfigProvider>
+      <RootDocument>
+        <QueryClientProvider client={queryClient}>
+          <ConfigProvider theme={lightTheme}>
+            <AppLayout onLogout={authService.logout}>
+              <Outlet />
+            </AppLayout>
+            <TanStackRouterDevtools position="bottom-right" />
+          </ConfigProvider>
+        </QueryClientProvider>
+      </RootDocument>
     )
   }
 
   // Default fallback (should rarely be used)
   return (
-    <ConfigProvider theme={lightTheme}>
-      <Outlet />
-    </ConfigProvider>
+    <RootDocument>
+      <QueryClientProvider client={queryClient}>
+        <ConfigProvider theme={lightTheme}>
+          <Outlet />
+          <TanStackRouterDevtools position="bottom-right" />
+        </ConfigProvider>
+      </QueryClientProvider>
+    </RootDocument>
   )
 }
 
-function RootDocument({ children }: { children: React.ReactNode }) {
+function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="en">
       <head>
@@ -121,7 +146,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
-        <TanStackRouterDevtools position="bottom-right" />
         <Scripts />
       </body>
     </html>

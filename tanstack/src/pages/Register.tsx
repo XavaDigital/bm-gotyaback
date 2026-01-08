@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Form, Input, Button, Card, Typography, message } from 'antd';
 import { useNavigate, Link } from '@tanstack/react-router';
-import authService from '../services/auth.service';
+import authService from '~/services/auth.service';
 
 const { Title } = Typography;
 

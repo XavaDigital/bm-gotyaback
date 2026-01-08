@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, Radio, Button, message, Alert, Spin } from 'antd';
+import { Modal, Form, Input, Radio, Button, message, Alert, Spin, ConfigProvider, theme } from 'antd';
 import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import type { CreateSponsorshipRequest, CampaignPaymentConfig } from '../types/campaign.types';
-import getStripe from '../utils/stripe';
-import paymentService from '../services/payment.service';
+import type { CreateSponsorshipRequest, CampaignPaymentConfig } from '~/types/campaign.types';
+import getStripe from '~/utils/stripe';
+import paymentService from '~/services/payment.service';
 
 interface SponsorCheckoutModalProps {
     visible: boolean;
@@ -333,17 +333,32 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
     };
 
     return (
-        <Modal
-            title="Become a Sponsor"
-            open={visible}
-            onCancel={() => {
-                onCancel();
-                form.resetFields();
-                setSponsorData(null);
+        <ConfigProvider
+            theme={{
+                algorithm: theme.defaultAlgorithm,
+                token: {
+                    colorPrimary: '#C8102E',
+                    colorLink: '#C8102E',
+                    colorLinkHover: '#A00D25',
+                    colorBgContainer: '#ffffff',
+                    colorText: 'rgba(0, 0, 0, 0.88)',
+                    colorTextSecondary: 'rgba(0, 0, 0, 0.65)',
+                    colorTextTertiary: 'rgba(0, 0, 0, 0.45)',
+                    colorBorder: '#d9d9d9',
+                },
             }}
-            footer={null}
-            width={550}
         >
+            <Modal
+                title="Become a Sponsor"
+                open={visible}
+                onCancel={() => {
+                    onCancel();
+                    form.resetFields();
+                    setSponsorData(null);
+                }}
+                footer={null}
+                width={550}
+            >
             {loadingConfig ? (
                 <div style={{ textAlign: 'center', padding: '40px 0' }}>
                     <Spin size="large" />
@@ -484,7 +499,8 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
                     )}
                 </>
             )}
-        </Modal >
+            </Modal>
+        </ConfigProvider>
     );
 };
 

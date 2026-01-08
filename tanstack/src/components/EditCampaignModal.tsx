@@ -1,297 +1,258 @@
-import React, { useEffect, useState } from 'react';
-import { Modal, Form, Input, DatePicker, Checkbox, message, Select, InputNumber, Divider, Alert, Tooltip, Switch } from 'antd';
-import dayjs from 'dayjs';
-import { InfoCircleOutlined } from '@ant-design/icons';
-import type { Campaign, UpdateCampaignRequest, UpdatePricingRequest } from '../types/campaign.types';
-import campaignService from '../services/campaign.service';
-import sponsorshipService from '../services/sponsorship.service';
-
-const { TextArea } = Input;
-const { RangePicker } = DatePicker;
+import React, { useEffect, useState } from "react";
+import { Modal, message } from "antd";
+import dayjs from "dayjs";
+import type { Campaign, UpdateCampaignRequest } from "~/types/campaign.types";
+import campaignService from "../services/campaign.service";
+import sponsorshipService from "../services/sponsorship.service";
+import CampaignWizard from "./CampaignWizard";
 
 interface EditCampaignModalProps {
-    visible: boolean;
-    onCancel: () => void;
-    onSuccess: () => void;
-    campaign: Campaign | null;
+  visible: boolean;
+  onCancel: () => void;
+  onSuccess: () => void;
+  campaign: Campaign | null;
 }
 
 const EditCampaignModal: React.FC<EditCampaignModalProps> = ({
-    visible,
-    onCancel,
-    onSuccess,
-    campaign,
+  visible,
+  onCancel,
+  onSuccess,
+  campaign,
 }) => {
-    const [form] = Form.useForm();
-    const [loading, setLoading] = useState(false);
-    const [hasSponsors, setHasSponsors] = useState(false);
-    const [checkingSponsors, setCheckingSponsors] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [hasSponsors, setHasSponsors] = useState(false);
+  const [initializing, setInitializing] = useState(false);
+  const [campaignData, setCampaignData] = useState<any>({});
 
-    useEffect(() => {
-        if (visible && campaign) {
-            checkSponsors();
+  useEffect(() => {
+    if (visible && campaign) {
+      initializeForm();
+    } else if (!visible) {
+      // Reset state when modal closes
+      setHasSponsors(false);
+      setInitializing(false);
+      setCampaignData({});
+    }
+  }, [visible, campaign]);
 
-            // Initialize form values
-            const formValues: any = {
-                title: campaign.title,
-                description: campaign.description,
-                enableStripePayments: campaign.enableStripePayments,
-                garmentType: campaign.garmentType,
-                dates: [
-                    campaign.startDate ? dayjs(campaign.startDate) : null,
-                    campaign.endDate ? dayjs(campaign.endDate) : null,
-                ],
+  const initializeForm = async () => {
+    if (!campaign) return;
+
+    setInitializing(true);
+
+    try {
+      // Check sponsors first
+      try {
+        const sponsors = await sponsorshipService.getSponsors(campaign._id);
+        setHasSponsors(sponsors.length > 0);
+        console.log(`Campaign has ${sponsors.length} sponsors`);
+      } catch (error) {
+        console.error("Failed to check sponsors", error);
+        setHasSponsors(false); // Default to false if check fails
+      }
+
+      // Initialize form values
+      const formValues: any = {
+        title: campaign.title,
+        shortDescription: campaign.shortDescription || "",
+        description: campaign.description || "",
+        enableStripePayments: campaign.enableStripePayments ?? true,
+        allowOfflinePayments: campaign.allowOfflinePayments ?? false,
+        garmentType: campaign.garmentType,
+        currency: campaign.currency,
+        dates: [
+          campaign.startDate ? dayjs(campaign.startDate) : null,
+          campaign.endDate ? dayjs(campaign.endDate) : null,
+        ],
+      };
+
+      // Load pricing if applicable
+      if (campaign.campaignType !== "pay-what-you-want") {
+        try {
+          const layout = await campaignService.getLayout(campaign._id);
+          console.log("Loaded layout:", layout);
+
+          if (layout && layout.placements && layout.placements.length > 0) {
+            const pricingValues: any = {};
+            if (campaign.campaignType === "fixed") {
+              pricingValues.fixedPrice = layout.placements[0]?.price;
+              console.log("Loaded fixed price:", pricingValues.fixedPrice);
+            } else if (campaign.campaignType === "positional") {
+              const firstPrice = layout.placements[0]?.price || 0;
+              const secondPrice = layout.placements[1]?.price || 0;
+
+              // Calculate base price and price per position from the first two placements
+              pricingValues.basePrice = firstPrice;
+              pricingValues.pricePerPosition = secondPrice - firstPrice;
+              console.log("Loaded positional pricing:", pricingValues);
+            }
+            formValues.pricing = pricingValues;
+
+            // Store layout configuration for display
+            formValues.layoutConfig = {
+              totalPositions: layout.totalPositions,
+              columns: layout.columns,
+              arrangement: layout.arrangement || "horizontal",
             };
-
-            // Initialize pricing values if needed (fetching from backend layout would be improved, 
-            // but for now we rely on user input/defaults or a separate fetch if we want pre-fill accuracy)
-            // Note: Since we don't have pricing in the campaign object directly (it's in layout),
-            // and we didn't add a 'getLayout' call here, valid pricing fields will start empty or we'd need to fetch.
-            // For simplicity in this edit flow, we will leave them empty as "update if you want to change".
-            // However, to be user friendly, let's verify if we should fetch layout.
-            // A better UX is to fetch the layout to pre-fill.
-
-            form.setFieldsValue(formValues);
-
-            if (campaign.campaignType !== 'donation') {
-                loadPricing(campaign._id);
-            }
-        }
-    }, [visible, campaign, form]);
-
-    const checkSponsors = async () => {
-        if (!campaign) return;
-        setCheckingSponsors(true);
-        try {
-            // We can check if the sponsor list is empty. 
-            // Reuse existing service method or add a count method. 
-            // existing: getSponsors returns full list.
-            const sponsors = await sponsorshipService.getSponsors(campaign._id);
-            setHasSponsors(sponsors.length > 0);
+          }
         } catch (error) {
-            console.error('Failed to check sponsors', error);
-        } finally {
-            setCheckingSponsors(false);
+          console.error("Failed to load layout pricing", error);
         }
-    };
+      }
 
-    const loadPricing = async (campaignId: string) => {
-        try {
-            const layout = await campaignService.getLayout(campaignId);
-            if (layout && layout.placements && layout.placements.length > 0) {
-                // Infer pricing from placements
-                // For Fixed: take first price
-                // For Placement: take representatives from zones
+      console.log("Setting form values:", formValues);
 
-                // Helper to find price by row
-                const getPriceAtRow = (r: number) => {
-                    // Find a placement that matches Row `r`
-                    const p = layout.placements.find(p => p.positionId.includes(`R${r + 1}C`));
-                    return p ? p.price : undefined;
-                };
+      // Set campaignData for wizard
+      setCampaignData({
+        title: campaign.title,
+        shortDescription: campaign.shortDescription,
+        description: campaign.description,
+        garmentType: campaign.garmentType,
+        campaignType: campaign.campaignType,
+        sponsorDisplayType: campaign.sponsorDisplayType,
+        layoutStyle: campaign.layoutStyle,
+        currency: campaign.currency,
+        enableStripePayments: campaign.enableStripePayments,
+        allowOfflinePayments: campaign.allowOfflinePayments,
+        dates: [
+          campaign.startDate ? dayjs(campaign.startDate) : null,
+          campaign.endDate ? dayjs(campaign.endDate) : null,
+        ],
+        pricing: formValues.pricing,
+        layoutConfig: formValues.layoutConfig,
+      });
+    } catch (error) {
+      console.error("Failed to initialize form", error);
+      message.error("Failed to load campaign details");
+    } finally {
+      setInitializing(false);
+    }
+  };
 
-                const pricingValues: any = {};
-                if (campaign?.campaignType === 'fixed') {
-                    pricingValues.fixedPrice = layout.placements[0]?.price;
-                } else if (campaign?.campaignType === 'placement') {
-                    const rows = layout.rows;
-                    pricingValues.zonePricing = {
-                        top: getPriceAtRow(0), // Top zone (0)
-                        middle: getPriceAtRow(Math.floor(rows / 2)), // Middleish
-                        bottom: getPriceAtRow(rows - 1) // Bottom
-                    };
-                }
+  const handleSubmit = async (submittedCampaignData: any, layoutData: any) => {
+    try {
+      setLoading(true);
 
-                form.setFieldsValue({ pricing: pricingValues });
+      console.log("Submitted campaign data:", submittedCampaignData);
+      console.log("Has sponsors:", hasSponsors);
+      console.log("Campaign type:", campaign?.campaignType);
+
+      // 1. Update basic fields
+      const updateData: UpdateCampaignRequest = {
+        title: submittedCampaignData.title,
+        shortDescription: submittedCampaignData.shortDescription,
+        description: submittedCampaignData.description,
+        enableStripePayments: submittedCampaignData.enableStripePayments,
+        allowOfflinePayments: submittedCampaignData.allowOfflinePayments,
+        garmentType: submittedCampaignData.garmentType,
+      };
+
+      if (submittedCampaignData.startDate && submittedCampaignData.endDate) {
+        updateData.startDate = submittedCampaignData.startDate;
+        updateData.endDate = submittedCampaignData.endDate;
+      }
+
+      if (campaign) {
+        await campaignService.updateCampaign(campaign._id, updateData);
+
+        // 2. Update pricing ONLY if:
+        // - Campaign is grid-based (fixed or positional)
+        // - No sponsors exist yet
+        // - Pricing values are actually provided
+        if (
+          campaign.campaignType !== "pay-what-you-want" &&
+          !hasSponsors &&
+          submittedCampaignData.pricing
+        ) {
+          console.log(
+            "Attempting to update pricing:",
+            submittedCampaignData.pricing
+          );
+
+          // Backend expects pricing values directly in the body, NOT nested under pricingConfig
+          const pricingData: any = {};
+
+          if (campaign.campaignType === "fixed") {
+            const fixedPrice = Number(submittedCampaignData.pricing.fixedPrice);
+            console.log("Fixed price value:", fixedPrice);
+
+            if (isNaN(fixedPrice) || fixedPrice <= 0) {
+              message.error("Please enter a valid fixed price");
+              setLoading(false);
+              return;
             }
-        } catch (error) {
-            console.error('Failed to load layout pricing', error);
+            pricingData.fixedPrice = fixedPrice;
+          } else if (campaign.campaignType === "positional") {
+            const basePrice = Number(submittedCampaignData.pricing.basePrice);
+            const pricePerPosition = Number(
+              submittedCampaignData.pricing.pricePerPosition
+            );
+
+            console.log("Positional pricing values:", {
+              basePrice,
+              pricePerPosition,
+            });
+
+            if (isNaN(basePrice) || basePrice < 0) {
+              message.error("Please enter a valid base price");
+              setLoading(false);
+              return;
+            }
+            if (isNaN(pricePerPosition) || pricePerPosition < 0) {
+              message.error("Please enter a valid price per position");
+              setLoading(false);
+              return;
+            }
+
+            pricingData.basePrice = basePrice;
+            pricingData.pricePerPosition = pricePerPosition;
+          }
+
+          console.log("Sending pricing update:", pricingData);
+          await campaignService.updatePricing(campaign._id, pricingData);
+        } else {
+          console.log("Skipping pricing update - conditions not met");
         }
-    };
 
-    const handleSubmit = async () => {
-        try {
-            const values = await form.validateFields();
-            setLoading(true);
+        message.success("Campaign updated successfully");
+        onSuccess();
+      }
+    } catch (error: any) {
+      console.error("Update error:", error);
+      message.error(
+        error.response?.data?.message || "Failed to update campaign"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            // 1. Update basic fields
-            const updateData: UpdateCampaignRequest = {
-                title: values.title,
-                description: values.description,
-                enableStripePayments: values.enableStripePayments,
-                garmentType: values.garmentType,
-            };
-
-            if (values.dates && values.dates.length === 2) {
-                updateData.startDate = values.dates[0].toISOString();
-                updateData.endDate = values.dates[1].toISOString();
-            }
-
-            if (campaign) {
-                await campaignService.updateCampaign(campaign._id, updateData);
-
-                // 2. Update pricing if applicable and safe
-                if (campaign.campaignType !== 'donation' && !hasSponsors && values.pricing) {
-                    const pricingData: UpdatePricingRequest = {};
-                    if (campaign.campaignType === 'fixed') {
-                        pricingData.fixedPrice = values.pricing.fixedPrice;
-                    } else if (campaign.campaignType === 'placement') {
-                        pricingData.zonePricing = values.pricing.zonePricing;
-                    }
-
-                    await campaignService.updatePricing(campaign._id, pricingData);
-                }
-
-                message.success('Campaign updated successfully');
-                onSuccess();
-            }
-        } catch (error: any) {
-            message.error(error.response?.data?.message || 'Failed to update campaign');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <Modal
-            title="Edit Campaign"
-            open={visible}
-            onCancel={onCancel}
-            onOk={handleSubmit}
-            confirmLoading={loading}
-            okText="Save Changes"
-            width={600}
-        >
-            <Form form={form} layout="vertical">
-                <Form.Item
-                    label="Campaign Title"
-                    name="title"
-                    rules={[{ required: true, message: 'Please enter a title' }]}
-                >
-                    <Input placeholder="Campaign Title" />
-                </Form.Item>
-
-                <Form.Item label="Description" name="description">
-                    <TextArea rows={4} placeholder="Campaign Description" />
-                </Form.Item>
-
-                <Row gutter={16}>
-                    <Col span={12}>
-                        <Form.Item
-                            label="Garment Type"
-                            name="garmentType"
-                            rules={[{ required: true }]}
-                        >
-                            <Select>
-                                <Select.Option value="singlet">Singlet</Select.Option>
-                                <Select.Option value="tshirt">T-Shirt</Select.Option>
-                                <Select.Option value="hoodie">Hoodie</Select.Option>
-                            </Select>
-                        </Form.Item>
-                    </Col>
-                    <Col span={12}>
-                        <Form.Item
-                            label="Campaign Duration"
-                            name="dates"
-                            rules={[{ required: true, message: 'Please select campaign dates' }]}
-                        >
-                            <RangePicker style={{ width: '100%' }} />
-                        </Form.Item>
-                    </Col>
-                </Row>
-
-                <Divider orientation="left">Payment Methods</Divider>
-
-                <Alert
-                    message="Offline payments are always enabled. You can optionally enable online payments via Stripe."
-                    type="info"
-                    showIcon
-                    style={{ marginBottom: 16 }}
-                />
-
-                <Form.Item
-                    label="Enable Online Payments (Stripe)"
-                    name="enableStripePayments"
-                    valuePropName="checked"
-                    tooltip="Allow sponsors to pay with credit/debit cards via Stripe"
-                >
-                    <Switch />
-                </Form.Item>
-
-                {/* Pricing Section */}
-                {campaign && campaign.campaignType !== 'donation' && (
-                    <>
-                        <Divider orientation="left">Pricing Configuration</Divider>
-
-                        {checkingSponsors ? (
-                            <div style={{ marginBottom: 16 }}>Checking pricing availability...</div>
-                        ) : hasSponsors ? (
-                            <Alert
-                                message="Pricing Cannot Be Changed"
-                                description="Pricing updates are disabled because this campaign already has sponsors. This ensures fairness and data integrity."
-                                type="warning"
-                                showIcon
-                                style={{ marginBottom: 16 }}
-                            />
-                        ) : (
-                            <Alert
-                                message="Update Pricing"
-                                description="You can update pricing since there are no sponsors yet."
-                                type="info"
-                                showIcon
-                                style={{ marginBottom: 16 }}
-                            />
-                        )}
-
-                        <div style={{ opacity: hasSponsors ? 0.5 : 1, pointerEvents: hasSponsors ? 'none' : 'auto' }}>
-                            {campaign.campaignType === 'fixed' && (
-                                <Form.Item
-                                    label="Price per Spot"
-                                    name={['pricing', 'fixedPrice']}
-                                    rules={[{ required: !hasSponsors, message: 'Please enter a price' }]}
-                                >
-                                    <InputNumber
-                                        min={1}
-                                        prefix="$"
-                                        style={{ width: '100%' }}
-                                    />
-                                </Form.Item>
-                            )}
-
-                            {campaign.campaignType === 'placement' && (
-                                <>
-                                    <Form.Item
-                                        label="Top Zone Price"
-                                        name={['pricing', 'zonePricing', 'top']}
-                                        rules={[{ required: !hasSponsors, message: 'Required' }]}
-                                    >
-                                        <InputNumber min={1} prefix="$" style={{ width: '100%' }} />
-                                    </Form.Item>
-                                    <Form.Item
-                                        label="Middle Zone Price"
-                                        name={['pricing', 'zonePricing', 'middle']}
-                                        rules={[{ required: !hasSponsors, message: 'Required' }]}
-                                    >
-                                        <InputNumber min={1} prefix="$" style={{ width: '100%' }} />
-                                    </Form.Item>
-                                    <Form.Item
-                                        label="Bottom Zone Price"
-                                        name={['pricing', 'zonePricing', 'bottom']}
-                                        rules={[{ required: !hasSponsors, message: 'Required' }]}
-                                    >
-                                        <InputNumber min={1} prefix="$" style={{ width: '100%' }} />
-                                    </Form.Item>
-                                </>
-                            )}
-                        </div>
-                    </>
-                )}
-            </Form>
-        </Modal>
-    );
+  return (
+    <Modal
+      title="Edit Campaign"
+      open={visible}
+      onCancel={onCancel}
+      footer={null}
+      width={800}
+      destroyOnClose
+    >
+      {initializing ? (
+        <div style={{ padding: "40px 0", textAlign: "center" }}>
+          Loading campaign details...
+        </div>
+      ) : (
+        <CampaignWizard
+          mode="edit"
+          initialCampaignData={campaignData}
+          initialLayoutData={{}}
+          onSubmit={handleSubmit}
+          submitButtonText="Save Changes"
+          loading={loading}
+          hasSponsors={hasSponsors}
+        />
+      )}
+    </Modal>
+  );
 };
-
-// Helper imports for Col/Row since we used them in layout
-import { Col, Row } from 'antd';
 
 export default EditCampaignModal;

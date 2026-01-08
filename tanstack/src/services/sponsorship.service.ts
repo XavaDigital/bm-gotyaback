@@ -1,5 +1,5 @@
 import apiClient from './apiClient';
-import type { SponsorEntry, CreateSponsorshipRequest } from '../types/campaign.types';
+import type { SponsorEntry, CreateSponsorshipRequest } from '~/types/campaign.types';
 
 const sponsorshipService = {
     // Create a sponsorship (public - no auth required)
@@ -32,6 +32,38 @@ const sponsorshipService = {
     markAsPaid: async (sponsorshipId: string): Promise<SponsorEntry> => {
         const response = await apiClient.post<SponsorEntry>(
             `/sponsorships/${sponsorshipId}/mark-paid`
+        );
+        return response.data;
+    },
+
+    // Get pending logo approvals for a campaign (owner only)
+    getPendingLogos: async (campaignId: string): Promise<SponsorEntry[]> => {
+        const response = await apiClient.get<SponsorEntry[]>(
+            `/campaigns/${campaignId}/pending-logos`
+        );
+        return response.data;
+    },
+
+    // Approve or reject a logo (owner only)
+    approveLogo: async (
+        sponsorshipId: string,
+        data: { approved: boolean; rejectionReason?: string }
+    ): Promise<SponsorEntry> => {
+        const response = await apiClient.post<SponsorEntry>(
+            `/sponsorships/${sponsorshipId}/approve-logo`,
+            data
+        );
+        return response.data;
+    },
+
+    // Update payment status (owner only)
+    updatePaymentStatus: async (
+        sponsorshipId: string,
+        status: 'pending' | 'paid' | 'failed'
+    ): Promise<SponsorEntry> => {
+        const response = await apiClient.patch<SponsorEntry>(
+            `/sponsorships/${sponsorshipId}/payment-status`,
+            { status }
         );
         return response.data;
     },

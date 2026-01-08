@@ -7,7 +7,7 @@ import {
     CheckCircleOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from '@tanstack/react-router';
-import type { Campaign } from '../types/campaign.types';
+import type { Campaign } from '~/types/campaign.types';
 
 const { Text } = Typography;
 

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Form, Input, Button, message, Typography, Space, Divider } from 'antd';
 import { SaveOutlined } from '@ant-design/icons';
-import userService from '../services/user.service';
-import authService from '../services/auth.service';
-import ImageUpload from '../components/ImageUpload';
-import { QuillEditor } from '../components/QuillEditor';
-import type { UpdateProfileRequest } from '../types/campaign.types';
+import userService from '~/services/user.service';
+import authService from '~/services/auth.service';
+import ImageUpload from '~/components/ImageUpload';
+import RichTextEditor from '~/components/RichTextEditor';
+import type { UpdateProfileRequest } from '~/types/campaign.types';
 
 const { Title, Text } = Typography;
 
@@ -148,9 +148,7 @@ const ProfileSettings: React.FC = () => {
                         name="bio"
                         tooltip="Use the editor toolbar to add formatting, headings, lists, and links"
                     >
-                        <QuillEditor
-                            placeholder="Tell people about your organization or cause..."
-                        />
+                        <RichTextEditor placeholder="Tell people about your organization or cause..." />
                     </Form.Item>
 
                     <Divider />

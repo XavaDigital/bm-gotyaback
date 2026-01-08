@@ -1,5 +1,5 @@
 import apiClient from './apiClient';
-import type { PaymentConfig, CampaignPaymentConfig } from '../types/campaign.types';
+import type { PaymentConfig, CampaignPaymentConfig } from '~/types/campaign.types';
 
 const paymentService = {
     // Create payment intent for sponsorship

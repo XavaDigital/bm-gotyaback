@@ -5,7 +5,7 @@ import type {
     UpdateCampaignRequest,
     ShirtLayout,
     CreateLayoutRequest,
-} from '../types/campaign.types';
+} from '~/types/campaign.types';
 
 const campaignService = {
     // Create a new campaign
@@ -58,6 +58,7 @@ const campaignService = {
     // Get layout for campaign
     getLayout: async (campaignId: string): Promise<ShirtLayout> => {
         const response = await apiClient.get<ShirtLayout>(`/campaigns/${campaignId}/layout`);
+        // The interceptor converts 404s to resolved promises with null data
         return response.data;
     },
 };

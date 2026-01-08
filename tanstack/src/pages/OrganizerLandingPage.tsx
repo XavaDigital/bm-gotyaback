@@ -2,13 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
 import { Spin, message, Empty, Row, Col, Typography, Divider, Button } from 'antd';
 import { SettingOutlined } from '@ant-design/icons';
-import userService from '../services/user.service';
-import authService from '../services/auth.service';
-import OrganizerProfileHeader from '../components/OrganizerProfileHeader';
-import CampaignCard from '../components/CampaignCard';
-import PublicHeader from '../components/PublicHeader';
-import PublicFooter from '../components/PublicFooter';
-import type { OrganizerPublicProfile } from '../types/campaign.types';
+import userService from '~/services/user.service';
+import authService from '~/services/auth.service';
+import OrganizerProfileHeader from '~/components/OrganizerProfileHeader';
+import CampaignCard from '~/components/CampaignCard';
+import PublicHeader from '~/components/PublicHeader';
+import PublicFooter from '~/components/PublicFooter';
+import type { OrganizerPublicProfile } from '~/types/campaign.types';
 
 const { Title } = Typography;
 

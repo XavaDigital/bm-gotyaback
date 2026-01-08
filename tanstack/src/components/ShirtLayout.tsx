@@ -1,5 +1,5 @@
 import React from 'react';
-import type { ShirtLayout as ShirtLayoutType, Position } from '../types/campaign.types';
+import type { ShirtLayout as ShirtLayoutType, Position } from '~/types/campaign.types';
 
 interface ShirtLayoutProps {
     layout: ShirtLayoutType;
