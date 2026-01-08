@@ -1,0 +1,254 @@
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useState, useEffect } from 'react'
+import { Form, Input, Button, Card, Typography, message, Alert } from 'antd'
+import { Link } from '@tanstack/react-router'
+import { MailOutlined, ArrowLeftOutlined } from '@ant-design/icons'
+import apiClient from '~/services/apiClient'
+import beastmodeLogo from '~/assets/beastmode-logo.png'
+
+const { Title, Text } = Typography
+
+export const Route = createFileRoute('/forgot-password')({
+  component: ForgotPasswordPage,
+})
+
+function ForgotPasswordPage() {
+  const [loading, setLoading] = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    // Override body styles for full-width dark page
+    const body = document.body
+    const html = document.documentElement
+
+    const originalStyles = {
+      display: body.style.display,
+      placeItems: (body.style as any).placeItems,
+      margin: body.style.margin,
+      width: body.style.width,
+      htmlWidth: html.style.width,
+    }
+
+    body.style.display = 'block'
+    ;(body.style as any).placeItems = 'initial'
+    body.style.margin = '0'
+    body.style.width = '100%'
+    html.style.width = '100%'
+
+    return () => {
+      body.style.display = originalStyles.display
+      ;(body.style as any).placeItems = originalStyles.placeItems
+      body.style.margin = originalStyles.margin
+      body.style.width = originalStyles.width
+      html.style.width = originalStyles.htmlWidth
+    }
+  }, [])
+
+  const onFinish = async (values: any) => {
+    setLoading(true)
+    try {
+      await apiClient.post('/auth/forgot-password', { email: values.email })
+      setEmailSent(true)
+      message.success('Password reset instructions sent to your email!')
+    } catch (error: any) {
+      // In development, show actual errors for debugging
+      if (import.meta.env.DEV) {
+        console.error('Password reset error:', error)
+        message.error(
+          error.response?.data?.message ||
+            error.message ||
+            'Failed to send reset email. Is the backend running?'
+        )
+      } else {
+        // In production, always show success message to prevent email enumeration
+        setEmailSent(true)
+        message.success(
+          'If an account exists, password reset instructions have been sent!'
+        )
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div
+      style={{
+        minHeight: '100vh',
+        background: '#1f1f1f',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          background: '#2a2a2a',
+          borderBottom: '2px solid #3a3a3a',
+          padding: '16px 40px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <img
+            src={beastmodeLogo}
+            alt="Beast Mode Logo"
+            style={{ height: 50, width: 'auto' }}
+          />
+          <h2
+            style={{
+              margin: 0,
+              fontSize: 28,
+              fontWeight: 700,
+              color: '#ffffff',
+            }}
+          >
+            Got Your Back
+          </h2>
+        </div>
+        <Button
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate({ to: '/login' })}
+          style={{
+            background: 'transparent',
+            borderColor: '#ffffff',
+            color: '#ffffff',
+          }}
+        >
+          Back to Login
+        </Button>
+      </div>
+
+      {/* Main Content */}
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '40px 20px',
+        }}
+      >
+        <Card
+          style={{
+            width: '100%',
+            maxWidth: 480,
+            background: '#2a2a2a',
+            border: '2px solid #3a3a3a',
+            borderRadius: 12,
+          }}
+          bodyStyle={{ padding: 40 }}
+        >
+          {/* Title */}
+          <div style={{ textAlign: 'center', marginBottom: 32 }}>
+            <Title level={2} style={{ color: '#ffffff', marginBottom: 8 }}>
+              Forgot Password?
+            </Title>
+            <Text style={{ fontSize: 16, color: '#cccccc' }}>
+              {emailSent
+                ? 'Check your email for reset instructions'
+                : 'Enter your email to receive reset instructions'}
+            </Text>
+          </div>
+
+          {emailSent ? (
+            <div>
+              <Alert
+                message="Email Sent!"
+                description="If an account exists with that email, you will receive password reset instructions shortly. Please check your inbox and spam folder."
+                type="success"
+                showIcon
+                style={{
+                  marginBottom: 24,
+                  background: '#1f1f1f',
+                  border: '1px solid #52c41a',
+                }}
+              />
+              <Button
+                type="primary"
+                block
+                onClick={() => navigate({ to: '/login' })}
+                style={{
+                  height: 48,
+                  fontSize: 16,
+                  fontWeight: 600,
+                }}
+              >
+                Back to Login
+              </Button>
+            </div>
+          ) : (
+            <Form
+              name="forgot-password"
+              onFinish={onFinish}
+              layout="vertical"
+              size="large"
+            >
+              <Form.Item
+                name="email"
+                label={<span style={{ color: '#ffffff' }}>Email</span>}
+                rules={[
+                  { required: true, message: 'Please input your email!' },
+                  { type: 'email', message: 'Please enter a valid email!' },
+                ]}
+              >
+                <Input
+                  prefix={<MailOutlined style={{ color: '#999999' }} />}
+                  placeholder="Email Address"
+                  style={{
+                    background: '#1f1f1f',
+                    border: '1px solid #3a3a3a',
+                    color: '#ffffff',
+                  }}
+                />
+              </Form.Item>
+
+              <Form.Item style={{ marginBottom: 16 }}>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  block
+                  loading={loading}
+                  style={{
+                    height: 48,
+                    fontSize: 16,
+                    fontWeight: 600,
+                  }}
+                >
+                  Send Reset Link
+                </Button>
+              </Form.Item>
+
+              <div style={{ textAlign: 'center' }}>
+                <Text style={{ color: '#cccccc' }}>
+                  Remember your password?{' '}
+                </Text>
+                <Link to="/login" style={{ color: '#C8102E', fontWeight: 600 }}>
+                  Login
+                </Link>
+              </div>
+            </Form>
+          )}
+        </Card>
+      </div>
+
+      {/* Footer */}
+      <div
+        style={{
+          background: '#2a2a2a',
+          padding: '24px 40px',
+          textAlign: 'center',
+          borderTop: '2px solid #3a3a3a',
+        }}
+      >
+        <Text style={{ color: '#999999', fontSize: 14 }}>
+          © {new Date().getFullYear()} Got Your Back. All rights reserved.
+        </Text>
+      </div>
+    </div>
+  )
+}
+
