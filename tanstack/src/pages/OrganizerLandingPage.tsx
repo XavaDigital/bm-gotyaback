@@ -78,16 +78,30 @@ const OrganizerLandingPage: React.FC = () => {
 
     return (
         <div style={{ background: '#1f1f1f', minHeight: '100vh' }}>
-            <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 20px' }}>
+            <div
+                style={{
+                    maxWidth: 900,
+                    margin: '0 auto',
+                    padding: '0 clamp(16px, 3vw, 20px)',
+                }}
+            >
                 <PublicHeader />
 
                 {/* Edit Button for Owner */}
                 {isOwner && (
-                    <div style={{ textAlign: 'right', marginBottom: 16 }}>
+                    <div
+                        style={{
+                            textAlign: 'right',
+                            marginBottom: 16,
+                        }}
+                    >
                         <Button
                             type="primary"
                             icon={<SettingOutlined />}
                             onClick={() => navigate({ to: '/dashboard/profile' })}
+                            style={{
+                                fontSize: 'clamp(13px, 2.5vw, 14px)',
+                            }}
                         >
                             Edit Profile
                         </Button>
@@ -101,7 +115,13 @@ const OrganizerLandingPage: React.FC = () => {
 
                 {/* Active Campaigns Section */}
                 <div>
-                    <Title level={3} style={{ color: '#ffffff' }}>
+                    <Title
+                        level={3}
+                        style={{
+                            color: '#ffffff',
+                            fontSize: 'clamp(20px, 5vw, 28px)',
+                        }}
+                    >
                         Active Campaigns
                     </Title>
                     {data.campaigns.length === 0 ? (

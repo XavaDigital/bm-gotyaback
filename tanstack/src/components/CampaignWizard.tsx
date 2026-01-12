@@ -57,7 +57,7 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
     []
   );
 
-  // Custom styles for form labels
+  // Custom styles for form labels and radio buttons
   const formLabelStyle = `
     /* Make all labels bold */
     .campaign-wizard-form .ant-form-item-label > label {
@@ -89,6 +89,52 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
       margin: 0 !important;
       padding: 0 !important;
     }
+
+    /* Custom radio button styles to match app theme */
+    .campaign-wizard-form .ant-radio-wrapper {
+      width: 100%;
+      display: block;
+    }
+
+    .campaign-wizard-form .ant-radio-wrapper:hover .ant-radio-inner {
+      border-color: #c41e3a;
+    }
+
+    .campaign-wizard-form .ant-radio-checked .ant-radio-inner {
+      border-color: #c41e3a;
+      background-color: #c41e3a;
+    }
+
+    .campaign-wizard-form .ant-radio-checked::after {
+      border-color: #c41e3a;
+    }
+
+    .campaign-wizard-form .ant-radio:hover .ant-radio-inner {
+      border-color: #c41e3a;
+    }
+
+    /* Hide the radio button circle */
+    .campaign-wizard-form .ant-radio {
+      display: none;
+    }
+
+    /* Card styling for radio options */
+    .campaign-wizard-form .ant-card {
+      background-color: #1a1a1a;
+      border-color: #434343;
+      transition: all 0.3s ease;
+      margin-bottom: 0;
+    }
+
+    .campaign-wizard-form .ant-radio-wrapper-checked .ant-card {
+      border-color: #c41e3a !important;
+      border-width: 2px !important;
+      background-color: #2a1a1d !important;
+    }
+
+    .campaign-wizard-form .ant-card-body {
+      padding: 16px;
+    }
   `;
 
   // Update campaignData when initialCampaignData changes (for edit mode)
@@ -113,7 +159,7 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
       form.setFieldsValue({
         campaignType: campaignData.campaignType,
         sponsorDisplayType: campaignData.sponsorDisplayType || "text-only",
-        layoutStyle: campaignData.layoutStyle || "grid",
+        layoutStyle: campaignData.layoutStyle || "size-ordered",
       });
     } else if (current === 2) {
       // Step 2: Configuration
@@ -347,7 +393,7 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
               campaignData.campaignType ||
               (mode === "create" ? "positional" : undefined),
             sponsorDisplayType: campaignData.sponsorDisplayType || "text-only",
-            layoutStyle: campaignData.layoutStyle || "grid",
+            layoutStyle: campaignData.layoutStyle || "size-ordered",
           }}
         >
           <Form.Item
@@ -358,288 +404,87 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
             ]}
           >
             <Radio.Group style={{ width: "100%" }}>
-              <Form.Item noStyle shouldUpdate>
-                {({ getFieldValue }) => {
-                  const selectedType = getFieldValue("campaignType");
-
-                  return (
-                    <Row gutter={16}>
-                      <Col span={8}>
-                        <Card
+              <Row gutter={16}>
+                <Col span={8}>
+                  <Radio value="fixed" style={{ width: "100%" }}>
+                    <Card
+                      style={{
+                        height: "100%",
+                        cursor: "pointer",
+                      }}
+                      hoverable
+                    >
+                      <div>
+                        <strong style={{ fontSize: "16px", color: "#fff" }}>
+                          Fixed Price
+                        </strong>
+                        <p
                           style={{
-                            height: "100%",
-                            cursor: "pointer",
-                            borderColor:
-                              selectedType === "fixed" ? "#1890ff" : undefined,
-                            borderWidth: selectedType === "fixed" ? 2 : 1,
-                            backgroundColor:
-                              selectedType === "fixed" ? "#e6f7ff" : undefined,
+                            color: "#999",
+                            marginTop: 8,
+                            marginBottom: 0,
                           }}
-                          hoverable
                         >
-                          <Radio value="fixed" style={{ display: "none" }} />
-                          <div
-                            onClick={() =>
-                              form.setFieldsValue({ campaignType: "fixed" })
-                            }
-                          >
-                            <strong style={{ fontSize: "16px" }}>
-                              Fixed Price
-                            </strong>
-                            <p
-                              style={{
-                                color: "#888",
-                                marginTop: 8,
-                                marginBottom: 0,
-                              }}
-                            >
-                              All sponsorship spots cost the same amount
-                            </p>
-                          </div>
-                        </Card>
-                      </Col>
-                      <Col span={8}>
-                        <Card
+                          All sponsorship spots cost the same amount
+                        </p>
+                      </div>
+                    </Card>
+                  </Radio>
+                </Col>
+                <Col span={8}>
+                  <Radio value="positional" style={{ width: "100%" }}>
+                    <Card
+                      style={{
+                        height: "100%",
+                        cursor: "pointer",
+                      }}
+                      hoverable
+                    >
+                      <div>
+                        <strong style={{ fontSize: "16px", color: "#fff" }}>
+                          Positional Pricing
+                        </strong>
+                        <p
                           style={{
-                            height: "100%",
-                            cursor: "pointer",
-                            borderColor:
-                              selectedType === "positional"
-                                ? "#1890ff"
-                                : undefined,
-                            borderWidth: selectedType === "positional" ? 2 : 1,
-                            backgroundColor:
-                              selectedType === "positional"
-                                ? "#e6f7ff"
-                                : undefined,
+                            color: "#999",
+                            marginTop: 8,
+                            marginBottom: 0,
                           }}
-                          hoverable
                         >
-                          <Radio
-                            value="positional"
-                            style={{ display: "none" }}
-                          />
-                          <div
-                            onClick={() =>
-                              form.setFieldsValue({
-                                campaignType: "positional",
-                              })
-                            }
-                          >
-                            <strong style={{ fontSize: "16px" }}>
-                              Positional Pricing
-                            </strong>
-                            <p
-                              style={{
-                                color: "#888",
-                                marginTop: 8,
-                                marginBottom: 0,
-                              }}
-                            >
-                              Price increases based on position number (e.g.,
-                              $20 + $2 per position)
-                            </p>
-                          </div>
-                        </Card>
-                      </Col>
-                      <Col span={8}>
-                        <Card
+                          Price increases based on position number (e.g., $20 + $2
+                          per position)
+                        </p>
+                      </div>
+                    </Card>
+                  </Radio>
+                </Col>
+                <Col span={8}>
+                  <Radio value="pay-what-you-want" style={{ width: "100%" }}>
+                    <Card
+                      style={{
+                        height: "100%",
+                        cursor: "pointer",
+                      }}
+                      hoverable
+                    >
+                      <div>
+                        <strong style={{ fontSize: "16px", color: "#fff" }}>
+                          Pay What You Want
+                        </strong>
+                        <p
                           style={{
-                            height: "100%",
-                            cursor: "pointer",
-                            borderColor:
-                              selectedType === "pay-what-you-want"
-                                ? "#1890ff"
-                                : undefined,
-                            borderWidth:
-                              selectedType === "pay-what-you-want" ? 2 : 1,
-                            backgroundColor:
-                              selectedType === "pay-what-you-want"
-                                ? "#e6f7ff"
-                                : undefined,
+                            color: "#999",
+                            marginTop: 8,
+                            marginBottom: 0,
                           }}
-                          hoverable
                         >
-                          <Radio
-                            value="pay-what-you-want"
-                            style={{ display: "none" }}
-                          />
-                          <div
-                            onClick={() =>
-                              form.setFieldsValue({
-                                campaignType: "pay-what-you-want",
-                              })
-                            }
-                          >
-                            <strong style={{ fontSize: "16px" }}>
-                              Pay What You Want
-                            </strong>
-                            <p
-                              style={{
-                                color: "#888",
-                                marginTop: 8,
-                                marginBottom: 0,
-                              }}
-                            >
-                              Sponsors choose their amount, size based on
-                              contribution
-                            </p>
-                          </div>
-                        </Card>
-                      </Col>
-                    </Row>
-                  );
-                }}
-              </Form.Item>
-            </Radio.Group>
-          </Form.Item>
-
-          <Form.Item
-            label="Sponsor Display Type"
-            name="sponsorDisplayType"
-            rules={[
-              { required: true, message: "Please select sponsor display type" },
-            ]}
-            extra="Choose what type of sponsors you'll accept"
-          >
-            <Radio.Group style={{ width: "100%" }}>
-              <Form.Item noStyle shouldUpdate>
-                {({ getFieldValue }) => {
-                  const selectedDisplayType =
-                    getFieldValue("sponsorDisplayType");
-
-                  return (
-                    <Row gutter={16}>
-                      <Col span={8}>
-                        <Card
-                          style={{
-                            height: "100%",
-                            cursor: "pointer",
-                            borderColor:
-                              selectedDisplayType === "text-only"
-                                ? "#1890ff"
-                                : undefined,
-                            borderWidth:
-                              selectedDisplayType === "text-only" ? 2 : 1,
-                            backgroundColor:
-                              selectedDisplayType === "text-only"
-                                ? "#e6f7ff"
-                                : undefined,
-                          }}
-                          hoverable
-                        >
-                          <Radio
-                            value="text-only"
-                            style={{ display: "none" }}
-                          />
-                          <div
-                            onClick={() =>
-                              form.setFieldsValue({
-                                sponsorDisplayType: "text-only",
-                              })
-                            }
-                          >
-                            <strong style={{ fontSize: "16px" }}>
-                              Text Only
-                            </strong>
-                            <p
-                              style={{
-                                color: "#888",
-                                marginTop: 8,
-                                marginBottom: 0,
-                              }}
-                            >
-                              Sponsor Names
-                            </p>
-                          </div>
-                        </Card>
-                      </Col>
-                      <Col span={8}>
-                        <Card
-                          style={{
-                            height: "100%",
-                            cursor: "pointer",
-                            borderColor:
-                              selectedDisplayType === "logo-only"
-                                ? "#1890ff"
-                                : undefined,
-                            borderWidth:
-                              selectedDisplayType === "logo-only" ? 2 : 1,
-                            backgroundColor:
-                              selectedDisplayType === "logo-only"
-                                ? "#e6f7ff"
-                                : undefined,
-                          }}
-                          hoverable
-                        >
-                          <Radio
-                            value="logo-only"
-                            style={{ display: "none" }}
-                          />
-                          <div
-                            onClick={() =>
-                              form.setFieldsValue({
-                                sponsorDisplayType: "logo-only",
-                              })
-                            }
-                          >
-                            <strong style={{ fontSize: "16px" }}>
-                              Logo Only
-                            </strong>
-                            <p
-                              style={{
-                                color: "#888",
-                                marginTop: 8,
-                                marginBottom: 0,
-                              }}
-                            >
-                              Images
-                            </p>
-                          </div>
-                        </Card>
-                      </Col>
-                      <Col span={8}>
-                        <Card
-                          style={{
-                            height: "100%",
-                            cursor: "pointer",
-                            borderColor:
-                              selectedDisplayType === "both"
-                                ? "#1890ff"
-                                : undefined,
-                            borderWidth: selectedDisplayType === "both" ? 2 : 1,
-                            backgroundColor:
-                              selectedDisplayType === "both"
-                                ? "#e6f7ff"
-                                : undefined,
-                          }}
-                          hoverable
-                        >
-                          <Radio value="both" style={{ display: "none" }} />
-                          <div
-                            onClick={() =>
-                              form.setFieldsValue({
-                                sponsorDisplayType: "both",
-                              })
-                            }
-                          >
-                            <strong style={{ fontSize: "16px" }}>Both</strong>
-                            <p
-                              style={{
-                                color: "#888",
-                                marginTop: 8,
-                                marginBottom: 0,
-                              }}
-                            >
-                              Text and Logos
-                            </p>
-                          </div>
-                        </Card>
-                      </Col>
-                    </Row>
-                  );
-                }}
-              </Form.Item>
+                          Sponsors choose their amount, size based on contribution
+                        </p>
+                      </div>
+                    </Card>
+                  </Radio>
+                </Col>
+              </Row>
             </Radio.Group>
           </Form.Item>
 
@@ -652,203 +497,192 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
             {({ getFieldValue }) => {
               const campaignType = getFieldValue("campaignType");
 
-              // Only show layout style for pay-what-you-want
-              if (campaignType === "pay-what-you-want") {
+              // Define available layout styles for each campaign type
+              const layoutOptions: Record<string, Array<{ value: string; label: string; description: string }>> = {
+                'fixed': [
+                  { value: 'word-cloud', label: 'Word Cloud', description: 'Artistic arrangement' },
+                  { value: 'size-ordered', label: 'List', description: 'Ordered list display' },
+                ],
+                'positional': [
+                  { value: 'size-ordered', label: 'Ordered', description: 'Ordered by position' },
+                  { value: 'amount-ordered', label: 'Sections', description: 'Grouped by price tier' },
+                  { value: 'word-cloud', label: 'Cloud', description: 'Artistic word cloud' },
+                ],
+                'pay-what-you-want': [
+                  { value: 'amount-ordered', label: 'Ordered List', description: 'Highest payers first' },
+                  { value: 'word-cloud', label: 'Word Cloud', description: 'Size based on contribution' },
+                ],
+              };
+
+              const options = layoutOptions[campaignType] || [];
+
+              // Show layout style options for all campaign types
+              if (options.length > 0) {
+                // Layout style is required for fixed and positional, optional for pay-what-you-want
+                const isRequired = campaignType !== 'pay-what-you-want';
+
                 return (
                   <Form.Item
                     label="Layout Style"
                     name="layoutStyle"
                     rules={[
                       {
-                        required: true,
+                        required: isRequired,
                         message: "Please select a layout style",
                       },
                     ]}
-                    extra="How sponsors will be arranged on the shirt"
+                    extra={
+                      campaignType === 'pay-what-you-want'
+                        ? "Optional: Choose how sponsors will be arranged on the shirt"
+                        : "How sponsors will be arranged on the shirt"
+                    }
                   >
                     <Radio.Group
                       style={{ width: "100%" }}
                       disabled={mode === "edit"}
                     >
-                      <Form.Item noStyle shouldUpdate>
-                        {({ getFieldValue }) => {
-                          const selectedLayoutStyle =
-                            getFieldValue("layoutStyle");
-
-                          return (
-                            <Row gutter={16}>
-                              <Col span={8}>
-                                <Card
-                                  style={{
-                                    height: "100%",
-                                    cursor:
-                                      mode === "edit"
-                                        ? "not-allowed"
-                                        : "pointer",
-                                    borderColor:
-                                      selectedLayoutStyle === "size-ordered"
-                                        ? "#1890ff"
-                                        : undefined,
-                                    borderWidth:
-                                      selectedLayoutStyle === "size-ordered"
-                                        ? 2
-                                        : 1,
-                                    backgroundColor:
-                                      selectedLayoutStyle === "size-ordered"
-                                        ? "#e6f7ff"
-                                        : undefined,
-                                    opacity: mode === "edit" ? 0.6 : 1,
-                                  }}
-                                  hoverable={mode !== "edit"}
-                                >
-                                  <Radio
-                                    value="size-ordered"
-                                    style={{ display: "none" }}
-                                  />
-                                  <div
-                                    onClick={() => {
-                                      if (mode !== "edit") {
-                                        form.setFieldsValue({
-                                          layoutStyle: "size-ordered",
-                                        });
-                                      }
+                      <Row gutter={16}>
+                        {options.map((option) => (
+                          <Col span={options.length === 2 ? 12 : 8} key={option.value}>
+                            <Radio
+                              value={option.value}
+                              disabled={mode === "edit"}
+                              style={{ width: "100%" }}
+                            >
+                              <Card
+                                style={{
+                                  height: "100%",
+                                  cursor:
+                                    mode === "edit"
+                                      ? "not-allowed"
+                                      : "pointer",
+                                  opacity: mode === "edit" ? 0.6 : 1,
+                                }}
+                                hoverable={mode !== "edit"}
+                              >
+                                <div>
+                                  <strong style={{ fontSize: "16px", color: "#fff" }}>
+                                    {option.label}
+                                  </strong>
+                                  <p
+                                    style={{
+                                      color: "#999",
+                                      marginTop: 8,
+                                      marginBottom: 0,
                                     }}
                                   >
-                                    <strong style={{ fontSize: "16px" }}>
-                                      Size Ordered
-                                    </strong>
-                                    <p
-                                      style={{
-                                        color: "#888",
-                                        marginTop: 8,
-                                        marginBottom: 0,
-                                      }}
-                                    >
-                                      Largest First
-                                    </p>
-                                  </div>
-                                </Card>
-                              </Col>
-                              <Col span={8}>
-                                <Card
-                                  style={{
-                                    height: "100%",
-                                    cursor:
-                                      mode === "edit"
-                                        ? "not-allowed"
-                                        : "pointer",
-                                    borderColor:
-                                      selectedLayoutStyle === "amount-ordered"
-                                        ? "#1890ff"
-                                        : undefined,
-                                    borderWidth:
-                                      selectedLayoutStyle === "amount-ordered"
-                                        ? 2
-                                        : 1,
-                                    backgroundColor:
-                                      selectedLayoutStyle === "amount-ordered"
-                                        ? "#e6f7ff"
-                                        : undefined,
-                                    opacity: mode === "edit" ? 0.6 : 1,
-                                  }}
-                                  hoverable={mode !== "edit"}
-                                >
-                                  <Radio
-                                    value="amount-ordered"
-                                    style={{ display: "none" }}
-                                  />
-                                  <div
-                                    onClick={() => {
-                                      if (mode !== "edit") {
-                                        form.setFieldsValue({
-                                          layoutStyle: "amount-ordered",
-                                        });
-                                      }
-                                    }}
-                                  >
-                                    <strong style={{ fontSize: "16px" }}>
-                                      Amount Ordered
-                                    </strong>
-                                    <p
-                                      style={{
-                                        color: "#888",
-                                        marginTop: 8,
-                                        marginBottom: 0,
-                                      }}
-                                    >
-                                      Highest Payers First
-                                    </p>
-                                  </div>
-                                </Card>
-                              </Col>
-                              <Col span={8}>
-                                <Card
-                                  style={{
-                                    height: "100%",
-                                    cursor:
-                                      mode === "edit"
-                                        ? "not-allowed"
-                                        : "pointer",
-                                    borderColor:
-                                      selectedLayoutStyle === "word-cloud"
-                                        ? "#1890ff"
-                                        : undefined,
-                                    borderWidth:
-                                      selectedLayoutStyle === "word-cloud"
-                                        ? 2
-                                        : 1,
-                                    backgroundColor:
-                                      selectedLayoutStyle === "word-cloud"
-                                        ? "#e6f7ff"
-                                        : undefined,
-                                    opacity: mode === "edit" ? 0.6 : 1,
-                                  }}
-                                  hoverable={mode !== "edit"}
-                                >
-                                  <Radio
-                                    value="word-cloud"
-                                    style={{ display: "none" }}
-                                  />
-                                  <div
-                                    onClick={() => {
-                                      if (mode !== "edit") {
-                                        form.setFieldsValue({
-                                          layoutStyle: "word-cloud",
-                                        });
-                                      }
-                                    }}
-                                  >
-                                    <strong style={{ fontSize: "16px" }}>
-                                      Word Cloud
-                                    </strong>
-                                    <p
-                                      style={{
-                                        color: "#888",
-                                        marginTop: 8,
-                                        marginBottom: 0,
-                                      }}
-                                    >
-                                      Artistic
-                                    </p>
-                                  </div>
-                                </Card>
-                              </Col>
-                            </Row>
-                          );
-                        }}
-                      </Form.Item>
+                                    {option.description}
+                                  </p>
+                                </div>
+                              </Card>
+                            </Radio>
+                          </Col>
+                        ))}
+                      </Row>
                     </Radio.Group>
                   </Form.Item>
                 );
               }
 
-              // For fixed and positional, always use grid
+              // Fallback for unknown campaign types
               return (
                 <Form.Item name="layoutStyle" initialValue="grid" hidden>
                   <Input />
                 </Form.Item>
               );
             }}
+          </Form.Item>
+
+          <Form.Item
+            label="Sponsor Display Type"
+            name="sponsorDisplayType"
+            rules={[
+              { required: true, message: "Please select sponsor display type" },
+            ]}
+            extra="Choose what type of sponsors you'll accept"
+          >
+            <Radio.Group style={{ width: "100%" }}>
+              <Row gutter={16}>
+                <Col span={8}>
+                  <Radio value="text-only" style={{ width: "100%" }}>
+                    <Card
+                      style={{
+                        height: "100%",
+                        cursor: "pointer",
+                      }}
+                      hoverable
+                    >
+                      <div>
+                        <strong style={{ fontSize: "16px", color: "#fff" }}>
+                          Text Only
+                        </strong>
+                        <p
+                          style={{
+                            color: "#999",
+                            marginTop: 8,
+                            marginBottom: 0,
+                          }}
+                        >
+                          Sponsor Names
+                        </p>
+                      </div>
+                    </Card>
+                  </Radio>
+                </Col>
+                <Col span={8}>
+                  <Radio value="logo-only" style={{ width: "100%" }}>
+                    <Card
+                      style={{
+                        height: "100%",
+                        cursor: "pointer",
+                      }}
+                      hoverable
+                    >
+                      <div>
+                        <strong style={{ fontSize: "16px", color: "#fff" }}>
+                          Logo Only
+                        </strong>
+                        <p
+                          style={{
+                            color: "#999",
+                            marginTop: 8,
+                            marginBottom: 0,
+                          }}
+                        >
+                          Images
+                        </p>
+                      </div>
+                    </Card>
+                  </Radio>
+                </Col>
+                <Col span={8}>
+                  <Radio value="both" style={{ width: "100%" }}>
+                    <Card
+                      style={{
+                        height: "100%",
+                        cursor: "pointer",
+                      }}
+                      hoverable
+                    >
+                      <div>
+                        <strong style={{ fontSize: "16px", color: "#fff" }}>
+                          Both
+                        </strong>
+                        <p
+                          style={{
+                            color: "#999",
+                            marginTop: 8,
+                            marginBottom: 0,
+                          }}
+                        >
+                          Text and Logos
+                        </p>
+                      </div>
+                    </Card>
+                  </Radio>
+                </Col>
+              </Row>
+            </Radio.Group>
           </Form.Item>
         </Form>
       ),

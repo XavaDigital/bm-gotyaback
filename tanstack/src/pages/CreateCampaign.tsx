@@ -44,8 +44,14 @@ const CreateCampaign: React.FC = () => {
     };
 
     return (
-        <div style={{ maxWidth: 800, margin: '40px auto', padding: '0 20px' }}>
-            <h1>Create Campaign</h1>
+        <div
+            style={{
+                maxWidth: 800,
+                margin: '0 auto',
+                padding: 0,
+            }}
+        >
+            <h1 style={{ fontSize: 'clamp(20px, 5vw, 28px)', marginBottom: 24 }}>Create Campaign</h1>
             <CampaignWizard
                 mode="create"
                 onSubmit={handleSubmit}

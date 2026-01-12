@@ -130,42 +130,60 @@ const PublicCampaign: React.FC = () => {
       style={{
         background: "#1f1f1f",
         minHeight: "100vh",
+        overflowX: "hidden",
+        width: "100%",
       }}
     >
       <div
         style={{
           maxWidth: 900,
           margin: "0 auto",
-          padding: "0 20px",
+          padding: "0 clamp(16px, 3vw, 20px)",
+          width: "100%",
+          boxSizing: "border-box",
         }}
       >
         <PublicHeader />
 
-        {/* Title and Time Remaining Row */}
-        <div
+        {/* Title */}
+        <h1
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 24,
+            margin: 0,
+            color: "#ffffff",
+            fontSize: "clamp(24px, 6vw, 36px)",
+            marginBottom: 16,
+            textAlign: "center",
           }}
         >
-          <h1 style={{ margin: 0, color: "#ffffff" }}>{campaign.title}</h1>
-          {!isClosed && deadline && (
-            <Card variant="borderless" style={{ textAlign: "center" }}>
-              <Statistic.Timer
-                type="countdown"
-                title={
-                  <>
-                    <ClockCircleOutlined /> Time Remaining
-                  </>
-                }
-                value={deadline}
-                format="D [days] H [hrs] m [min]"
-              />
-            </Card>
-          )}
-        </div>
+          {campaign.title}
+        </h1>
+
+        {/* Time Remaining - Full Width */}
+        {!isClosed && deadline && (
+          <Card
+            variant="borderless"
+            style={{
+              textAlign: "center",
+              marginBottom: 24,
+              width: "100%",
+              boxSizing: "border-box",
+            }}
+          >
+            <Statistic.Timer
+              type="countdown"
+              title={
+                <span style={{ fontSize: "clamp(12px, 2.5vw, 14px)" }}>
+                  <ClockCircleOutlined /> Time Remaining
+                </span>
+              }
+              value={deadline}
+              format="D [days] H [hrs] m [min]"
+              style={{
+                fontSize: "clamp(14px, 3vw, 16px)",
+              }}
+            />
+          </Card>
+        )}
 
         {/* Header Image */}
         {campaign.headerImageUrl && (
@@ -185,11 +203,21 @@ const PublicCampaign: React.FC = () => {
 
         {/* Description - Full Width */}
         {campaign.description && (
-          <Card style={{ marginBottom: 24 }}>
+          <Card
+            style={{
+              marginBottom: 24,
+              width: "100%",
+              boxSizing: "border-box",
+            }}
+          >
             <div
               className="campaign-description"
               dangerouslySetInnerHTML={{ __html: campaign.description }}
-              style={{ fontSize: 16 }}
+              style={{
+                fontSize: "clamp(14px, 2.5vw, 16px)",
+                wordWrap: "break-word",
+                overflowWrap: "break-word",
+              }}
             />
           </Card>
         )}
@@ -197,56 +225,100 @@ const PublicCampaign: React.FC = () => {
         {layout && layout.layoutType === "grid" && (
           <Card
             title={
-              <span style={{ fontSize: "24px", fontWeight: "600" }}>
+              <span
+                style={{
+                  fontSize: "clamp(18px, 4vw, 24px)",
+                  fontWeight: "600",
+                }}
+              >
                 Select Your Sponsorship Spot
               </span>
             }
-            style={{ marginBottom: 24 }}
+            style={{
+              marginBottom: 24,
+              width: "100%",
+              boxSizing: "border-box",
+            }}
             extra={
-              <div style={{ fontSize: 14 }}>
+              <div style={{ fontSize: "clamp(12px, 2.5vw, 14px)" }}>
                 {takenSpots} / {totalSpots} spots filled
               </div>
             }
           >
             {isClosed ? (
-              <div style={{ textAlign: "center", padding: 40, color: "#888" }}>
-                <h3>This campaign has ended</h3>
-                <p>No more sponsorships can be accepted.</p>
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "clamp(24px, 6vw, 40px)",
+                  color: "#888",
+                }}
+              >
+                <h3 style={{ fontSize: "clamp(18px, 4vw, 24px)" }}>
+                  This campaign has ended
+                </h3>
+                <p style={{ fontSize: "clamp(14px, 2.5vw, 16px)" }}>
+                  No more sponsorships can be accepted.
+                </p>
               </div>
             ) : (
               <>
                 <div
                   style={{
                     marginBottom: 16,
-                    padding: 12,
+                    padding: "clamp(8px, 2vw, 12px)",
                     backgroundColor: "#1f1f1f",
                     borderRadius: 4,
                     border: "1px solid #3a3a3a",
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "clamp(8px, 2vw, 16px)",
+                    alignItems: "center",
                   }}
                 >
-                  <strong style={{ color: "#ffffff" }}>Legend:</strong>
-                  <span style={{ marginLeft: 16, color: "#ffffff" }}>
+                  <strong
+                    style={{
+                      color: "#ffffff",
+                      fontSize: "clamp(12px, 2.5vw, 14px)",
+                    }}
+                  >
+                    Legend:
+                  </strong>
+                  <span
+                    style={{
+                      color: "#ffffff",
+                      fontSize: "clamp(12px, 2.5vw, 14px)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                  >
                     <span
                       style={{
                         display: "inline-block",
-                        width: 16,
-                        height: 16,
+                        width: "clamp(12px, 2.5vw, 16px)",
+                        height: "clamp(12px, 2.5vw, 16px)",
                         backgroundColor: "#52c41a",
                         borderRadius: 2,
-                        marginRight: 4,
                       }}
                     />
                     Available
                   </span>
-                  <span style={{ marginLeft: 16, color: "#ffffff" }}>
+                  <span
+                    style={{
+                      color: "#ffffff",
+                      fontSize: "clamp(12px, 2.5vw, 14px)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                  >
                     <span
                       style={{
                         display: "inline-block",
-                        width: 16,
-                        height: 16,
+                        width: "clamp(12px, 2.5vw, 16px)",
+                        height: "clamp(12px, 2.5vw, 16px)",
                         backgroundColor: "#d9d9d9",
                         borderRadius: 2,
-                        marginRight: 4,
                       }}
                     />
                     Taken
@@ -257,24 +329,23 @@ const PublicCampaign: React.FC = () => {
                   selectedPosition={selectedPosition}
                   onPositionSelect={handlePositionSelect}
                   currency={campaign.currency}
-                  showPriceGradient={campaign.campaignType === "positional"}
-                  sponsors={sponsors}
                 />
                 <div
                   style={{
                     marginTop: 24,
                     textAlign: "center",
                     backgroundColor: "#1f1f1f",
-                    padding: 24,
+                    padding: "clamp(12px, 3vw, 20px)",
                     borderRadius: 8,
                     border: "1px solid #3a3a3a",
+                    boxSizing: "border-box",
                   }}
                 >
                   <h4
                     style={{
-                      marginBottom: 12,
+                      marginBottom: 8,
                       color: "#ffffff",
-                      fontSize: "28px",
+                      fontSize: "clamp(15px, 3.5vw, 22px)",
                       fontWeight: "600",
                     }}
                   >
@@ -282,9 +353,9 @@ const PublicCampaign: React.FC = () => {
                   </h4>
                   <p
                     style={{
-                      marginBottom: 20,
+                      marginBottom: 12,
                       color: "#cccccc",
-                      fontSize: "18px",
+                      fontSize: "clamp(12px, 2.5vw, 15px)",
                     }}
                   >
                     You can still support this campaign by making a general
@@ -298,10 +369,11 @@ const PublicCampaign: React.FC = () => {
                       setCheckoutVisible(true);
                     }}
                     style={{
-                      height: "60px",
-                      fontSize: "20px",
-                      padding: "0 48px",
+                      height: "clamp(38px, 6vw, 44px)",
+                      fontSize: "clamp(12px, 2.2vw, 14px)",
                       fontWeight: "600",
+                      padding: "0 clamp(12px, 2.5vw, 20px)",
+                      whiteSpace: "nowrap",
                     }}
                   >
                     Make a General Donation
@@ -316,14 +388,23 @@ const PublicCampaign: React.FC = () => {
         {layout && layout.layoutType === "flexible" && (
           <Card
             title={
-              <span style={{ fontSize: "24px", fontWeight: "600" }}>
+              <span
+                style={{
+                  fontSize: "clamp(18px, 4vw, 24px)",
+                  fontWeight: "600",
+                }}
+              >
                 Become a Sponsor
               </span>
             }
-            style={{ marginBottom: 24 }}
+            style={{
+              marginBottom: 24,
+              width: "100%",
+              boxSizing: "border-box",
+            }}
             extra={
               layout.maxSponsors && (
-                <div style={{ fontSize: 14 }}>
+                <div style={{ fontSize: "clamp(12px, 2.5vw, 14px)" }}>
                   {sponsors.length} / {layout.maxSponsors} sponsors
                 </div>
               )

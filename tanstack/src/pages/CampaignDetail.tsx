@@ -23,6 +23,7 @@ import type {
   Campaign,
   SponsorEntry,
   ShirtLayout,
+  CampaignType,
 } from "~/types/campaign.types";
 import campaignService from "../services/campaign.service";
 import sponsorshipService from "../services/sponsorship.service";
@@ -31,6 +32,20 @@ import ShirtLayoutComponent from "../components/ShirtLayout";
 import LogoApprovalCard from "../components/LogoApprovalCard";
 import FlexibleLayoutRenderer from "../components/FlexibleLayoutRenderer";
 import { Route } from "../routes/campaigns.$id";
+
+// Helper function to format campaign type labels
+const formatCampaignType = (type: CampaignType): string => {
+  switch (type) {
+    case 'fixed':
+      return 'Fixed Pricing';
+    case 'positional':
+      return 'Tiered Pricing';
+    case 'pay-what-you-want':
+      return 'Pay What You Want';
+    default:
+      return type;
+  }
+};
 
 const CampaignDetail: React.FC = () => {
   const { id } = useParams({ from: '/campaigns/$id' });
@@ -241,7 +256,12 @@ const CampaignDetail: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div style={{ textAlign: "center", padding: 60 }}>
+      <div
+        style={{
+          textAlign: "center",
+          padding: "clamp(40px, 8vw, 60px)",
+        }}
+      >
         <Spin size="large" />
       </div>
     );
@@ -259,36 +279,85 @@ const CampaignDetail: React.FC = () => {
     .filter((s) => s.paymentStatus === "pending")
     .reduce((sum, s) => sum + s.amount, 0);
 
+  const potentialFunds = sponsors.reduce((sum, s) => sum + s.amount, 0);
+
+  // Calculate maximum potential if all slots are filled (for grid layouts)
+  const maxPotentialIfAllFilled = layout?.placements
+    ? layout.placements.reduce((sum, p) => sum + p.price, 0)
+    : 0;
+
   const spotsTaken = layout?.placements.filter((p) => p.isTaken).length || 0;
   const totalSpots = layout?.placements.length || 0;
   const isFlexibleLayout = layout?.layoutType === "flexible";
 
   return (
-    <div style={{ padding: 24 }}>
+    <div
+      style={{
+        padding: "clamp(12px, 3vw, 24px)",
+        maxWidth: "100%",
+        boxSizing: "border-box",
+      }}
+    >
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
-          marginBottom: 24,
+          alignItems: "flex-start",
+          marginBottom: "clamp(16px, 3vw, 24px)",
+          flexWrap: "wrap",
+          gap: "clamp(12px, 2vw, 16px)",
         }}
       >
-        <h1>{campaign.title}</h1>
-        <div>
+        <h1
+          style={{
+            fontSize: "clamp(20px, 5vw, 32px)",
+            margin: 0,
+            flex: "1 1 100%",
+          }}
+        >
+          {campaign.title}
+        </h1>
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "clamp(6px, 1.5vw, 8px)",
+            width: "100%",
+          }}
+        >
           <Button
             onClick={() => window.open(`/campaign/${campaign.slug}`, "_blank")}
-            style={{ marginRight: 8 }}
             icon={<ExportOutlined />}
+            style={{
+              fontSize: "clamp(12px, 2.5vw, 14px)",
+              height: "clamp(30px, 6vw, 32px)",
+              padding: "0 clamp(8px, 2vw, 15px)",
+            }}
           >
-            View Public Page
+            <span style={{ display: window.innerWidth < 768 ? "none" : "inline" }}>
+              View Public Page
+            </span>
+            <span style={{ display: window.innerWidth >= 768 ? "none" : "inline" }}>
+              View
+            </span>
           </Button>
           {campaign.sponsorDisplayType !== "text-only" && (
             <Badge count={pendingLogos.length} offset={[-5, 5]}>
               <Button
                 onClick={() => navigate({ to: `/campaigns/${id}/logo-approval` })}
-                style={{ marginRight: 8 }}
                 icon={<BellOutlined />}
+                style={{
+                  fontSize: "clamp(12px, 2.5vw, 14px)",
+                  height: "clamp(30px, 6vw, 32px)",
+                  padding: "0 clamp(8px, 2vw, 15px)",
+                }}
               >
-                Logo Approvals
+                <span style={{ display: window.innerWidth < 768 ? "none" : "inline" }}>
+                  Logo Approvals
+                </span>
+                <span style={{ display: window.innerWidth >= 768 ? "none" : "inline" }}>
+                  Logos
+                </span>
               </Button>
             </Badge>
           )}
@@ -298,61 +367,341 @@ const CampaignDetail: React.FC = () => {
                 type="primary"
                 icon={<EditOutlined />}
                 onClick={() => setIsEditModalVisible(true)}
-                style={{ marginRight: 8 }}
+                style={{
+                  fontSize: "clamp(12px, 2.5vw, 14px)",
+                  height: "clamp(30px, 6vw, 32px)",
+                  padding: "0 clamp(8px, 2vw, 15px)",
+                }}
               >
-                Edit Campaign
+                <span style={{ display: window.innerWidth < 768 ? "none" : "inline" }}>
+                  Edit Campaign
+                </span>
+                <span style={{ display: window.innerWidth >= 768 ? "none" : "inline" }}>
+                  Edit
+                </span>
               </Button>
               <Button
                 danger
                 icon={<CloseCircleOutlined />}
                 onClick={handleCloseCampaign}
                 loading={closingCampaign}
+                style={{
+                  fontSize: "clamp(12px, 2.5vw, 14px)",
+                  height: "clamp(30px, 6vw, 32px)",
+                  padding: "0 clamp(8px, 2vw, 15px)",
+                }}
               >
-                Close Campaign
+                <span style={{ display: window.innerWidth < 768 ? "none" : "inline" }}>
+                  Close Campaign
+                </span>
+                <span style={{ display: window.innerWidth >= 768 ? "none" : "inline" }}>
+                  Close
+                </span>
               </Button>
             </>
           )}
         </div>
       </div>
 
-      <Card title="Campaign Statistics" style={{ marginBottom: 24 }}>
-        <div style={{ display: "flex", gap: 24 }}>
+      <Card
+        title={
+          <span style={{ fontSize: "clamp(16px, 3.5vw, 20px)" }}>
+            Campaign Statistics
+          </span>
+        }
+        style={{
+          marginBottom: "clamp(16px, 3vw, 24px)",
+          width: "100%",
+          boxSizing: "border-box",
+        }}
+      >
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+            gap: "clamp(12px, 3vw, 24px)",
+          }}
+        >
           <Statistic
             title="Total Raised"
             value={totalRaised}
             prefix={campaign.currency}
             suffix="$"
-            valueStyle={{ color: "#3f8600" }}
+            valueStyle={{
+              color: "#3f8600",
+              fontSize: "clamp(18px, 4vw, 24px)",
+            }}
           />
           <Statistic
             title="Pending Payments"
             value={pendingAmount}
             prefix={campaign.currency}
             suffix="$"
-            valueStyle={{ color: "#cf1322" }}
+            valueStyle={{
+              color: "#cf1322",
+              fontSize: "clamp(18px, 4vw, 24px)",
+            }}
           />
           {layout && !isFlexibleLayout && (
             <Statistic
               title="Spots Filled"
               value={spotsTaken}
               suffix={`/ ${totalSpots}`}
+              valueStyle={{ fontSize: "clamp(18px, 4vw, 24px)" }}
             />
           )}
-          <Statistic title="Total Sponsors" value={sponsors.length} />
+          <Statistic
+            title="Total Sponsors"
+            value={sponsors.length}
+            valueStyle={{ fontSize: "clamp(18px, 4vw, 24px)" }}
+          />
           {isFlexibleLayout && layout?.maxSponsors && (
             <Statistic
               title="Sponsor Limit"
               value={sponsors.length}
               suffix={`/ ${layout.maxSponsors}`}
+              valueStyle={{ fontSize: "clamp(18px, 4vw, 24px)" }}
             />
           )}
           {pendingLogos.length > 0 && (
             <Statistic
               title="Pending Logo Approvals"
               value={pendingLogos.length}
-              valueStyle={{ color: "#faad14" }}
+              valueStyle={{
+                color: "#faad14",
+                fontSize: "clamp(18px, 4vw, 24px)",
+              }}
             />
           )}
+        </div>
+      </Card>
+
+      {/* Funds Calculator */}
+      <Card
+        title={
+          <span style={{ fontSize: "clamp(16px, 3.5vw, 20px)" }}>
+            Funds Calculator
+          </span>
+        }
+        style={{
+          marginBottom: "clamp(16px, 3vw, 24px)",
+          width: "100%",
+          boxSizing: "border-box",
+        }}
+      >
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: "clamp(12px, 3vw, 24px)",
+          }}
+        >
+          <div
+            style={{
+              padding: "clamp(16px, 3vw, 20px)",
+              background: "#f0f9ff",
+              borderRadius: 8,
+              border: "1px solid #91d5ff",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "clamp(12px, 2.5vw, 14px)",
+                color: "#666",
+                marginBottom: 8,
+              }}
+            >
+              Total Raised (Paid)
+            </div>
+            <div
+              style={{
+                fontSize: "clamp(24px, 5vw, 32px)",
+                fontWeight: "bold",
+                color: "#3f8600",
+              }}
+            >
+              {campaign.currency} ${totalRaised.toFixed(2)}
+            </div>
+            <div
+              style={{
+                fontSize: "clamp(11px, 2vw, 12px)",
+                color: "#999",
+                marginTop: 4,
+              }}
+            >
+              {sponsors.filter((s) => s.paymentStatus === "paid").length} paid sponsor
+              {sponsors.filter((s) => s.paymentStatus === "paid").length !== 1 ? "s" : ""}
+            </div>
+          </div>
+
+          <div
+            style={{
+              padding: "clamp(16px, 3vw, 20px)",
+              background: "#fff7e6",
+              borderRadius: 8,
+              border: "1px solid #ffd591",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "clamp(12px, 2.5vw, 14px)",
+                color: "#666",
+                marginBottom: 8,
+              }}
+            >
+              Potential Funds (All)
+            </div>
+            <div
+              style={{
+                fontSize: "clamp(24px, 5vw, 32px)",
+                fontWeight: "bold",
+                color: "#d48806",
+              }}
+            >
+              {campaign.currency} ${potentialFunds.toFixed(2)}
+            </div>
+            <div
+              style={{
+                fontSize: "clamp(11px, 2vw, 12px)",
+                color: "#999",
+                marginTop: 4,
+              }}
+            >
+              {sponsors.length} total sponsor{sponsors.length !== 1 ? "s" : ""}
+              {pendingAmount > 0 && (
+                <span style={{ color: "#d48806", marginLeft: 4 }}>
+                  (${pendingAmount.toFixed(2)} pending)
+                </span>
+              )}
+            </div>
+          </div>
+
+          {pendingAmount > 0 && (
+            <div
+              style={{
+                padding: "clamp(16px, 3vw, 20px)",
+                background: "#fff1f0",
+                borderRadius: 8,
+                border: "1px solid #ffa39e",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "clamp(12px, 2.5vw, 14px)",
+                  color: "#666",
+                  marginBottom: 8,
+                }}
+              >
+                Pending Payments
+              </div>
+              <div
+                style={{
+                  fontSize: "clamp(24px, 5vw, 32px)",
+                  fontWeight: "bold",
+                  color: "#cf1322",
+                }}
+              >
+                {campaign.currency} ${pendingAmount.toFixed(2)}
+              </div>
+              <div
+                style={{
+                  fontSize: "clamp(11px, 2vw, 12px)",
+                  color: "#999",
+                  marginTop: 4,
+                }}
+              >
+                {sponsors.filter((s) => s.paymentStatus === "pending").length} pending sponsor
+                {sponsors.filter((s) => s.paymentStatus === "pending").length !== 1 ? "s" : ""}
+              </div>
+            </div>
+          )}
+
+          {layout && !isFlexibleLayout && maxPotentialIfAllFilled > 0 && (
+            <div
+              style={{
+                padding: "clamp(16px, 3vw, 20px)",
+                background: "#f6ffed",
+                borderRadius: 8,
+                border: "1px solid #b7eb8f",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "clamp(12px, 2.5vw, 14px)",
+                  color: "#666",
+                  marginBottom: 8,
+                }}
+              >
+                Max Potential (All Slots)
+              </div>
+              <div
+                style={{
+                  fontSize: "clamp(24px, 5vw, 32px)",
+                  fontWeight: "bold",
+                  color: "#52c41a",
+                }}
+              >
+                {campaign.currency} ${maxPotentialIfAllFilled.toFixed(2)}
+              </div>
+              <div
+                style={{
+                  fontSize: "clamp(11px, 2vw, 12px)",
+                  color: "#999",
+                  marginTop: 4,
+                }}
+              >
+                {spotsTaken} / {totalSpots} slots filled
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Summary */}
+        <div
+          style={{
+            marginTop: "clamp(16px, 3vw, 20px)",
+            padding: "clamp(12px, 2.5vw, 16px)",
+            background: "#fafafa",
+            borderRadius: 8,
+            borderLeft: "4px solid #1890ff",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "clamp(13px, 2.5vw, 14px)",
+              color: "#595959",
+              lineHeight: 1.6,
+            }}
+          >
+            <strong>Summary:</strong> You have raised{" "}
+            <strong style={{ color: "#3f8600" }}>
+              {campaign.currency} ${totalRaised.toFixed(2)}
+            </strong>{" "}
+            from paid sponsors.
+            {pendingAmount > 0 && (
+              <>
+                {" "}
+                If all pending payments are completed, you will have{" "}
+                <strong style={{ color: "#d48806" }}>
+                  {campaign.currency} ${potentialFunds.toFixed(2)}
+                </strong>
+                .
+              </>
+            )}
+            {pendingAmount === 0 && totalRaised > 0 && (
+              <> All payments have been received!</>
+            )}
+            {layout && !isFlexibleLayout && maxPotentialIfAllFilled > 0 && (
+              <>
+                {" "}
+                If all {totalSpots} slots are filled, you could raise up to{" "}
+                <strong style={{ color: "#52c41a" }}>
+                  {campaign.currency} ${maxPotentialIfAllFilled.toFixed(2)}
+                </strong>
+                .
+              </>
+            )}
+          </div>
         </div>
       </Card>
 
@@ -360,7 +709,7 @@ const CampaignDetail: React.FC = () => {
       {pendingLogos.length > 0 && (
         <Card
           title={
-            <span>
+            <span style={{ fontSize: "clamp(16px, 3.5vw, 20px)" }}>
               <BellOutlined style={{ marginRight: 8 }} />
               Pending Logo Approvals
               <Badge
@@ -370,10 +719,19 @@ const CampaignDetail: React.FC = () => {
               />
             </span>
           }
-          style={{ marginBottom: 24 }}
+          style={{
+            marginBottom: "clamp(16px, 3vw, 24px)",
+            width: "100%",
+            boxSizing: "border-box",
+          }}
         >
           {loadingPendingLogos ? (
-            <div style={{ textAlign: "center", padding: 40 }}>
+            <div
+              style={{
+                textAlign: "center",
+                padding: "clamp(24px, 6vw, 40px)",
+              }}
+            >
               <Spin />
             </div>
           ) : (
@@ -391,8 +749,22 @@ const CampaignDetail: React.FC = () => {
         </Card>
       )}
 
-      <Card title="Campaign Details" style={{ marginBottom: 24 }}>
-        <Descriptions bordered column={2}>
+      <Card
+        title={
+          <span style={{ fontSize: "clamp(16px, 3.5vw, 20px)" }}>
+            Campaign Details
+          </span>
+        }
+        style={{
+          marginBottom: "clamp(16px, 3vw, 24px)",
+          width: "100%",
+          boxSizing: "border-box",
+        }}
+      >
+        <Descriptions
+          bordered
+          column={{ xs: 1, sm: 1, md: 2, lg: 2, xl: 2, xxl: 2 }}
+        >
           <Descriptions.Item label="Status">
             {campaign.isClosed ? (
               <Tag color="red">Closed</Tag>
@@ -401,7 +773,7 @@ const CampaignDetail: React.FC = () => {
             )}
           </Descriptions.Item>
           <Descriptions.Item label="Campaign Type">
-            {campaign.campaignType}
+            {formatCampaignType(campaign.campaignType)}
           </Descriptions.Item>
           <Descriptions.Item label="Garment">
             {campaign.garmentType}
@@ -428,16 +800,38 @@ const CampaignDetail: React.FC = () => {
 
       {/* Layout Display */}
       {layout && (
-        <Card title="Shirt Layout" style={{ marginBottom: 24 }}>
+        <Card
+          title={
+            <span style={{ fontSize: "clamp(16px, 3.5vw, 20px)" }}>
+              Shirt Layout
+            </span>
+          }
+          style={{
+            marginBottom: "clamp(16px, 3vw, 24px)",
+            width: "100%",
+            boxSizing: "border-box",
+          }}
+        >
           {layout.layoutType === "grid" ? (
             <>
-              <div style={{ marginBottom: 16 }}>
+              <div
+                style={{
+                  marginBottom: 16,
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 8,
+                  alignItems: "center",
+                }}
+              >
                 <Tag color="blue">
-                  {campaign.campaignType === "fixed"
-                    ? "Fixed Pricing"
-                    : "Positional Pricing"}
+                  {formatCampaignType(campaign.campaignType)}
                 </Tag>
-                <span style={{ marginLeft: 8, color: "#666" }}>
+                <span
+                  style={{
+                    color: "#666",
+                    fontSize: "clamp(12px, 2.5vw, 14px)",
+                  }}
+                >
                   {layout.rows} rows × {layout.columns} columns = {totalSpots}{" "}
                   positions
                 </span>
@@ -452,9 +846,22 @@ const CampaignDetail: React.FC = () => {
             </>
           ) : (
             <>
-              <div style={{ marginBottom: 16 }}>
+              <div
+                style={{
+                  marginBottom: 16,
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 8,
+                  alignItems: "center",
+                }}
+              >
                 <Tag color="purple">Pay What You Want</Tag>
-                <span style={{ marginLeft: 8, color: "#666" }}>
+                <span
+                  style={{
+                    color: "#666",
+                    fontSize: "clamp(12px, 2.5vw, 14px)",
+                  }}
+                >
                   Flexible layout
                   {layout.maxSponsors
                     ? ` (max ${layout.maxSponsors} sponsors)`
@@ -462,7 +869,13 @@ const CampaignDetail: React.FC = () => {
                 </span>
               </div>
               <div style={{ marginBottom: 16 }}>
-                <p style={{ fontSize: 14, color: "#666", marginBottom: 8 }}>
+                <p
+                  style={{
+                    fontSize: "clamp(12px, 2.5vw, 14px)",
+                    color: "#666",
+                    marginBottom: 8,
+                  }}
+                >
                   Layout style: <strong>{campaign.layoutStyle}</strong>
                 </p>
               </div>
@@ -475,13 +888,19 @@ const CampaignDetail: React.FC = () => {
               ) : (
                 <div
                   style={{
-                    padding: 40,
+                    padding: "clamp(24px, 6vw, 40px)",
                     background: "#f5f5f5",
                     borderRadius: 8,
                     textAlign: "center",
                   }}
                 >
-                  <p style={{ fontSize: 16, color: "#999", margin: 0 }}>
+                  <p
+                    style={{
+                      fontSize: "clamp(14px, 3vw, 16px)",
+                      color: "#999",
+                      margin: 0,
+                    }}
+                  >
                     No sponsors yet
                   </p>
                 </div>
@@ -491,12 +910,21 @@ const CampaignDetail: React.FC = () => {
         </Card>
       )}
 
-      <Card title="Sponsors">
+      <Card
+        title={
+          <span style={{ fontSize: "clamp(16px, 3.5vw, 20px)" }}>Sponsors</span>
+        }
+        style={{
+          width: "100%",
+          boxSizing: "border-box",
+        }}
+      >
         <Table
           dataSource={sponsors}
           columns={sponsorColumns}
           rowKey="_id"
           pagination={{ pageSize: 10 }}
+          scroll={{ x: 800 }}
         />
       </Card>
 

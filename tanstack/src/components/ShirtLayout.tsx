@@ -44,9 +44,10 @@ const ShirtLayout: React.FC<ShirtLayoutProps> = ({
             style={{
                 display: 'grid',
                 gridTemplateColumns: `repeat(${layout.columns}, 1fr)`,
-                gap: '8px',
-                maxWidth: '600px',
+                gap: 'clamp(4px, 1vw, 8px)',
+                maxWidth: 'min(600px, 100%)',
                 margin: '0 auto',
+                width: '100%',
             }}
         >
             {layout.placements.map((position) => (
@@ -57,14 +58,14 @@ const ShirtLayout: React.FC<ShirtLayoutProps> = ({
                         backgroundColor: getPositionColor(position),
                         border: '2px solid #fff',
                         borderRadius: '4px',
-                        padding: '12px',
+                        padding: 'clamp(4px, 1vw, 12px)',
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: getPositionCursor(position),
                         transition: 'all 0.3s',
-                        minHeight: '80px',
+                        minHeight: 'clamp(50px, 10vw, 80px)',
                         opacity: position.isTaken && !readonly ? 0.5 : 1,
                     }}
                     onMouseEnter={(e) => {
@@ -82,17 +83,29 @@ const ShirtLayout: React.FC<ShirtLayoutProps> = ({
                         style={{
                             color: '#fff',
                             fontWeight: 'bold',
-                            fontSize: '12px',
+                            fontSize: 'clamp(9px, 2vw, 12px)',
                             marginBottom: '4px',
                         }}
                     >
                         {position.positionId}
                     </div>
-                    <div style={{ color: '#fff', fontSize: '14px', fontWeight: '600' }}>
+                    <div
+                        style={{
+                            color: '#fff',
+                            fontSize: 'clamp(11px, 2.5vw, 14px)',
+                            fontWeight: '600',
+                        }}
+                    >
                         {currency} ${position.price}
                     </div>
                     {position.isTaken && (
-                        <div style={{ color: '#fff', fontSize: '10px', marginTop: '4px' }}>
+                        <div
+                            style={{
+                                color: '#fff',
+                                fontSize: 'clamp(8px, 1.8vw, 10px)',
+                                marginTop: '4px',
+                            }}
+                        >
                             TAKEN
                         </div>
                     )}

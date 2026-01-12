@@ -105,10 +105,12 @@ const ProfileSettings: React.FC = () => {
     };
 
     return (
-        <div style={{ maxWidth: 800, margin: '0 auto', padding: 24 }}>
+        <div style={{ maxWidth: 800, margin: '0 auto' }}>
             <Card>
-                <Title level={2}>Organizer Profile Settings</Title>
-                <Text type="secondary">
+                <Title level={2} style={{ fontSize: 'clamp(20px, 5vw, 28px)' }}>
+                    Organizer Profile Settings
+                </Title>
+                <Text type="secondary" style={{ fontSize: 'clamp(13px, 2.5vw, 14px)' }}>
                     Customize your public organizer profile. This will be visible to visitors viewing your campaigns.
                 </Text>
 

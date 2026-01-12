@@ -52,19 +52,36 @@ const LogoApprovalCard: React.FC<LogoApprovalCardProps> = ({
   return (
     <>
       <Card
-        style={{ marginBottom: 16 }}
-        bodyStyle={{ padding: 16 }}
+        style={{
+          marginBottom: 16,
+          width: "100%",
+          boxSizing: "border-box",
+        }}
+        bodyStyle={{ padding: "clamp(12px, 3vw, 16px)" }}
       >
-        <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: "clamp(12px, 3vw, 16px)",
+            alignItems: "flex-start",
+            flexDirection: window.innerWidth < 640 ? "column" : "row",
+          }}
+        >
           {/* Logo Preview */}
-          <div style={{ flex: "0 0 150px" }}>
+          <div
+            style={{
+              flex: window.innerWidth < 640 ? "1 1 100%" : "0 0 150px",
+              display: "flex",
+              justifyContent: window.innerWidth < 640 ? "center" : "flex-start",
+            }}
+          >
             {sponsor.logoUrl ? (
               <Image
                 src={sponsor.logoUrl}
                 alt={`${sponsor.name}'s logo`}
                 style={{
-                  width: 150,
-                  height: 150,
+                  width: "clamp(120px, 30vw, 150px)",
+                  height: "clamp(120px, 30vw, 150px)",
                   objectFit: "contain",
                   border: "1px solid #d9d9d9",
                   borderRadius: 8,
@@ -75,8 +92,8 @@ const LogoApprovalCard: React.FC<LogoApprovalCardProps> = ({
             ) : (
               <div
                 style={{
-                  width: 150,
-                  height: 150,
+                  width: "clamp(120px, 30vw, 150px)",
+                  height: "clamp(120px, 30vw, 150px)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -84,6 +101,7 @@ const LogoApprovalCard: React.FC<LogoApprovalCardProps> = ({
                   borderRadius: 8,
                   background: "#fafafa",
                   color: "#999",
+                  fontSize: "clamp(12px, 2.5vw, 14px)",
                 }}
               >
                 No Logo
@@ -92,12 +110,20 @@ const LogoApprovalCard: React.FC<LogoApprovalCardProps> = ({
           </div>
 
           {/* Sponsor Details */}
-          <div style={{ flex: 1 }}>
-            <div style={{ marginBottom: 8 }}>
-              <strong style={{ fontSize: 16 }}>{sponsor.name}</strong>
-              <Tag color="blue" style={{ marginLeft: 8 }}>
-                ${sponsor.amount}
-              </Tag>
+          <div style={{ flex: 1, width: "100%" }}>
+            <div
+              style={{
+                marginBottom: 8,
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 8,
+                alignItems: "center",
+              }}
+            >
+              <strong style={{ fontSize: "clamp(14px, 3vw, 16px)" }}>
+                {sponsor.name}
+              </strong>
+              <Tag color="blue">${sponsor.amount}</Tag>
               {sponsor.displaySize && (
                 <Tag color="purple" style={{ textTransform: "capitalize" }}>
                   {sponsor.displaySize}
@@ -105,35 +131,70 @@ const LogoApprovalCard: React.FC<LogoApprovalCardProps> = ({
               )}
             </div>
 
-            <div style={{ marginBottom: 4, color: "#666" }}>
+            <div
+              style={{
+                marginBottom: 4,
+                color: "#666",
+                fontSize: "clamp(12px, 2.5vw, 14px)",
+              }}
+            >
               <strong>Email:</strong> {sponsor.email}
             </div>
 
             {sponsor.positionId && (
-              <div style={{ marginBottom: 4, color: "#666" }}>
+              <div
+                style={{
+                  marginBottom: 4,
+                  color: "#666",
+                  fontSize: "clamp(12px, 2.5vw, 14px)",
+                }}
+              >
                 <strong>Position:</strong> {sponsor.positionId}
               </div>
             )}
 
             {sponsor.message && (
-              <div style={{ marginBottom: 4, color: "#666" }}>
+              <div
+                style={{
+                  marginBottom: 4,
+                  color: "#666",
+                  fontSize: "clamp(12px, 2.5vw, 14px)",
+                }}
+              >
                 <strong>Message:</strong> {sponsor.message}
               </div>
             )}
 
-            <div style={{ marginBottom: 4, color: "#666" }}>
+            <div
+              style={{
+                marginBottom: 4,
+                color: "#666",
+                fontSize: "clamp(12px, 2.5vw, 14px)",
+              }}
+            >
               <strong>Payment Status:</strong>{" "}
               <Tag color={sponsor.paymentStatus === "paid" ? "green" : "orange"}>
                 {sponsor.paymentStatus}
               </Tag>
             </div>
 
-            <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
+            <div
+              style={{
+                marginTop: 12,
+                display: "flex",
+                gap: 8,
+                flexWrap: "wrap",
+              }}
+            >
               <Button
                 type="primary"
                 icon={<CheckOutlined />}
                 onClick={handleApprove}
                 loading={loading}
+                style={{
+                  fontSize: "clamp(12px, 2.5vw, 14px)",
+                  height: "clamp(30px, 6vw, 32px)",
+                }}
               >
                 Approve
               </Button>
@@ -142,6 +203,10 @@ const LogoApprovalCard: React.FC<LogoApprovalCardProps> = ({
                 icon={<CloseOutlined />}
                 onClick={() => setRejectModalVisible(true)}
                 loading={loading}
+                style={{
+                  fontSize: "clamp(12px, 2.5vw, 14px)",
+                  height: "clamp(30px, 6vw, 32px)",
+                }}
               >
                 Reject
               </Button>

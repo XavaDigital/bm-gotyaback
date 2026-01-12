@@ -113,41 +113,78 @@ const Home: React.FC = () => {
         style={{
           background: "#2a2a2a",
           borderBottom: "2px solid #3a3a3a",
-          padding: "16px 40px",
+          padding: "12px 16px",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          flexWrap: "wrap",
+          gap: "12px",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            flex: "1 1 auto",
+            minWidth: 0,
+          }}
+        >
           <img
             src={beastmodeLogo}
             alt="Beast Mode Logo"
-            style={{ height: 50, width: "auto" }}
+            style={{
+              height: "clamp(35px, 8vw, 50px)",
+              width: "auto",
+              flexShrink: 0,
+            }}
           />
           <h2
             style={{
               margin: 0,
-              fontSize: 28,
+              fontSize: "clamp(18px, 5vw, 28px)",
               fontWeight: 700,
               color: "#ffffff",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
             }}
           >
             Got Your Back
           </h2>
         </div>
-        <div style={{ display: "flex", gap: 12 }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            flexWrap: "wrap",
+            justifyContent: "flex-end",
+          }}
+        >
           {user ? (
             <Button
               type="primary"
               size="large"
               onClick={() => navigate({ to: "/dashboard" })}
+              style={{
+                fontSize: "clamp(14px, 3vw, 16px)",
+                padding: "4px 16px",
+                height: "auto",
+              }}
             >
-              Go to Dashboard
+              Dashboard
             </Button>
           ) : (
             <>
-              <Button size="large" onClick={() => navigate({ to: "/login" })}>
+              <Button
+                size="large"
+                onClick={() => navigate({ to: "/login" })}
+                style={{
+                  fontSize: "clamp(14px, 3vw, 16px)",
+                  padding: "4px 16px",
+                  height: "auto",
+                }}
+              >
                 Login
               </Button>
               <Button
@@ -155,8 +192,13 @@ const Home: React.FC = () => {
                 size="large"
                 icon={<RocketOutlined />}
                 onClick={() => navigate({ to: "/register" })}
+                style={{
+                  fontSize: "clamp(14px, 3vw, 16px)",
+                  padding: "4px 16px",
+                  height: "auto",
+                }}
               >
-                Get Started Free
+                <span style={{ display: "inline" }}>Get Started</span>
               </Button>
             </>
           )}
@@ -167,89 +209,104 @@ const Home: React.FC = () => {
       <div
         style={{
           background: "linear-gradient(135deg, #2a2a2a 0%, #1f1f1f 100%)",
-          padding: "100px 40px",
+          padding: "clamp(40px, 10vw, 100px) 20px",
           textAlign: "center",
         }}
       >
-        <h1
+        <div
           style={{
-            fontSize: 64,
-            fontWeight: 800,
-            marginBottom: 24,
-            color: "#ffffff",
-            lineHeight: 1.2,
+            maxWidth: "1200px",
+            margin: "0 auto",
+            padding: "0 16px",
           }}
         >
-          Fundraising Made <span style={{ color: "#C8102E" }}>Simple</span>
-        </h1>
-        <p
-          style={{
-            fontSize: 24,
-            color: "#cccccc",
-            maxWidth: 800,
-            margin: "0 auto 40px",
-            lineHeight: 1.6,
-          }}
-        >
-          The easiest way to raise funds for your sports team, club, or cause.
-          Create beautiful sponsorship campaigns in minutes, accept payments
-          online, and track your progress in real-time.
-        </p>
-        <div style={{ display: "flex", gap: 16, justifyContent: "center" }}>
-          <Button
-            type="primary"
-            size="large"
-            icon={<RocketOutlined />}
-            onClick={() => navigate({ to: "/register" })}
+          <h1
             style={{
-              height: 60,
-              fontSize: 20,
-              padding: "0 48px",
-              fontWeight: 600,
+              fontSize: "clamp(32px, 8vw, 64px)",
+              fontWeight: 800,
+              marginBottom: 24,
+              color: "#ffffff",
+              lineHeight: 1.2,
             }}
           >
-            Start Your Campaign Free
-          </Button>
-          {!user && (
+            Fundraising Made <span style={{ color: "#C8102E" }}>Simple</span>
+          </h1>
+          <p
+            style={{
+              fontSize: "clamp(16px, 4vw, 24px)",
+              color: "#cccccc",
+              maxWidth: 800,
+              margin: "0 auto 40px",
+              lineHeight: 1.6,
+            }}
+          >
+            The easiest way to raise funds for your sports team, club, or cause.
+            Create beautiful sponsorship campaigns in minutes, accept payments
+            online, and track your progress in real-time.
+          </p>
+          <div
+            style={{
+              display: "flex",
+              gap: 16,
+              justifyContent: "center",
+              flexWrap: "wrap",
+            }}
+          >
             <Button
+              type="primary"
               size="large"
-              onClick={() => navigate({ to: "/login" })}
+              icon={<RocketOutlined />}
+              onClick={() => navigate({ to: "/register" })}
               style={{
-                height: 60,
-                fontSize: 20,
-                padding: "0 48px",
-                background: "transparent",
-                borderColor: "#ffffff",
-                color: "#ffffff",
+                height: "clamp(48px, 10vw, 60px)",
+                fontSize: "clamp(16px, 3.5vw, 20px)",
+                padding: "0 clamp(24px, 5vw, 48px)",
+                fontWeight: 600,
               }}
             >
-              Login
+              Start Your Campaign Free
             </Button>
-          )}
+            {!user && (
+              <Button
+                size="large"
+                onClick={() => navigate({ to: "/login" })}
+                style={{
+                  height: "clamp(48px, 10vw, 60px)",
+                  fontSize: "clamp(16px, 3.5vw, 20px)",
+                  padding: "0 clamp(24px, 5vw, 48px)",
+                  background: "transparent",
+                  borderColor: "#ffffff",
+                  color: "#ffffff",
+                }}
+              >
+                Login
+              </Button>
+            )}
+          </div>
+          <p
+            style={{
+              marginTop: 24,
+              fontSize: "clamp(14px, 3vw, 16px)",
+              color: "#999999",
+            }}
+          >
+            <CheckCircleOutlined style={{ color: "#52c41a", marginRight: 8 }} />
+            No credit card required • Free forever • Setup in 5 minutes
+          </p>
         </div>
-        <p
-          style={{
-            marginTop: 24,
-            fontSize: 16,
-            color: "#999999",
-          }}
-        >
-          <CheckCircleOutlined style={{ color: "#52c41a", marginRight: 8 }} />
-          No credit card required • Free forever • Setup in 5 minutes
-        </p>
       </div>
 
       {/* Features Section */}
       <div
         style={{
-          padding: "80px 40px",
+          padding: "clamp(40px, 8vw, 80px) clamp(16px, 4vw, 40px)",
           maxWidth: 1400,
           margin: "0 auto",
         }}
       >
         <h2
           style={{
-            fontSize: 48,
+            fontSize: "clamp(28px, 6vw, 48px)",
             fontWeight: 700,
             textAlign: "center",
             marginBottom: 16,
@@ -261,12 +318,12 @@ const Home: React.FC = () => {
         </h2>
         <p
           style={{
-            fontSize: 18,
+            fontSize: "clamp(16px, 3vw, 18px)",
             color: "#cccccc",
             textAlign: "center",
-            marginBottom: 60,
+            marginBottom: "clamp(30px, 6vw, 60px)",
             maxWidth: 700,
-            margin: "0 auto 60px",
+            margin: "0 auto clamp(30px, 6vw, 60px)",
           }}
         >
           Powerful features designed to make fundraising effortless and
@@ -284,14 +341,14 @@ const Home: React.FC = () => {
                   height: "100%",
                   transition: "all 0.3s ease",
                 }}
-                bodyStyle={{ padding: 32 }}
+                bodyStyle={{ padding: "clamp(20px, 4vw, 32px)" }}
                 hoverable
               >
                 <div style={{ textAlign: "center" }}>
                   <div style={{ marginBottom: 20 }}>{feature.icon}</div>
                   <h3
                     style={{
-                      fontSize: 22,
+                      fontSize: "clamp(18px, 3.5vw, 22px)",
                       fontWeight: 600,
                       marginBottom: 12,
                       color: "#ffffff",
@@ -301,7 +358,7 @@ const Home: React.FC = () => {
                   </h3>
                   <p
                     style={{
-                      fontSize: 16,
+                      fontSize: "clamp(14px, 2.5vw, 16px)",
                       color: "#cccccc",
                       lineHeight: 1.6,
                       margin: 0,
@@ -320,7 +377,7 @@ const Home: React.FC = () => {
       <div
         style={{
           background: "#2a2a2a",
-          padding: "80px 40px",
+          padding: "clamp(40px, 8vw, 80px) clamp(16px, 4vw, 40px)",
           borderTop: "2px solid #3a3a3a",
           borderBottom: "2px solid #3a3a3a",
         }}
@@ -330,7 +387,7 @@ const Home: React.FC = () => {
             <Col xs={24} lg={12}>
               <h2
                 style={{
-                  fontSize: 48,
+                  fontSize: "clamp(28px, 6vw, 48px)",
                   fontWeight: 700,
                   marginBottom: 24,
                   color: "#ffffff",
@@ -341,7 +398,7 @@ const Home: React.FC = () => {
               </h2>
               <p
                 style={{
-                  fontSize: 18,
+                  fontSize: "clamp(16px, 3vw, 18px)",
                   color: "#cccccc",
                   lineHeight: 1.8,
                   marginBottom: 32,
@@ -358,9 +415,9 @@ const Home: React.FC = () => {
                 icon={<ArrowRightOutlined />}
                 onClick={() => navigate({ to: "/register" })}
                 style={{
-                  height: 56,
-                  fontSize: 18,
-                  padding: "0 40px",
+                  height: "clamp(48px, 8vw, 56px)",
+                  fontSize: "clamp(16px, 3vw, 18px)",
+                  padding: "0 clamp(24px, 5vw, 40px)",
                 }}
               >
                 Create Your Free Campaign
@@ -370,14 +427,14 @@ const Home: React.FC = () => {
               <div
                 style={{
                   background: "#1f1f1f",
-                  padding: 40,
+                  padding: "clamp(24px, 5vw, 40px)",
                   borderRadius: 12,
                   border: "2px solid #3a3a3a",
                 }}
               >
                 <h3
                   style={{
-                    fontSize: 24,
+                    fontSize: "clamp(20px, 4vw, 24px)",
                     fontWeight: 600,
                     marginBottom: 24,
                     color: "#ffffff",
@@ -387,16 +444,22 @@ const Home: React.FC = () => {
                 </h3>
                 <Row gutter={[16, 16]}>
                   {benefits.map((benefit, index) => (
-                    <Col span={12} key={index}>
+                    <Col xs={24} sm={12} key={index}>
                       <div style={{ display: "flex", alignItems: "center" }}>
                         <CheckCircleOutlined
                           style={{
                             color: "#C8102E",
-                            fontSize: 20,
+                            fontSize: "clamp(16px, 3vw, 20px)",
                             marginRight: 12,
+                            flexShrink: 0,
                           }}
                         />
-                        <span style={{ fontSize: 16, color: "#ffffff" }}>
+                        <span
+                          style={{
+                            fontSize: "clamp(14px, 2.5vw, 16px)",
+                            color: "#ffffff",
+                          }}
+                        >
                           {benefit}
                         </span>
                       </div>
@@ -412,7 +475,7 @@ const Home: React.FC = () => {
       {/* Payment Methods Section */}
       <div
         style={{
-          padding: "80px 40px",
+          padding: "clamp(40px, 8vw, 80px) clamp(16px, 4vw, 40px)",
           maxWidth: 1200,
           margin: "0 auto",
           textAlign: "center",
@@ -420,7 +483,7 @@ const Home: React.FC = () => {
       >
         <h2
           style={{
-            fontSize: 48,
+            fontSize: "clamp(28px, 6vw, 48px)",
             fontWeight: 700,
             marginBottom: 24,
             color: "#ffffff",
@@ -430,11 +493,11 @@ const Home: React.FC = () => {
         </h2>
         <p
           style={{
-            fontSize: 18,
+            fontSize: "clamp(16px, 3vw, 18px)",
             color: "#cccccc",
-            marginBottom: 60,
+            marginBottom: "clamp(30px, 6vw, 60px)",
             maxWidth: 700,
-            margin: "0 auto 60px",
+            margin: "0 auto clamp(30px, 6vw, 60px)",
           }}
         >
           Accept payments the way that works best for you and your supporters.
@@ -449,14 +512,18 @@ const Home: React.FC = () => {
                 borderRadius: 12,
                 height: "100%",
               }}
-              bodyStyle={{ padding: 32 }}
+              bodyStyle={{ padding: "clamp(20px, 4vw, 32px)" }}
             >
               <CreditCardOutlined
-                style={{ fontSize: 56, color: "#C8102E", marginBottom: 16 }}
+                style={{
+                  fontSize: "clamp(40px, 8vw, 56px)",
+                  color: "#C8102E",
+                  marginBottom: 16,
+                }}
               />
               <h3
                 style={{
-                  fontSize: 22,
+                  fontSize: "clamp(18px, 3.5vw, 22px)",
                   fontWeight: 600,
                   marginBottom: 12,
                   color: "#ffffff",
@@ -464,7 +531,13 @@ const Home: React.FC = () => {
               >
                 Credit Card
               </h3>
-              <p style={{ fontSize: 16, color: "#cccccc", margin: 0 }}>
+              <p
+                style={{
+                  fontSize: "clamp(14px, 2.5vw, 16px)",
+                  color: "#cccccc",
+                  margin: 0,
+                }}
+              >
                 Secure online payments via Stripe. Instant processing and
                 automated receipts.
               </p>
@@ -478,14 +551,18 @@ const Home: React.FC = () => {
                 borderRadius: 12,
                 height: "100%",
               }}
-              bodyStyle={{ padding: 32 }}
+              bodyStyle={{ padding: "clamp(20px, 4vw, 32px)" }}
             >
               <DollarOutlined
-                style={{ fontSize: 56, color: "#C8102E", marginBottom: 16 }}
+                style={{
+                  fontSize: "clamp(40px, 8vw, 56px)",
+                  color: "#C8102E",
+                  marginBottom: 16,
+                }}
               />
               <h3
                 style={{
-                  fontSize: 22,
+                  fontSize: "clamp(18px, 3.5vw, 22px)",
                   fontWeight: 600,
                   marginBottom: 12,
                   color: "#ffffff",
@@ -493,7 +570,13 @@ const Home: React.FC = () => {
               >
                 Cash Payments
               </h3>
-              <p style={{ fontSize: 16, color: "#cccccc", margin: 0 }}>
+              <p
+                style={{
+                  fontSize: "clamp(14px, 2.5vw, 16px)",
+                  color: "#cccccc",
+                  margin: 0,
+                }}
+              >
                 Accept cash in person and manually track payments in your
                 dashboard.
               </p>
@@ -507,14 +590,18 @@ const Home: React.FC = () => {
                 borderRadius: 12,
                 height: "100%",
               }}
-              bodyStyle={{ padding: 32 }}
+              bodyStyle={{ padding: "clamp(20px, 4vw, 32px)" }}
             >
               <SafetyOutlined
-                style={{ fontSize: 56, color: "#C8102E", marginBottom: 16 }}
+                style={{
+                  fontSize: "clamp(40px, 8vw, 56px)",
+                  color: "#C8102E",
+                  marginBottom: 16,
+                }}
               />
               <h3
                 style={{
-                  fontSize: 22,
+                  fontSize: "clamp(18px, 3.5vw, 22px)",
                   fontWeight: 600,
                   marginBottom: 12,
                   color: "#ffffff",
@@ -522,7 +609,13 @@ const Home: React.FC = () => {
               >
                 Bank Transfer
               </h3>
-              <p style={{ fontSize: 16, color: "#cccccc", margin: 0 }}>
+              <p
+                style={{
+                  fontSize: "clamp(14px, 2.5vw, 16px)",
+                  color: "#cccccc",
+                  margin: 0,
+                }}
+              >
                 Direct bank transfers for larger donations. Track manually in
                 your system.
               </p>
@@ -535,66 +628,74 @@ const Home: React.FC = () => {
       <div
         style={{
           background: "linear-gradient(135deg, #C8102E 0%, #A00D25 100%)",
-          padding: "100px 40px",
+          padding: "clamp(50px, 10vw, 100px) clamp(20px, 4vw, 40px)",
           textAlign: "center",
         }}
       >
-        <h2
+        <div
           style={{
-            fontSize: 56,
-            fontWeight: 800,
-            marginBottom: 24,
-            color: "#ffffff",
+            maxWidth: "1200px",
+            margin: "0 auto",
+            padding: "0 16px",
           }}
         >
-          Ready to Start Fundraising?
-        </h2>
-        <p
-          style={{
-            fontSize: 22,
-            color: "#ffffff",
-            marginBottom: 40,
-            maxWidth: 700,
-            margin: "0 auto 40px",
-            opacity: 0.95,
-          }}
-        >
-          Join hundreds of teams and organizations raising funds with Got Your
-          Back. Create your first campaign in minutes.
-        </p>
-        <Button
-          size="large"
-          icon={<RocketOutlined />}
-          onClick={() => navigate({ to: "/register" })}
-          style={{
-            height: 64,
-            fontSize: 22,
-            padding: "0 56px",
-            fontWeight: 700,
-            background: "#ffffff",
-            color: "#C8102E",
-            border: "none",
-          }}
-        >
-          Get Started Free
-        </Button>
-        <p
-          style={{
-            marginTop: 24,
-            fontSize: 16,
-            color: "#ffffff",
-            opacity: 0.9,
-          }}
-        >
-          No credit card required • Cancel anytime • Free forever
-        </p>
+          <h2
+            style={{
+              fontSize: "clamp(32px, 7vw, 56px)",
+              fontWeight: 800,
+              marginBottom: 24,
+              color: "#ffffff",
+            }}
+          >
+            Ready to Start Fundraising?
+          </h2>
+          <p
+            style={{
+              fontSize: "clamp(16px, 4vw, 22px)",
+              color: "#ffffff",
+              marginBottom: 40,
+              maxWidth: 700,
+              margin: "0 auto 40px",
+              opacity: 0.95,
+            }}
+          >
+            Join hundreds of teams and organizations raising funds with Got Your
+            Back. Create your first campaign in minutes.
+          </p>
+          <Button
+            size="large"
+            icon={<RocketOutlined />}
+            onClick={() => navigate({ to: "/register" })}
+            style={{
+              height: "clamp(52px, 10vw, 64px)",
+              fontSize: "clamp(18px, 4vw, 22px)",
+              padding: "0 clamp(32px, 6vw, 56px)",
+              fontWeight: 700,
+              background: "#ffffff",
+              color: "#C8102E",
+              border: "none",
+            }}
+          >
+            Get Started Free
+          </Button>
+          <p
+            style={{
+              marginTop: 24,
+              fontSize: "clamp(14px, 3vw, 16px)",
+              color: "#ffffff",
+              opacity: 0.9,
+            }}
+          >
+            No credit card required • Cancel anytime • Free forever
+          </p>
+        </div>
       </div>
 
       {/* Footer */}
       <div
         style={{
           background: "#2a2a2a",
-          padding: "40px 40px",
+          padding: "clamp(24px, 5vw, 40px) clamp(16px, 4vw, 40px)",
           textAlign: "center",
           borderTop: "2px solid #3a3a3a",
         }}
@@ -606,18 +707,34 @@ const Home: React.FC = () => {
             justifyContent: "center",
             gap: 16,
             marginBottom: 16,
+            flexWrap: "wrap",
           }}
         >
           <img
             src={beastmodeLogo}
             alt="Beast Mode Logo"
-            style={{ height: 40, width: "auto" }}
+            style={{
+              height: "clamp(30px, 6vw, 40px)",
+              width: "auto",
+            }}
           />
-          <p style={{ margin: 0, fontSize: 16, color: "#cccccc" }}>
+          <p
+            style={{
+              margin: 0,
+              fontSize: "clamp(14px, 3vw, 16px)",
+              color: "#cccccc",
+            }}
+          >
             Powered by Beast Mode
           </p>
         </div>
-        <p style={{ margin: 0, fontSize: 14, color: "#999999" }}>
+        <p
+          style={{
+            margin: 0,
+            fontSize: "clamp(12px, 2.5vw, 14px)",
+            color: "#999999",
+          }}
+        >
           © {new Date().getFullYear()} Got Your Back. All rights reserved.
         </p>
       </div>

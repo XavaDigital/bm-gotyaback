@@ -3,7 +3,7 @@ import { useNavigate, useRouteContext } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { Card, Button, Empty, Spin, Tag, Row, Col, message, Statistic } from 'antd';
 import { PlusOutlined, EyeOutlined, EditOutlined } from '@ant-design/icons';
-import type { Campaign } from '~/types/campaign.types';
+import type { Campaign, CampaignType } from '~/types/campaign.types';
 import campaignService from '~/services/campaign.service';
 import sponsorshipService from '~/services/sponsorship.service';
 import EditCampaignModal from '~/components/EditCampaignModal';
@@ -17,6 +17,20 @@ interface CampaignStats {
     positionsClaimed: number;
     positionsTotal: number;
 }
+
+// Helper function to format campaign type labels
+const formatCampaignType = (type: CampaignType): string => {
+    switch (type) {
+        case 'fixed':
+            return 'Fixed Pricing';
+        case 'positional':
+            return 'Tiered Pricing';
+        case 'pay-what-you-want':
+            return 'Pay What You Want';
+        default:
+            return type;
+    }
+};
 
 const MyCampaigns: React.FC = () => {
     // Get initial data from loader
@@ -140,10 +154,26 @@ const MyCampaigns: React.FC = () => {
     }
 
     return (
-        <div style={{ padding: 24 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
-                <h1>My Campaigns</h1>
-                <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate({ to: '/campaigns/create' })}>
+        <div>
+            <div
+                style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: 24,
+                    flexWrap: 'wrap',
+                    gap: 12,
+                }}
+            >
+                <h1 style={{ margin: 0, fontSize: 'clamp(20px, 5vw, 28px)' }}>My Campaigns</h1>
+                <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => navigate({ to: '/campaigns/create' })}
+                    style={{
+                        fontSize: 'clamp(14px, 3vw, 16px)',
+                    }}
+                >
                     Create Campaign
                 </Button>
             </div>
@@ -191,11 +221,7 @@ const MyCampaigns: React.FC = () => {
                                             <div>
                                                 <strong>Type:</strong>{' '}
                                                 <Tag>
-                                                    {campaign.campaignType === 'fixed'
-                                                        ? 'Fixed Price'
-                                                        : campaign.campaignType === 'positional'
-                                                            ? 'Positional Pricing'
-                                                            : 'Pay What You Want'}
+                                                    {formatCampaignType(campaign.campaignType)}
                                                 </Tag>
                                             </div>
                                             <div>

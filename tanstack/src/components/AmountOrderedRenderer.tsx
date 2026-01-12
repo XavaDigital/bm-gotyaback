@@ -26,7 +26,14 @@ const AmountOrderedRenderer: React.FC<AmountOrderedRendererProps> = ({
 
   if (sortedSponsors.length === 0) {
     return (
-      <div style={{ textAlign: "center", padding: 40, color: "#999" }}>
+      <div
+        style={{
+          textAlign: "center",
+          padding: "clamp(24px, 6vw, 40px)",
+          color: "#999",
+          fontSize: "clamp(14px, 2.5vw, 16px)",
+        }}
+      >
         No sponsors yet. Be the first!
       </div>
     );
@@ -37,10 +44,10 @@ const AmountOrderedRenderer: React.FC<AmountOrderedRendererProps> = ({
       style={{
         display: "flex",
         flexWrap: "wrap",
-        gap: "20px",
+        gap: "clamp(12px, 3vw, 20px)",
         alignItems: "center",
         justifyContent: "center",
-        padding: "20px",
+        padding: "clamp(12px, 3vw, 20px)",
       }}
     >
       {sortedSponsors.map((sponsor) => {
@@ -64,8 +71,8 @@ const AmountOrderedRenderer: React.FC<AmountOrderedRendererProps> = ({
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: "8px",
-              padding: "12px",
+              gap: "clamp(6px, 1.5vw, 8px)",
+              padding: "clamp(8px, 2vw, 12px)",
               border: "1px solid #3a3a3a",
               borderRadius: "8px",
               backgroundColor: "#2a2a2a",
@@ -98,7 +105,7 @@ const AmountOrderedRenderer: React.FC<AmountOrderedRendererProps> = ({
             )}
             <div
               style={{
-                fontSize: "14px",
+                fontSize: "clamp(12px, 2.5vw, 14px)",
                 fontWeight: "600",
                 color: "#C8102E",
                 marginTop: "4px",

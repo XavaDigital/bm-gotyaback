@@ -6,20 +6,23 @@ const PublicFooter: React.FC = () => {
     return (
         <div
             style={{
-                marginTop: 60,
-                padding: '40px 40px 64px 40px',
+                marginTop: 'clamp(40px, 8vw, 60px)',
+                padding: 'clamp(24px, 6vw, 40px) clamp(16px, 4vw, 40px) clamp(40px, 8vw, 64px)',
                 background: '#1f1f1f',
                 textAlign: 'center',
-                marginLeft: '-20px',
-                marginRight: '-20px',
+                marginLeft: 'calc(-1 * clamp(16px, 3vw, 20px))',
+                marginRight: 'calc(-1 * clamp(16px, 3vw, 20px))',
+                boxSizing: 'border-box',
+                maxWidth: '100vw',
             }}
         >
             <h2
                 style={{
                     color: '#ffffff',
-                    fontSize: '32px',
+                    fontSize: 'clamp(20px, 5vw, 32px)',
                     fontWeight: '700',
-                    marginBottom: '16px',
+                    marginBottom: 'clamp(12px, 2vw, 16px)',
+                    lineHeight: '1.3',
                 }}
             >
                 Want to create your own fundraising campaign?
@@ -27,10 +30,11 @@ const PublicFooter: React.FC = () => {
             <p
                 style={{
                     color: '#cccccc',
-                    fontSize: '18px',
-                    marginBottom: '24px',
+                    fontSize: 'clamp(14px, 3vw, 18px)',
+                    marginBottom: 'clamp(16px, 3vw, 24px)',
                     maxWidth: '600px',
-                    margin: '0 auto 24px',
+                    margin: '0 auto clamp(16px, 3vw, 24px)',
+                    lineHeight: '1.5',
                 }}
             >
                 Join Got Your Back and start raising funds for your team, club, or cause today.
@@ -41,9 +45,9 @@ const PublicFooter: React.FC = () => {
                 icon={<RocketOutlined />}
                 href="/register"
                 style={{
-                    height: '50px',
-                    fontSize: '18px',
-                    padding: '0 40px',
+                    height: 'clamp(44px, 8vw, 50px)',
+                    fontSize: 'clamp(14px, 3vw, 18px)',
+                    padding: '0 clamp(20px, 5vw, 40px)',
                 }}
             >
                 Get Started

@@ -18,7 +18,7 @@ const OrganizerProfileHeader: React.FC<OrganizerProfileHeaderProps> = ({ profile
                 <div
                     style={{
                         width: '100%',
-                        height: 200,
+                        height: 'clamp(120px, 25vw, 200px)',
                         backgroundImage: `url(${profile.coverImageUrl})`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
@@ -28,41 +28,90 @@ const OrganizerProfileHeader: React.FC<OrganizerProfileHeaderProps> = ({ profile
             )}
 
             {/* Profile Info */}
-            <div style={{ padding: '24px 0' }}>
+            <div style={{ padding: 'clamp(16px, 3vw, 24px) 0' }}>
                 <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-                    <Space align="center" size="large">
+                    <Space
+                        align="center"
+                        size="large"
+                        style={{
+                            flexWrap: 'wrap',
+                            justifyContent: 'center',
+                        }}
+                    >
                         {/* Logo */}
                         {profile.logoUrl ? (
-                            <Avatar size={80} src={profile.logoUrl} />
+                            <Avatar size={typeof window !== 'undefined' && window.innerWidth < 768 ? 60 : 80} src={profile.logoUrl} />
                         ) : (
-                            <Avatar size={80} style={{ backgroundColor: '#1890ff' }}>
+                            <Avatar size={typeof window !== 'undefined' && window.innerWidth < 768 ? 60 : 80} style={{ backgroundColor: '#1890ff' }}>
                                 {profile.displayName?.charAt(0) || 'O'}
                             </Avatar>
                         )}
 
                         {/* Name and Links */}
-                        <div>
-                            <Title level={2} style={{ margin: 0, color: '#ffffff' }}>
+                        <div style={{ textAlign: typeof window !== 'undefined' && window.innerWidth < 768 ? 'center' : 'left' }}>
+                            <Title
+                                level={2}
+                                style={{
+                                    margin: 0,
+                                    color: '#ffffff',
+                                    fontSize: 'clamp(20px, 5vw, 32px)',
+                                }}
+                            >
                                 {profile.displayName || 'Organizer'}
                             </Title>
-                            <Space size="middle" style={{ marginTop: 8 }}>
+                            <Space
+                                size="middle"
+                                style={{
+                                    marginTop: 8,
+                                    flexWrap: 'wrap',
+                                    justifyContent: typeof window !== 'undefined' && window.innerWidth < 768 ? 'center' : 'flex-start',
+                                }}
+                            >
                                 {profile.websiteUrl && (
-                                    <Link href={profile.websiteUrl} target="_blank" style={{ color: '#C8102E' }}>
+                                    <Link
+                                        href={profile.websiteUrl}
+                                        target="_blank"
+                                        style={{
+                                            color: '#C8102E',
+                                            fontSize: 'clamp(12px, 2.5vw, 14px)',
+                                        }}
+                                    >
                                         <GlobalOutlined /> Website
                                     </Link>
                                 )}
                                 {profile.socialLinks?.facebook && (
-                                    <Link href={profile.socialLinks.facebook} target="_blank" style={{ color: '#C8102E' }}>
+                                    <Link
+                                        href={profile.socialLinks.facebook}
+                                        target="_blank"
+                                        style={{
+                                            color: '#C8102E',
+                                            fontSize: 'clamp(12px, 2.5vw, 14px)',
+                                        }}
+                                    >
                                         <FacebookOutlined /> Facebook
                                     </Link>
                                 )}
                                 {profile.socialLinks?.twitter && (
-                                    <Link href={profile.socialLinks.twitter} target="_blank" style={{ color: '#C8102E' }}>
+                                    <Link
+                                        href={profile.socialLinks.twitter}
+                                        target="_blank"
+                                        style={{
+                                            color: '#C8102E',
+                                            fontSize: 'clamp(12px, 2.5vw, 14px)',
+                                        }}
+                                    >
                                         <TwitterOutlined /> Twitter
                                     </Link>
                                 )}
                                 {profile.socialLinks?.instagram && (
-                                    <Link href={profile.socialLinks.instagram} target="_blank" style={{ color: '#C8102E' }}>
+                                    <Link
+                                        href={profile.socialLinks.instagram}
+                                        target="_blank"
+                                        style={{
+                                            color: '#C8102E',
+                                            fontSize: 'clamp(12px, 2.5vw, 14px)',
+                                        }}
+                                    >
                                         <InstagramOutlined /> Instagram
                                     </Link>
                                 )}
@@ -73,10 +122,22 @@ const OrganizerProfileHeader: React.FC<OrganizerProfileHeaderProps> = ({ profile
                     {/* Bio */}
                     {profile.bio && (
                         <div>
-                            <Title level={4} style={{ color: '#ffffff' }}>About</Title>
+                            <Title
+                                level={4}
+                                style={{
+                                    color: '#ffffff',
+                                    fontSize: 'clamp(16px, 4vw, 20px)',
+                                }}
+                            >
+                                About
+                            </Title>
                             <div
                                 className="ql-editor"
-                                style={{ padding: 0, color: '#cccccc' }}
+                                style={{
+                                    padding: 0,
+                                    color: '#cccccc',
+                                    fontSize: 'clamp(14px, 2.5vw, 16px)',
+                                }}
                                 dangerouslySetInnerHTML={{ __html: profile.bio }}
                             />
                         </div>
