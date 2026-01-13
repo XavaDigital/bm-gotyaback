@@ -403,88 +403,111 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
               { required: true, message: "Please select a pricing strategy" },
             ]}
           >
-            <Radio.Group style={{ width: "100%" }}>
-              <Row gutter={16}>
-                <Col span={8}>
-                  <Radio value="fixed" style={{ width: "100%" }}>
-                    <Card
-                      style={{
-                        height: "100%",
-                        cursor: "pointer",
-                      }}
-                      hoverable
-                    >
-                      <div>
-                        <strong style={{ fontSize: "16px", color: "#fff" }}>
-                          Fixed Price
-                        </strong>
-                        <p
-                          style={{
-                            color: "#999",
-                            marginTop: 8,
-                            marginBottom: 0,
-                          }}
-                        >
-                          All sponsorship spots cost the same amount
-                        </p>
-                      </div>
-                    </Card>
-                  </Radio>
-                </Col>
-                <Col span={8}>
-                  <Radio value="positional" style={{ width: "100%" }}>
-                    <Card
-                      style={{
-                        height: "100%",
-                        cursor: "pointer",
-                      }}
-                      hoverable
-                    >
-                      <div>
-                        <strong style={{ fontSize: "16px", color: "#fff" }}>
-                          Positional Pricing
-                        </strong>
-                        <p
-                          style={{
-                            color: "#999",
-                            marginTop: 8,
-                            marginBottom: 0,
-                          }}
-                        >
-                          Price increases based on position number (e.g., $20 + $2
-                          per position)
-                        </p>
-                      </div>
-                    </Card>
-                  </Radio>
-                </Col>
-                <Col span={8}>
-                  <Radio value="pay-what-you-want" style={{ width: "100%" }}>
-                    <Card
-                      style={{
-                        height: "100%",
-                        cursor: "pointer",
-                      }}
-                      hoverable
-                    >
-                      <div>
-                        <strong style={{ fontSize: "16px", color: "#fff" }}>
-                          Pay What You Want
-                        </strong>
-                        <p
-                          style={{
-                            color: "#999",
-                            marginTop: 8,
-                            marginBottom: 0,
-                          }}
-                        >
-                          Sponsors choose their amount, size based on contribution
-                        </p>
-                      </div>
-                    </Card>
-                  </Radio>
-                </Col>
-              </Row>
+            <Radio.Group style={{ width: "100%" }} className="campaign-wizard-radio-group">
+              <Form.Item noStyle shouldUpdate>
+                {({ getFieldValue }) => {
+                  const selectedType = getFieldValue("campaignType");
+
+                  return (
+                    <Row gutter={16}>
+                      <Col span={8}>
+                        <Radio value="fixed" style={{ width: "100%" }} className="campaign-wizard-radio">
+                          <Card
+                            className="campaign-wizard-card"
+                            style={{
+                              height: "100%",
+                              cursor: "pointer",
+                              backgroundColor: selectedType === "fixed" ? "#fef0f2" : "#ffffff",
+                              borderColor: selectedType === "fixed" ? "#C8102E" : "#d9d9d9",
+                              borderWidth: selectedType === "fixed" ? 2 : 1,
+                              transition: "all 0.3s ease",
+                            }}
+                            hoverable
+                          >
+                            <div>
+                              <strong style={{ fontSize: "16px", color: "#262626" }}>
+                                Fixed Price
+                              </strong>
+                              <p
+                                style={{
+                                  color: "#595959",
+                                  marginTop: 8,
+                                  marginBottom: 0,
+                                }}
+                              >
+                                All sponsorship spots cost the same amount
+                              </p>
+                            </div>
+                          </Card>
+                        </Radio>
+                      </Col>
+                      <Col span={8}>
+                        <Radio value="positional" style={{ width: "100%" }} className="campaign-wizard-radio">
+                          <Card
+                            className="campaign-wizard-card"
+                            style={{
+                              height: "100%",
+                              cursor: "pointer",
+                              backgroundColor: selectedType === "positional" ? "#fef0f2" : "#ffffff",
+                              borderColor: selectedType === "positional" ? "#C8102E" : "#d9d9d9",
+                              borderWidth: selectedType === "positional" ? 2 : 1,
+                              transition: "all 0.3s ease",
+                            }}
+                            hoverable
+                          >
+                            <div>
+                              <strong style={{ fontSize: "16px", color: "#262626" }}>
+                                Positional Pricing
+                              </strong>
+                              <p
+                                style={{
+                                  color: "#595959",
+                                  marginTop: 8,
+                                  marginBottom: 0,
+                                }}
+                              >
+                                Price increases based on position number (e.g., $20 + $2
+                                per position)
+                              </p>
+                            </div>
+                          </Card>
+                        </Radio>
+                      </Col>
+                      <Col span={8}>
+                        <Radio value="pay-what-you-want" style={{ width: "100%" }} className="campaign-wizard-radio">
+                          <Card
+                            className="campaign-wizard-card"
+                            style={{
+                              height: "100%",
+                              cursor: "pointer",
+                              backgroundColor: selectedType === "pay-what-you-want" ? "#fef0f2" : "#ffffff",
+                              borderColor: selectedType === "pay-what-you-want" ? "#C8102E" : "#d9d9d9",
+                              borderWidth: selectedType === "pay-what-you-want" ? 2 : 1,
+                              transition: "all 0.3s ease",
+                            }}
+                            hoverable
+                          >
+                            <div>
+                              <strong style={{ fontSize: "16px", color: "#262626" }}>
+                                Pay What You Want
+                              </strong>
+                              <p
+                                style={{
+                                  color: "#595959",
+                                  marginTop: 8,
+                                  marginBottom: 0,
+                                }}
+                              >
+                                Sponsors choose their amount, size based on contribution
+                              </p>
+                            </div>
+                          </Card>
+                        </Radio>
+                      </Col>
+                    </Row>
+                  );
+                }}
+              </Form.Item>
             </Radio.Group>
           </Form.Item>
 
@@ -540,45 +563,60 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                     <Radio.Group
                       style={{ width: "100%" }}
                       disabled={mode === "edit"}
+                      className="campaign-wizard-radio-group"
                     >
-                      <Row gutter={16}>
-                        {options.map((option) => (
-                          <Col span={options.length === 2 ? 12 : 8} key={option.value}>
-                            <Radio
-                              value={option.value}
-                              disabled={mode === "edit"}
-                              style={{ width: "100%" }}
-                            >
-                              <Card
-                                style={{
-                                  height: "100%",
-                                  cursor:
-                                    mode === "edit"
-                                      ? "not-allowed"
-                                      : "pointer",
-                                  opacity: mode === "edit" ? 0.6 : 1,
-                                }}
-                                hoverable={mode !== "edit"}
-                              >
-                                <div>
-                                  <strong style={{ fontSize: "16px", color: "#fff" }}>
-                                    {option.label}
-                                  </strong>
-                                  <p
-                                    style={{
-                                      color: "#999",
-                                      marginTop: 8,
-                                      marginBottom: 0,
-                                    }}
+                      <Form.Item noStyle shouldUpdate>
+                        {({ getFieldValue }) => {
+                          const selectedLayoutStyle = getFieldValue("layoutStyle");
+
+                          return (
+                            <Row gutter={16}>
+                              {options.map((option) => (
+                                <Col span={options.length === 2 ? 12 : 8} key={option.value}>
+                                  <Radio
+                                    value={option.value}
+                                    disabled={mode === "edit"}
+                                    style={{ width: "100%" }}
+                                    className="campaign-wizard-radio"
                                   >
-                                    {option.description}
-                                  </p>
-                                </div>
-                              </Card>
-                            </Radio>
-                          </Col>
-                        ))}
-                      </Row>
+                                    <Card
+                                      className="campaign-wizard-card"
+                                      style={{
+                                        height: "100%",
+                                        cursor:
+                                          mode === "edit"
+                                            ? "not-allowed"
+                                            : "pointer",
+                                        opacity: mode === "edit" ? 0.6 : 1,
+                                        backgroundColor: selectedLayoutStyle === option.value ? "#fef0f2" : "#ffffff",
+                                        borderColor: selectedLayoutStyle === option.value ? "#C8102E" : "#d9d9d9",
+                                        borderWidth: selectedLayoutStyle === option.value ? 2 : 1,
+                                        transition: "all 0.3s ease",
+                                      }}
+                                      hoverable={mode !== "edit"}
+                                    >
+                                      <div>
+                                        <strong style={{ fontSize: "16px", color: "#262626" }}>
+                                          {option.label}
+                                        </strong>
+                                        <p
+                                          style={{
+                                            color: "#595959",
+                                            marginTop: 8,
+                                            marginBottom: 0,
+                                          }}
+                                        >
+                                          {option.description}
+                                        </p>
+                                      </div>
+                                    </Card>
+                                  </Radio>
+                                </Col>
+                              ))}
+                            </Row>
+                          );
+                        }}
+                      </Form.Item>
                     </Radio.Group>
                   </Form.Item>
                 );
@@ -601,87 +639,110 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
             ]}
             extra="Choose what type of sponsors you'll accept"
           >
-            <Radio.Group style={{ width: "100%" }}>
-              <Row gutter={16}>
-                <Col span={8}>
-                  <Radio value="text-only" style={{ width: "100%" }}>
-                    <Card
-                      style={{
-                        height: "100%",
-                        cursor: "pointer",
-                      }}
-                      hoverable
-                    >
-                      <div>
-                        <strong style={{ fontSize: "16px", color: "#fff" }}>
-                          Text Only
-                        </strong>
-                        <p
-                          style={{
-                            color: "#999",
-                            marginTop: 8,
-                            marginBottom: 0,
-                          }}
-                        >
-                          Sponsor Names
-                        </p>
-                      </div>
-                    </Card>
-                  </Radio>
-                </Col>
-                <Col span={8}>
-                  <Radio value="logo-only" style={{ width: "100%" }}>
-                    <Card
-                      style={{
-                        height: "100%",
-                        cursor: "pointer",
-                      }}
-                      hoverable
-                    >
-                      <div>
-                        <strong style={{ fontSize: "16px", color: "#fff" }}>
-                          Logo Only
-                        </strong>
-                        <p
-                          style={{
-                            color: "#999",
-                            marginTop: 8,
-                            marginBottom: 0,
-                          }}
-                        >
-                          Images
-                        </p>
-                      </div>
-                    </Card>
-                  </Radio>
-                </Col>
-                <Col span={8}>
-                  <Radio value="both" style={{ width: "100%" }}>
-                    <Card
-                      style={{
-                        height: "100%",
-                        cursor: "pointer",
-                      }}
-                      hoverable
-                    >
-                      <div>
-                        <strong style={{ fontSize: "16px", color: "#fff" }}>
-                          Both
-                        </strong>
-                        <p
-                          style={{
-                            color: "#999",
-                            marginTop: 8,
-                            marginBottom: 0,
-                          }}
-                        >
-                          Text and Logos
-                        </p>
-                      </div>
-                    </Card>
-                  </Radio>
-                </Col>
-              </Row>
+            <Radio.Group style={{ width: "100%" }} className="campaign-wizard-radio-group">
+              <Form.Item noStyle shouldUpdate>
+                {({ getFieldValue }) => {
+                  const selectedDisplayType = getFieldValue("sponsorDisplayType");
+
+                  return (
+                    <Row gutter={16}>
+                      <Col span={8}>
+                        <Radio value="text-only" style={{ width: "100%" }} className="campaign-wizard-radio">
+                          <Card
+                            className="campaign-wizard-card"
+                            style={{
+                              height: "100%",
+                              cursor: "pointer",
+                              backgroundColor: selectedDisplayType === "text-only" ? "#fef0f2" : "#ffffff",
+                              borderColor: selectedDisplayType === "text-only" ? "#C8102E" : "#d9d9d9",
+                              borderWidth: selectedDisplayType === "text-only" ? 2 : 1,
+                              transition: "all 0.3s ease",
+                            }}
+                            hoverable
+                          >
+                            <div>
+                              <strong style={{ fontSize: "16px", color: "#262626" }}>
+                                Text Only
+                              </strong>
+                              <p
+                                style={{
+                                  color: "#595959",
+                                  marginTop: 8,
+                                  marginBottom: 0,
+                                }}
+                              >
+                                Sponsor Names
+                              </p>
+                            </div>
+                          </Card>
+                        </Radio>
+                      </Col>
+                      <Col span={8}>
+                        <Radio value="logo-only" style={{ width: "100%" }} className="campaign-wizard-radio">
+                          <Card
+                            className="campaign-wizard-card"
+                            style={{
+                              height: "100%",
+                              cursor: "pointer",
+                              backgroundColor: selectedDisplayType === "logo-only" ? "#fef0f2" : "#ffffff",
+                              borderColor: selectedDisplayType === "logo-only" ? "#C8102E" : "#d9d9d9",
+                              borderWidth: selectedDisplayType === "logo-only" ? 2 : 1,
+                              transition: "all 0.3s ease",
+                            }}
+                            hoverable
+                          >
+                            <div>
+                              <strong style={{ fontSize: "16px", color: "#262626" }}>
+                                Logo Only
+                              </strong>
+                              <p
+                                style={{
+                                  color: "#595959",
+                                  marginTop: 8,
+                                  marginBottom: 0,
+                                }}
+                              >
+                                Images
+                              </p>
+                            </div>
+                          </Card>
+                        </Radio>
+                      </Col>
+                      <Col span={8}>
+                        <Radio value="both" style={{ width: "100%" }} className="campaign-wizard-radio">
+                          <Card
+                            className="campaign-wizard-card"
+                            style={{
+                              height: "100%",
+                              cursor: "pointer",
+                              backgroundColor: selectedDisplayType === "both" ? "#fef0f2" : "#ffffff",
+                              borderColor: selectedDisplayType === "both" ? "#C8102E" : "#d9d9d9",
+                              borderWidth: selectedDisplayType === "both" ? 2 : 1,
+                              transition: "all 0.3s ease",
+                            }}
+                            hoverable
+                          >
+                            <div>
+                              <strong style={{ fontSize: "16px", color: "#262626" }}>
+                                Both
+                              </strong>
+                              <p
+                                style={{
+                                  color: "#595959",
+                                  marginTop: 8,
+                                  marginBottom: 0,
+                                }}
+                              >
+                                Text and Logos
+                              </p>
+                            </div>
+                          </Card>
+                        </Radio>
+                      </Col>
+                    </Row>
+                  );
+                }}
+              </Form.Item>
             </Radio.Group>
           </Form.Item>
         </Form>
@@ -1000,334 +1061,573 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
 
           {campaignData.campaignType === "positional" && (
             <>
-              <Alert
-                message="Positional Pricing Configuration"
-                description="Price increases based on position number"
-                type="info"
-                showIcon
-                style={{ marginBottom: 16 }}
-              />
-              {mode === "edit" && hasSponsors && (
-                <Alert
-                  message="Pricing Locked"
-                  description="Cannot change pricing after sponsors have joined."
-                  type="warning"
-                  showIcon
-                  style={{ marginBottom: 16 }}
-                />
-              )}
+              <Form.Item noStyle shouldUpdate>
+                {({ getFieldValue }) => {
+                  const layoutStyle = getFieldValue("layoutStyle") || campaignData.layoutStyle;
+                  const isSectionsLayout = layoutStyle === "amount-ordered";
 
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item
-                    label="Base Price"
-                    name={
-                      mode === "create"
-                        ? ["pricingConfig", "basePrice"]
-                        : ["pricing", "basePrice"]
-                    }
-                    rules={[
-                      {
-                        required: true,
-                        message: "Please enter base price",
-                      },
-                    ]}
-                    extra="Starting price for position 1"
-                  >
-                    <InputNumber
-                      min={0}
-                      prefix="$"
-                      style={{ width: "100%" }}
-                      placeholder="10"
-                      disabled={mode === "edit" && hasSponsors}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label="Price Per Position"
-                    name={
-                      mode === "create"
-                        ? ["pricingConfig", "pricePerPosition"]
-                        : ["pricing", "pricePerPosition"]
-                    }
-                    rules={[
-                      {
-                        required: true,
-                        message: "Please enter price per position",
-                      },
-                    ]}
-                    extra="Amount to add for each position number"
-                  >
-                    <InputNumber
-                      min={0}
-                      prefix="$"
-                      style={{ width: "100%" }}
-                      placeholder="2"
-                      disabled={mode === "edit" && hasSponsors}
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
+                  return (
+                    <>
+                      {isSectionsLayout ? (
+                        <>
+                          <Alert
+                            message="Sections Configuration"
+                            description="Configure pricing and slots for each section (top, middle, bottom)"
+                            type="info"
+                            showIcon
+                            style={{ marginBottom: 16 }}
+                          />
+                          {mode === "edit" && hasSponsors && (
+                            <Alert
+                              message="Configuration Locked"
+                              description="Cannot change section configuration after sponsors have joined."
+                              type="warning"
+                              showIcon
+                              style={{ marginBottom: 16 }}
+                            />
+                          )}
 
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item
-                    label="Total Positions"
-                    name={
-                      mode === "create"
-                        ? "totalPositions"
-                        : ["layoutConfig", "totalPositions"]
-                    }
-                    rules={
-                      mode === "create"
-                        ? [
-                            {
-                              required: true,
-                              message: "Please enter total number of positions",
-                            },
-                          ]
-                        : []
-                    }
-                    extra={
-                      mode === "edit" && hasSponsors
-                        ? "Cannot be changed after sponsors join"
-                        : "Total sponsor spots (e.g., 20)"
-                    }
-                  >
-                    <InputNumber
-                      min={1}
-                      max={100}
-                      style={{ width: "100%" }}
-                      placeholder="20"
-                      disabled={mode === "edit" && hasSponsors}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label="Number of Columns"
-                    name={
-                      mode === "create"
-                        ? "columns"
-                        : ["layoutConfig", "columns"]
-                    }
-                    rules={
-                      mode === "create"
-                        ? [
-                            {
-                              required: true,
-                              message: "Please enter number of columns",
-                            },
-                          ]
-                        : []
-                    }
-                    extra={
-                      mode === "edit" && hasSponsors
-                        ? "Cannot be changed after sponsors join"
-                        : "Columns in grid (e.g., 5)"
-                    }
-                  >
-                    <InputNumber
-                      min={1}
-                      max={10}
-                      style={{ width: "100%" }}
-                      placeholder="5"
-                      disabled={mode === "edit" && hasSponsors}
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-              <Form.Item
-                label="Position Arrangement"
-                name={
-                  mode === "create"
-                    ? "arrangement"
-                    : ["layoutConfig", "arrangement"]
-                }
-                initialValue="horizontal"
-              >
-                <Radio.Group style={{ width: "100%" }}>
-                  <Form.Item noStyle shouldUpdate>
-                    {({ getFieldValue }) => {
-                      const fieldName =
-                        mode === "create"
-                          ? "arrangement"
-                          : ["layoutConfig", "arrangement"];
-                      const selectedArrangement =
-                        getFieldValue(fieldName) || "horizontal";
-                      const isDisabled = mode === "edit" && hasSponsors;
-                      return (
-                        <Row gutter={16}>
-                          <Col span={12}>
-                            <Card
-                              hoverable={!isDisabled}
-                              onClick={() => {
-                                if (!isDisabled) {
-                                  if (mode === "create") {
-                                    form.setFieldsValue({
-                                      arrangement: "horizontal",
-                                    });
-                                  } else {
-                                    form.setFieldsValue({
-                                      layoutConfig: {
-                                        ...getFieldValue("layoutConfig"),
-                                        arrangement: "horizontal",
-                                      },
-                                    });
+                          {/* Top Section */}
+                          <Card
+                            title="Top Section"
+                            style={{ marginBottom: 16 }}
+                            styles={{
+                              header: { backgroundColor: "#fafafa" },
+                              body: { backgroundColor: "#ffffff" }
+                            }}
+                          >
+                            <Row gutter={16}>
+                              <Col span={12}>
+                                <Form.Item
+                                  label="Amount per Slot"
+                                  name={
+                                    mode === "create"
+                                      ? ["pricingConfig", "sections", "top", "amount"]
+                                      : ["pricing", "sections", "top", "amount"]
                                   }
-                                }
-                              }}
-                              style={{
-                                border:
-                                  selectedArrangement === "horizontal"
-                                    ? "2px solid #1890ff"
-                                    : "1px solid #d9d9d9",
-                                backgroundColor:
-                                  selectedArrangement === "horizontal"
-                                    ? "#e6f7ff"
-                                    : "white",
-                                cursor: isDisabled ? "not-allowed" : "pointer",
-                                opacity: isDisabled ? 0.6 : 1,
-                              }}
-                            >
-                              <Radio
-                                value="horizontal"
-                                style={{ display: "none" }}
-                              />
-                              <div
-                                style={{
-                                  textAlign: "center",
-                                  padding: "8px 0",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    fontSize: "48px",
-                                    marginBottom: "8px",
-                                    fontWeight: "bold",
-                                    color: "#1890ff",
-                                    fontFamily: "monospace",
-                                    lineHeight: "1",
-                                  }}
+                                  rules={[
+                                    {
+                                      required: true,
+                                      message: "Please enter amount for top section",
+                                    },
+                                  ]}
+                                  extra="Price for each slot in the top section"
                                 >
-                                  ⟋
-                                </div>
-                                <div
-                                  style={{
-                                    fontWeight: "600",
-                                    marginBottom: "4px",
-                                  }}
-                                >
-                                  Horizontal
-                                </div>
-                                <div
-                                  style={{
-                                    fontSize: "12px",
-                                    color: "#666",
-                                  }}
-                                >
-                                  Positions fill rows first
-                                </div>
-                                <div
-                                  style={{
-                                    fontSize: "11px",
-                                    color: "#999",
-                                    marginTop: "4px",
-                                  }}
-                                >
-                                  (1,2,3 in row 1)
-                                </div>
-                              </div>
-                            </Card>
-                          </Col>
-                          <Col span={12}>
-                            <Card
-                              hoverable={!isDisabled}
-                              onClick={() => {
-                                if (!isDisabled) {
-                                  if (mode === "create") {
-                                    form.setFieldsValue({
-                                      arrangement: "vertical",
-                                    });
-                                  } else {
-                                    form.setFieldsValue({
-                                      layoutConfig: {
-                                        ...getFieldValue("layoutConfig"),
-                                        arrangement: "vertical",
-                                      },
-                                    });
+                                  <InputNumber
+                                    min={0}
+                                    prefix="$"
+                                    style={{ width: "100%" }}
+                                    placeholder="100"
+                                    disabled={mode === "edit" && hasSponsors}
+                                  />
+                                </Form.Item>
+                              </Col>
+                              <Col span={12}>
+                                <Form.Item
+                                  label="Number of Slots"
+                                  name={
+                                    mode === "create"
+                                      ? ["pricingConfig", "sections", "top", "slots"]
+                                      : ["pricing", "sections", "top", "slots"]
                                   }
+                                  rules={[
+                                    {
+                                      required: true,
+                                      message: "Please enter number of slots",
+                                    },
+                                  ]}
+                                  extra="Total slots available in top section"
+                                >
+                                  <InputNumber
+                                    min={1}
+                                    max={50}
+                                    style={{ width: "100%" }}
+                                    placeholder="5"
+                                    disabled={mode === "edit" && hasSponsors}
+                                  />
+                                </Form.Item>
+                              </Col>
+                            </Row>
+                          </Card>
+
+                          {/* Middle Section */}
+                          <Card
+                            title="Middle Section"
+                            style={{ marginBottom: 16 }}
+                            styles={{
+                              header: { backgroundColor: "#fafafa" },
+                              body: { backgroundColor: "#ffffff" }
+                            }}
+                          >
+                            <Row gutter={16}>
+                              <Col span={12}>
+                                <Form.Item
+                                  label="Amount per Slot"
+                                  name={
+                                    mode === "create"
+                                      ? ["pricingConfig", "sections", "middle", "amount"]
+                                      : ["pricing", "sections", "middle", "amount"]
+                                  }
+                                  rules={[
+                                    {
+                                      required: true,
+                                      message: "Please enter amount for middle section",
+                                    },
+                                  ]}
+                                  extra="Price for each slot in the middle section"
+                                >
+                                  <InputNumber
+                                    min={0}
+                                    prefix="$"
+                                    style={{ width: "100%" }}
+                                    placeholder="50"
+                                    disabled={mode === "edit" && hasSponsors}
+                                  />
+                                </Form.Item>
+                              </Col>
+                              <Col span={12}>
+                                <Form.Item
+                                  label="Number of Slots"
+                                  name={
+                                    mode === "create"
+                                      ? ["pricingConfig", "sections", "middle", "slots"]
+                                      : ["pricing", "sections", "middle", "slots"]
+                                  }
+                                  rules={[
+                                    {
+                                      required: true,
+                                      message: "Please enter number of slots",
+                                    },
+                                  ]}
+                                  extra="Total slots available in middle section"
+                                >
+                                  <InputNumber
+                                    min={1}
+                                    max={50}
+                                    style={{ width: "100%" }}
+                                    placeholder="10"
+                                    disabled={mode === "edit" && hasSponsors}
+                                  />
+                                </Form.Item>
+                              </Col>
+                            </Row>
+                          </Card>
+
+                          {/* Bottom Section */}
+                          <Card
+                            title="Bottom Section"
+                            style={{ marginBottom: 16 }}
+                            styles={{
+                              header: { backgroundColor: "#fafafa" },
+                              body: { backgroundColor: "#ffffff" }
+                            }}
+                          >
+                            <Row gutter={16}>
+                              <Col span={12}>
+                                <Form.Item
+                                  label="Amount per Slot"
+                                  name={
+                                    mode === "create"
+                                      ? ["pricingConfig", "sections", "bottom", "amount"]
+                                      : ["pricing", "sections", "bottom", "amount"]
+                                  }
+                                  rules={[
+                                    {
+                                      required: true,
+                                      message: "Please enter amount for bottom section",
+                                    },
+                                  ]}
+                                  extra="Price for each slot in the bottom section"
+                                >
+                                  <InputNumber
+                                    min={0}
+                                    prefix="$"
+                                    style={{ width: "100%" }}
+                                    placeholder="25"
+                                    disabled={mode === "edit" && hasSponsors}
+                                  />
+                                </Form.Item>
+                              </Col>
+                              <Col span={12}>
+                                <Form.Item
+                                  label="Number of Slots"
+                                  name={
+                                    mode === "create"
+                                      ? ["pricingConfig", "sections", "bottom", "slots"]
+                                      : ["pricing", "sections", "bottom", "slots"]
+                                  }
+                                  rules={[
+                                    {
+                                      required: true,
+                                      message: "Please enter number of slots",
+                                    },
+                                  ]}
+                                  extra="Total slots available in bottom section"
+                                >
+                                  <InputNumber
+                                    min={1}
+                                    max={50}
+                                    style={{ width: "100%" }}
+                                    placeholder="10"
+                                    disabled={mode === "edit" && hasSponsors}
+                                  />
+                                </Form.Item>
+                              </Col>
+                            </Row>
+                          </Card>
+                        </>
+                      ) : (
+                        <>
+                          <Alert
+                            message="Positional Pricing Configuration"
+                            description="Price increases based on position number"
+                            type="info"
+                            showIcon
+                            style={{ marginBottom: 16 }}
+                          />
+                          {mode === "edit" && hasSponsors && (
+                            <Alert
+                              message="Pricing Locked"
+                              description="Cannot change pricing after sponsors have joined."
+                              type="warning"
+                              showIcon
+                              style={{ marginBottom: 16 }}
+                            />
+                          )}
+
+                          <Row gutter={16}>
+                            <Col span={12}>
+                              <Form.Item
+                                label="Base Price"
+                                name={
+                                  mode === "create"
+                                    ? ["pricingConfig", "basePrice"]
+                                    : ["pricing", "basePrice"]
                                 }
-                              }}
-                              style={{
-                                border:
-                                  selectedArrangement === "vertical"
-                                    ? "2px solid #1890ff"
-                                    : "1px solid #d9d9d9",
-                                backgroundColor:
-                                  selectedArrangement === "vertical"
-                                    ? "#e6f7ff"
-                                    : "white",
-                                cursor: isDisabled ? "not-allowed" : "pointer",
-                                opacity: isDisabled ? 0.6 : 1,
-                              }}
-                            >
-                              <Radio
-                                value="vertical"
-                                style={{ display: "none" }}
-                              />
-                              <div
-                                style={{
-                                  textAlign: "center",
-                                  padding: "8px 0",
-                                }}
+                                rules={[
+                                  {
+                                    required: true,
+                                    message: "Please enter base price",
+                                  },
+                                ]}
+                                extra="Starting price for position 1"
                               >
-                                <div
-                                  style={{
-                                    fontSize: "48px",
-                                    marginBottom: "8px",
-                                    fontWeight: "bold",
-                                    color: "#1890ff",
-                                    fontFamily: "monospace",
-                                    lineHeight: "1",
-                                  }}
-                                >
-                                  ⟍
-                                </div>
-                                <div
-                                  style={{
-                                    fontWeight: "600",
-                                    marginBottom: "4px",
-                                  }}
-                                >
-                                  Vertical
-                                </div>
-                                <div
-                                  style={{
-                                    fontSize: "12px",
-                                    color: "#666",
-                                  }}
-                                >
-                                  Positions fill columns first
-                                </div>
-                                <div
-                                  style={{
-                                    fontSize: "11px",
-                                    color: "#999",
-                                    marginTop: "4px",
-                                  }}
-                                >
-                                  (1,2,3 in column 1)
-                                </div>
-                              </div>
-                            </Card>
-                          </Col>
-                        </Row>
-                      );
-                    }}
-                  </Form.Item>
-                </Radio.Group>
+                                <InputNumber
+                                  min={0}
+                                  prefix="$"
+                                  style={{ width: "100%" }}
+                                  placeholder="10"
+                                  disabled={mode === "edit" && hasSponsors}
+                                />
+                              </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                              <Form.Item
+                                label="Price Per Position"
+                                name={
+                                  mode === "create"
+                                    ? ["pricingConfig", "pricePerPosition"]
+                                    : ["pricing", "pricePerPosition"]
+                                }
+                                rules={[
+                                  {
+                                    required: true,
+                                    message: "Please enter price per position",
+                                  },
+                                ]}
+                                extra="Amount to add for each position number"
+                              >
+                                <InputNumber
+                                  min={0}
+                                  prefix="$"
+                                  style={{ width: "100%" }}
+                                  placeholder="2"
+                                  disabled={mode === "edit" && hasSponsors}
+                                />
+                              </Form.Item>
+                            </Col>
+                          </Row>
+                        </>
+                      )}
+                    </>
+                  );
+                }}
+              </Form.Item>
+
+              <Form.Item noStyle shouldUpdate>
+                {({ getFieldValue }) => {
+                  const layoutStyle = getFieldValue("layoutStyle") || campaignData.layoutStyle;
+                  const isSectionsLayout = layoutStyle === "amount-ordered";
+
+                  // For sections layout, we don't need these fields
+                  if (isSectionsLayout) {
+                    return null;
+                  }
+
+                  return (
+                    <>
+                      <Row gutter={16}>
+                        <Col span={12}>
+                          <Form.Item
+                            label="Total Positions"
+                            name={
+                              mode === "create"
+                                ? "totalPositions"
+                                : ["layoutConfig", "totalPositions"]
+                            }
+                            rules={
+                              mode === "create"
+                                ? [
+                                    {
+                                      required: true,
+                                      message: "Please enter total number of positions",
+                                    },
+                                  ]
+                                : []
+                            }
+                            extra={
+                              mode === "edit" && hasSponsors
+                                ? "Cannot be changed after sponsors join"
+                                : "Total sponsor spots (e.g., 20)"
+                            }
+                          >
+                            <InputNumber
+                              min={1}
+                              max={100}
+                              style={{ width: "100%" }}
+                              placeholder="20"
+                              disabled={mode === "edit" && hasSponsors}
+                            />
+                          </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                          <Form.Item
+                            label="Number of Columns"
+                            name={
+                              mode === "create"
+                                ? "columns"
+                                : ["layoutConfig", "columns"]
+                            }
+                            rules={
+                              mode === "create"
+                                ? [
+                                    {
+                                      required: true,
+                                      message: "Please enter number of columns",
+                                    },
+                                  ]
+                                : []
+                            }
+                            extra={
+                              mode === "edit" && hasSponsors
+                                ? "Cannot be changed after sponsors join"
+                                : "Columns in grid (e.g., 5)"
+                            }
+                          >
+                            <InputNumber
+                              min={1}
+                              max={10}
+                              style={{ width: "100%" }}
+                              placeholder="5"
+                              disabled={mode === "edit" && hasSponsors}
+                            />
+                          </Form.Item>
+                        </Col>
+                      </Row>
+                      <Form.Item
+                        label="Position Arrangement"
+                        name={
+                          mode === "create"
+                            ? "arrangement"
+                            : ["layoutConfig", "arrangement"]
+                        }
+                        initialValue="horizontal"
+                      >
+                        <Radio.Group style={{ width: "100%" }}>
+                          <Form.Item noStyle shouldUpdate>
+                            {({ getFieldValue }) => {
+                              const fieldName =
+                                mode === "create"
+                                  ? "arrangement"
+                                  : ["layoutConfig", "arrangement"];
+                              const selectedArrangement =
+                                getFieldValue(fieldName) || "horizontal";
+                              const isDisabled = mode === "edit" && hasSponsors;
+                              return (
+                                <Row gutter={16}>
+                                  <Col span={12}>
+                                    <Card
+                                      hoverable={!isDisabled}
+                                      onClick={() => {
+                                        if (!isDisabled) {
+                                          if (mode === "create") {
+                                            form.setFieldsValue({
+                                              arrangement: "horizontal",
+                                            });
+                                          } else {
+                                            form.setFieldsValue({
+                                              layoutConfig: {
+                                                ...getFieldValue("layoutConfig"),
+                                                arrangement: "horizontal",
+                                              },
+                                            });
+                                          }
+                                        }
+                                      }}
+                                      style={{
+                                        border:
+                                          selectedArrangement === "horizontal"
+                                            ? "2px solid #1890ff"
+                                            : "1px solid #d9d9d9",
+                                        backgroundColor:
+                                          selectedArrangement === "horizontal"
+                                            ? "#e6f7ff"
+                                            : "white",
+                                        cursor: isDisabled ? "not-allowed" : "pointer",
+                                        opacity: isDisabled ? 0.6 : 1,
+                                      }}
+                                    >
+                                      <Radio
+                                        value="horizontal"
+                                        style={{ display: "none" }}
+                                      />
+                                      <div
+                                        style={{
+                                          textAlign: "center",
+                                          padding: "8px 0",
+                                        }}
+                                      >
+                                        <div
+                                          style={{
+                                            fontSize: "48px",
+                                            marginBottom: "8px",
+                                            fontWeight: "bold",
+                                            color: "#1890ff",
+                                            fontFamily: "monospace",
+                                            lineHeight: "1",
+                                          }}
+                                        >
+                                          ⟋
+                                        </div>
+                                        <div
+                                          style={{
+                                            fontWeight: "600",
+                                            marginBottom: "4px",
+                                          }}
+                                        >
+                                          Horizontal
+                                        </div>
+                                        <div
+                                          style={{
+                                            fontSize: "12px",
+                                            color: "#666",
+                                          }}
+                                        >
+                                          Positions fill rows first
+                                        </div>
+                                        <div
+                                          style={{
+                                            fontSize: "11px",
+                                            color: "#999",
+                                            marginTop: "4px",
+                                          }}
+                                        >
+                                          (1,2,3 in row 1)
+                                        </div>
+                                      </div>
+                                    </Card>
+                                  </Col>
+                                  <Col span={12}>
+                                    <Card
+                                      hoverable={!isDisabled}
+                                      onClick={() => {
+                                        if (!isDisabled) {
+                                          if (mode === "create") {
+                                            form.setFieldsValue({
+                                              arrangement: "vertical",
+                                            });
+                                          } else {
+                                            form.setFieldsValue({
+                                              layoutConfig: {
+                                                ...getFieldValue("layoutConfig"),
+                                                arrangement: "vertical",
+                                              },
+                                            });
+                                          }
+                                        }
+                                      }}
+                                      style={{
+                                        border:
+                                          selectedArrangement === "vertical"
+                                            ? "2px solid #1890ff"
+                                            : "1px solid #d9d9d9",
+                                        backgroundColor:
+                                          selectedArrangement === "vertical"
+                                            ? "#e6f7ff"
+                                            : "white",
+                                        cursor: isDisabled ? "not-allowed" : "pointer",
+                                        opacity: isDisabled ? 0.6 : 1,
+                                      }}
+                                    >
+                                      <Radio
+                                        value="vertical"
+                                        style={{ display: "none" }}
+                                      />
+                                      <div
+                                        style={{
+                                          textAlign: "center",
+                                          padding: "8px 0",
+                                        }}
+                                      >
+                                        <div
+                                          style={{
+                                            fontSize: "48px",
+                                            marginBottom: "8px",
+                                            fontWeight: "bold",
+                                            color: "#1890ff",
+                                            fontFamily: "monospace",
+                                            lineHeight: "1",
+                                          }}
+                                        >
+                                          ⟍
+                                        </div>
+                                        <div
+                                          style={{
+                                            fontWeight: "600",
+                                            marginBottom: "4px",
+                                          }}
+                                        >
+                                          Vertical
+                                        </div>
+                                        <div
+                                          style={{
+                                            fontSize: "12px",
+                                            color: "#666",
+                                          }}
+                                        >
+                                          Positions fill columns first
+                                        </div>
+                                        <div
+                                          style={{
+                                            fontSize: "11px",
+                                            color: "#999",
+                                            marginTop: "4px",
+                                          }}
+                                        >
+                                          (1,2,3 in column 1)
+                                        </div>
+                                      </div>
+                                    </Card>
+                                  </Col>
+                                </Row>
+                              );
+                            }}
+                          </Form.Item>
+                        </Radio.Group>
+                      </Form.Item>
+                    </>
+                  );
+                }}
               </Form.Item>
             </>
           )}

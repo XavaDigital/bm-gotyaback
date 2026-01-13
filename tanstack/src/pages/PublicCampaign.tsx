@@ -540,16 +540,19 @@ const PublicCampaign: React.FC = () => {
               description="No sponsors yet. Be the first!"
               image={Empty.PRESENTED_IMAGE_SIMPLE}
             />
-          ) : campaign.campaignType === "pay-what-you-want" &&
-            layout?.layoutType === "flexible" ? (
-            /* Flexible layout for pay-what-you-want */
+          ) : campaign.layoutStyle === "word-cloud" ||
+             campaign.layoutStyle === "amount-ordered" ||
+             campaign.layoutStyle === "size-ordered" ||
+             (campaign.campaignType === "pay-what-you-want" && layout?.layoutType === "flexible") ? (
+            /* Use flexible layout renderer for word-cloud, amount-ordered, size-ordered, or flexible layouts */
             <FlexibleLayoutRenderer
               sponsors={sponsors}
               layoutStyle={campaign.layoutStyle}
               sponsorDisplayType={campaign.sponsorDisplayType}
+              campaignType={campaign.campaignType}
             />
           ) : (
-            /* Traditional list for grid layouts */
+            /* Traditional list for grid layouts without special layout styles */
             <List
               dataSource={sponsors}
               renderItem={(sponsor) => (

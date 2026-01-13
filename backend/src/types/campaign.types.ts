@@ -8,6 +8,11 @@ export interface SizeTier {
   logoWidth: number; // px for logo sponsors
 }
 
+export interface SectionConfig {
+  amount: number; // Price for this section
+  slots: number; // Number of slots in this section
+}
+
 export interface PricingConfig {
   // For fixed pricing
   fixedPrice?: number;
@@ -18,6 +23,13 @@ export interface PricingConfig {
 
   // For positional pricing (multiplicative: position * priceMultiplier)
   priceMultiplier?: number;
+
+  // For positional pricing with sections layout (amount-ordered)
+  sections?: {
+    top?: SectionConfig;
+    middle?: SectionConfig;
+    bottom?: SectionConfig;
+  };
 
   // For pay-what-you-want
   minimumAmount?: number;

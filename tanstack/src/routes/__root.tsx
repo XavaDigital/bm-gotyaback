@@ -1,7 +1,7 @@
 import { createRootRoute, Outlet, useRouterState, HeadContent, Scripts } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ConfigProvider } from 'antd'
+import { ConfigProvider, App } from 'antd'
 import * as React from 'react'
 import type { ReactNode } from 'react'
 import 'antd/dist/reset.css'
@@ -90,10 +90,11 @@ function RootComponent() {
   const isAuthPage = pathname === '/login' || pathname === '/register'
   const isPublicPage = pathname === '/' || pathname.startsWith('/campaign/') || pathname.startsWith('/u/')
 
-  // Protected pages: dashboard, campaigns, profile
+  // Protected pages: dashboard, campaigns, profile, admin
   const isProtectedPage = pathname.startsWith('/dashboard') ||
                           pathname.startsWith('/campaigns') ||
-                          pathname.includes('/profile')
+                          pathname.includes('/profile') ||
+                          pathname.startsWith('/admin')
 
   // Public pages (including home) and auth pages use dark theme
   if (isAuthPage || isPublicPage) {
@@ -101,8 +102,10 @@ function RootComponent() {
       <RootDocument>
         <QueryClientProvider client={queryClient}>
           <ConfigProvider theme={darkTheme}>
-            <Outlet />
-            <TanStackRouterDevtools position="bottom-right" />
+            <App>
+              <Outlet />
+              <TanStackRouterDevtools position="bottom-right" />
+            </App>
           </ConfigProvider>
         </QueryClientProvider>
       </RootDocument>
@@ -115,10 +118,12 @@ function RootComponent() {
       <RootDocument>
         <QueryClientProvider client={queryClient}>
           <ConfigProvider theme={lightTheme}>
-            <AppLayout onLogout={authService.logout}>
-              <Outlet />
-            </AppLayout>
-            <TanStackRouterDevtools position="bottom-right" />
+            <App>
+              <AppLayout onLogout={authService.logout}>
+                <Outlet />
+              </AppLayout>
+              <TanStackRouterDevtools position="bottom-right" />
+            </App>
           </ConfigProvider>
         </QueryClientProvider>
       </RootDocument>
@@ -130,8 +135,10 @@ function RootComponent() {
     <RootDocument>
       <QueryClientProvider client={queryClient}>
         <ConfigProvider theme={lightTheme}>
-          <Outlet />
-          <TanStackRouterDevtools position="bottom-right" />
+          <App>
+            <Outlet />
+            <TanStackRouterDevtools position="bottom-right" />
+          </App>
         </ConfigProvider>
       </QueryClientProvider>
     </RootDocument>

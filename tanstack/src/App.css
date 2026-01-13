@@ -71,6 +71,39 @@ h6,
   color: #888;
 }
 
+/* --- Campaign Wizard Radio Card Styles --- */
+/* Override Ant Design Radio checked state to prevent dark background */
+
+/* Target the specific campaign wizard radio cards */
+.campaign-wizard-radio-group .campaign-wizard-radio .campaign-wizard-card {
+  background-color: #ffffff !important;
+  border-color: #d9d9d9 !important;
+}
+
+/* When radio is checked, apply light red background with primary red border */
+.campaign-wizard-radio-group .campaign-wizard-radio.ant-radio-wrapper-checked .campaign-wizard-card,
+.campaign-wizard-radio-group .ant-radio-wrapper-checked .campaign-wizard-card {
+  background-color: #fef0f2 !important;
+  border-color: #C8102E !important;
+  border-width: 2px !important;
+}
+
+/* Ensure text remains dark and readable on light backgrounds */
+.campaign-wizard-radio .campaign-wizard-card strong {
+  color: #262626 !important;
+}
+
+.campaign-wizard-radio .campaign-wizard-card p {
+  color: #595959 !important;
+}
+
+/* Additional fallback for any Radio wrapper with checked state */
+.ant-radio-wrapper-checked .campaign-wizard-card {
+  background-color: #fef0f2 !important;
+  border-color: #C8102E !important;
+  border-width: 2px !important;
+}
+
 /* --- Admin Layout Styles Ported from BM-estore --- */
 
 .ant-layout {

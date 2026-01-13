@@ -6,6 +6,7 @@ import sponsorshipRoutes from "./routes/sponsorship.routes";
 import paymentRoutes from "./routes/payment.routes";
 import userRoutes from "./routes/user.routes";
 import publicRoutes from "./routes/public.routes";
+import adminRoutes from "./routes/admin.routes";
 import * as paymentController from "./controllers/payment.controller";
 
 const app = express();
@@ -49,6 +50,7 @@ app.use("/api", sponsorshipRoutes);
 app.use("/api/payment", paymentRoutes); // Other payment routes (not webhook)
 app.use("/api/users", userRoutes);
 app.use("/api/public", publicRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Health check endpoints
 app.get("/", (req, res) => {

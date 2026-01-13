@@ -61,6 +61,17 @@ const campaignService = {
         // The interceptor converts 404s to resolved promises with null data
         return response.data;
     },
+
+    // Admin: Get all campaigns
+    getAllCampaigns: async (): Promise<Campaign[]> => {
+        const response = await apiClient.get<Campaign[]>('/admin/campaigns');
+        return response.data;
+    },
+
+    // Admin: Delete campaign
+    deleteCampaign: async (id: string): Promise<void> => {
+        await apiClient.delete(`/admin/campaigns/${id}`);
+    },
 };
 
 export default campaignService;

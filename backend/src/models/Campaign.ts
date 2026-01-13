@@ -51,6 +51,30 @@ const campaignSchema = new mongoose.Schema(
         // For positional pricing (multiplicative: position * priceMultiplier)
         priceMultiplier: { type: Number },
 
+        // For positional pricing with sections layout (amount-ordered)
+        sections: {
+          type: {
+            top: {
+              type: {
+                amount: { type: Number },
+                slots: { type: Number },
+              },
+            },
+            middle: {
+              type: {
+                amount: { type: Number },
+                slots: { type: Number },
+              },
+            },
+            bottom: {
+              type: {
+                amount: { type: Number },
+                slots: { type: Number },
+              },
+            },
+          },
+        },
+
         // For pay-what-you-want
         minimumAmount: { type: Number },
         suggestedAmounts: [{ type: Number }],

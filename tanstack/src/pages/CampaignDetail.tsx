@@ -24,6 +24,8 @@ import type {
   SponsorEntry,
   ShirtLayout,
   CampaignType,
+  LayoutStyle,
+  SponsorDisplayType,
 } from "~/types/campaign.types";
 import campaignService from "../services/campaign.service";
 import sponsorshipService from "../services/sponsorship.service";
@@ -42,6 +44,36 @@ const formatCampaignType = (type: CampaignType): string => {
       return 'Tiered Pricing';
     case 'pay-what-you-want':
       return 'Pay What You Want';
+    default:
+      return type;
+  }
+};
+
+// Helper function to format layout style labels
+const formatLayoutStyle = (style: LayoutStyle): string => {
+  switch (style) {
+    case 'grid':
+      return 'Grid Layout';
+    case 'size-ordered':
+      return 'Size Ordered';
+    case 'amount-ordered':
+      return 'Amount Ordered';
+    case 'word-cloud':
+      return 'Word Cloud';
+    default:
+      return style;
+  }
+};
+
+// Helper function to format sponsor display type labels
+const formatSponsorDisplayType = (type: SponsorDisplayType): string => {
+  switch (type) {
+    case 'text-only':
+      return 'Text Only';
+    case 'logo-only':
+      return 'Logo Only';
+    case 'both':
+      return 'Text & Logo';
     default:
       return type;
   }
@@ -775,6 +807,12 @@ const CampaignDetail: React.FC = () => {
           <Descriptions.Item label="Campaign Type">
             {formatCampaignType(campaign.campaignType)}
           </Descriptions.Item>
+          <Descriptions.Item label="Layout Style">
+            {formatLayoutStyle(campaign.layoutStyle)}
+          </Descriptions.Item>
+          <Descriptions.Item label="Sponsor Display Type">
+            {formatSponsorDisplayType(campaign.sponsorDisplayType)}
+          </Descriptions.Item>
           <Descriptions.Item label="Garment">
             {campaign.garmentType}
           </Descriptions.Item>
@@ -812,7 +850,8 @@ const CampaignDetail: React.FC = () => {
             boxSizing: "border-box",
           }}
         >
-          {layout.layoutType === "grid" ? (
+          {layout.layoutType === "grid" && campaign.layoutStyle !== "word-cloud" && campaign.layoutStyle !== "amount-ordered" && campaign.layoutStyle !== "size-ordered" ? (
+            /* Show traditional grid only for campaigns without special layout styles */
             <>
               <div
                 style={{
@@ -845,6 +884,7 @@ const CampaignDetail: React.FC = () => {
               />
             </>
           ) : (
+            /* Show flexible layout renderer for word-cloud, amount-ordered, size-ordered, or flexible layouts */
             <>
               <div
                 style={{
@@ -855,35 +895,26 @@ const CampaignDetail: React.FC = () => {
                   alignItems: "center",
                 }}
               >
-                <Tag color="purple">Pay What You Want</Tag>
+                <Tag color={campaign.campaignType === "pay-what-you-want" ? "purple" : "blue"}>
+                  {formatCampaignType(campaign.campaignType)}
+                </Tag>
                 <span
                   style={{
                     color: "#666",
                     fontSize: "clamp(12px, 2.5vw, 14px)",
                   }}
                 >
-                  Flexible layout
-                  {layout.maxSponsors
-                    ? ` (max ${layout.maxSponsors} sponsors)`
-                    : " (unlimited sponsors)"}
+                  {layout.layoutType === "flexible"
+                    ? `Flexible layout${layout.maxSponsors ? ` (max ${layout.maxSponsors} sponsors)` : " (unlimited sponsors)"}`
+                    : `${formatLayoutStyle(campaign.layoutStyle)} layout`}
                 </span>
-              </div>
-              <div style={{ marginBottom: 16 }}>
-                <p
-                  style={{
-                    fontSize: "clamp(12px, 2.5vw, 14px)",
-                    color: "#666",
-                    marginBottom: 8,
-                  }}
-                >
-                  Layout style: <strong>{campaign.layoutStyle}</strong>
-                </p>
               </div>
               {sponsors.length > 0 ? (
                 <FlexibleLayoutRenderer
                   sponsors={sponsors}
                   layoutStyle={campaign.layoutStyle}
                   sponsorDisplayType={campaign.sponsorDisplayType}
+                  campaignType={campaign.campaignType}
                 />
               ) : (
                 <div

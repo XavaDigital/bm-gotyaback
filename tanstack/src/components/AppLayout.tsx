@@ -7,6 +7,7 @@ import {
     SettingOutlined,
     GlobalOutlined,
     MenuOutlined,
+    ToolOutlined,
 } from "@ant-design/icons";
 import { Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import authService from "../services/auth.service";
@@ -80,6 +81,11 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onLogout }) => {
             key: "/dashboard/profile",
             icon: <SettingOutlined />,
             label: "Profile Settings",
+        },
+        {
+            key: "/admin",
+            icon: <ToolOutlined />,
+            label: "Admin Settings",
         }
     ];
 

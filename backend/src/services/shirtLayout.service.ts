@@ -3,6 +3,41 @@ import mongoose from "mongoose";
 import { PricingConfig } from "../types/campaign.types";
 import { calculatePositionPrice } from "./pricing.service";
 
+// Generate positions for section-based layout (top, middle, bottom)
+export const generateSectionPositions = (
+  pricing: PricingConfig,
+  campaignType: string
+) => {
+  if (!pricing.sections) {
+    throw new Error("Section configuration is required for section-based layout");
+  }
+
+  const positions = [];
+  let positionNumber = 1;
+
+  // Generate positions for each section
+  const sections: Array<"top" | "middle" | "bottom"> = ["top", "middle", "bottom"];
+
+  for (const section of sections) {
+    const sectionConfig = pricing.sections[section];
+    if (!sectionConfig) continue;
+
+    const { slots, amount } = sectionConfig;
+
+    for (let i = 0; i < slots; i++) {
+      positions.push({
+        positionId: positionNumber.toString(),
+        section, // Store which section this position belongs to
+        price: amount,
+        isTaken: false,
+      });
+      positionNumber++;
+    }
+  }
+
+  return positions;
+};
+
 // Generate position array based on campaign type
 export const generatePositions = (
   totalPositions: number,
@@ -74,6 +109,31 @@ export const generatePositions = (
   }
 
   return positions;
+};
+
+// Create section-based layout for positional campaigns with amount-ordered layout
+export const createSectionLayout = async (
+  campaignId: string,
+  campaignType: string,
+  pricing: PricingConfig
+) => {
+  // Check if layout already exists for this campaign
+  const existingLayout = await ShirtLayout.findOne({ campaignId });
+  if (existingLayout) {
+    throw new Error("Layout already exists for this campaign");
+  }
+
+  const positions = generateSectionPositions(pricing, campaignType);
+  const totalPositions = positions.length;
+
+  const layout = await ShirtLayout.create({
+    campaignId,
+    layoutType: "grid",
+    totalPositions,
+    placements: positions,
+  });
+
+  return layout;
 };
 
 export const createLayout = async (

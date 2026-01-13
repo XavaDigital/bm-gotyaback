@@ -223,11 +223,14 @@ export const updatePaymentStatus = async (
   return sponsorship;
 };
 
-// Get public sponsor list (all sponsors with approved logos, limited info)
+// Get public sponsor list (text sponsors + approved logo sponsors)
 export const getPublicSponsors = async (campaignId: string) => {
   const sponsors = await SponsorEntry.find({
     campaignId,
-    logoApprovalStatus: "approved", // Only show approved logos (or text-only sponsors)
+    $or: [
+      { sponsorType: "text" }, // All text sponsors
+      { sponsorType: "logo", logoApprovalStatus: "approved" }, // Only approved logo sponsors
+    ],
   }).select(
     "name message positionId createdAt sponsorType logoUrl displaySize calculatedFontSize calculatedLogoWidth paymentStatus amount"
   );

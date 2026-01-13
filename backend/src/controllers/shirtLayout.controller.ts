@@ -33,36 +33,55 @@ export const createLayout = async (req: Request, res: Response) => {
       maxSponsors,
       campaignType,
       arrangement,
+      layoutStyle,
     } = req.body;
 
     let layout;
 
-    // Determine layout type based on campaign type
-    if (campaignType === "pay-what-you-want") {
-      // Create flexible layout
-      layout = await shirtLayoutService.createFlexibleLayout(
+    // Check if this is a section-based layout (positional with amount-ordered)
+    if (
+      campaignType === "positional" &&
+      layoutStyle === "amount-ordered" &&
+      pricingConfig?.sections
+    ) {
+      // Create section-based layout
+      layout = await shirtLayoutService.createSectionLayout(
         campaignId,
-        maxSponsors
+        campaignType,
+        pricingConfig
       );
     } else {
-      // Create grid layout for fixed and positional
-      if (!totalPositions || !columns) {
-        return res
-          .status(400)
-          .json({
-            message:
-              "Total positions and columns are required for grid layouts",
-          });
-      }
+      // Determine layout type based on layoutStyle (not just campaign type)
+      // Flexible layouts: word-cloud, size-ordered, amount-ordered (for non-positional)
+      // Grid layout: grid (or when layoutStyle is not specified for fixed/positional)
+      const useFlexibleLayout =
+        layoutStyle === "word-cloud" ||
+        layoutStyle === "size-ordered" ||
+        (layoutStyle === "amount-ordered" && campaignType !== "positional");
 
-      layout = await shirtLayoutService.createLayout(
-        campaignId,
-        totalPositions,
-        columns,
-        campaignType,
-        pricingConfig || campaign.pricingConfig,
-        arrangement || "horizontal"
-      );
+      if (useFlexibleLayout) {
+        // Create flexible layout for word-cloud, size-ordered, amount-ordered
+        layout = await shirtLayoutService.createFlexibleLayout(
+          campaignId,
+          maxSponsors || totalPositions // Use totalPositions as max if maxSponsors not provided
+        );
+      } else {
+        // Create grid layout for grid layoutStyle or legacy fixed/positional
+        if (!totalPositions || !columns) {
+          return res.status(400).json({
+            message: "Total positions and columns are required for grid layouts",
+          });
+        }
+
+        layout = await shirtLayoutService.createLayout(
+          campaignId,
+          totalPositions,
+          columns,
+          campaignType,
+          pricingConfig || campaign.pricingConfig,
+          arrangement || "horizontal"
+        );
+      }
     }
 
     res.status(201).json(layout);

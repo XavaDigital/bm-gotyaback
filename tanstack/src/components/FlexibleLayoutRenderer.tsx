@@ -1,5 +1,5 @@
 import React from "react";
-import type { SponsorEntry, LayoutStyle } from "~/types/campaign.types";
+import type { SponsorEntry, LayoutStyle, CampaignType } from "~/types/campaign.types";
 import SizeOrderedRenderer from "./SizeOrderedRenderer";
 import AmountOrderedRenderer from "./AmountOrderedRenderer";
 import WordCloudRenderer from "./WordCloudRenderer";
@@ -8,12 +8,14 @@ interface FlexibleLayoutRendererProps {
   sponsors: SponsorEntry[];
   layoutStyle: LayoutStyle;
   sponsorDisplayType: "text-only" | "logo-only" | "both";
+  campaignType?: CampaignType; // Optional for backward compatibility
 }
 
 const FlexibleLayoutRenderer: React.FC<FlexibleLayoutRendererProps> = ({
   sponsors,
   layoutStyle,
   sponsorDisplayType,
+  campaignType,
 }) => {
   // Delegate to specific renderer based on layout style
   switch (layoutStyle) {
@@ -22,6 +24,7 @@ const FlexibleLayoutRenderer: React.FC<FlexibleLayoutRendererProps> = ({
         <SizeOrderedRenderer
           sponsors={sponsors}
           sponsorDisplayType={sponsorDisplayType}
+          campaignType={campaignType}
         />
       );
     case "amount-ordered":

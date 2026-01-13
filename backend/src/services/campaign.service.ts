@@ -279,3 +279,59 @@ export const updateCampaignPricing = async (
   await layout.save();
   return true;
 };
+
+export const reopenCampaign = async (campaignId: string, userId: string) => {
+  const campaign = await Campaign.findById(campaignId);
+
+  if (!campaign) {
+    throw new Error("Campaign not found");
+  }
+
+  // Verify ownership - handle populated ownerId
+  const ownerId =
+    typeof campaign.ownerId === "object" && campaign.ownerId._id
+      ? campaign.ownerId._id.toString()
+      : campaign.ownerId.toString();
+
+  if (ownerId !== userId) {
+    throw new Error("Not authorized to reopen this campaign");
+  }
+
+  if (!campaign.isClosed) {
+    throw new Error("Campaign is not closed");
+  }
+
+  campaign.isClosed = false;
+  await campaign.save();
+
+  return campaign;
+};
+
+export const getAllCampaigns = async () => {
+  const campaigns = await Campaign.find()
+    .populate("ownerId", "name email")
+    .sort({ createdAt: -1 });
+  return campaigns;
+};
+
+export const deleteCampaign = async (campaignId: string) => {
+  if (!mongoose.Types.ObjectId.isValid(campaignId)) {
+    throw new Error("Invalid campaign ID");
+  }
+
+  const campaign = await Campaign.findById(campaignId);
+
+  if (!campaign) {
+    throw new Error("Campaign not found");
+  }
+
+  // Delete associated data
+  const ShirtLayout = mongoose.model("ShirtLayout");
+  const SponsorEntry = mongoose.model("SponsorEntry");
+
+  await ShirtLayout.deleteMany({ campaignId });
+  await SponsorEntry.deleteMany({ campaignId });
+  await Campaign.findByIdAndDelete(campaignId);
+
+  return { message: "Campaign deleted successfully" };
+};

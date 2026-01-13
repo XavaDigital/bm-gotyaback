@@ -1,29 +1,48 @@
-import React from "react";
-import type { SponsorEntry, SponsorDisplayType } from "~/types/campaign.types";
+import React, { useMemo } from "react";
+import type { SponsorEntry, SponsorDisplayType, CampaignType } from "~/types/campaign.types";
 import TextSponsor from "./TextSponsor";
 import LogoSponsor from "./LogoSponsor";
 
 interface SizeOrderedRendererProps {
   sponsors: SponsorEntry[];
   sponsorDisplayType: SponsorDisplayType;
+  campaignType?: CampaignType;
 }
 
 const SizeOrderedRenderer: React.FC<SizeOrderedRendererProps> = ({
   sponsors,
   sponsorDisplayType,
+  campaignType,
 }) => {
-  // Filter sponsors with approved logos (if logo type)
-  const approvedSponsors = sponsors.filter((s) => {
-    if (s.sponsorType === "logo" && s.logoApprovalStatus !== "approved")
-      return false;
-    return true;
-  });
+  // Determine if this should use simple list layout (no card backgrounds)
+  // For fixed and positional pricing, use simple list
+  const isSimpleList = campaignType === "fixed" || campaignType === "positional";
 
-  // Sort sponsors by display size (largest first)
-  const sizeOrder = { xlarge: 4, large: 3, medium: 2, small: 1 };
-  const sortedSponsors = [...approvedSponsors].sort(
-    (a, b) => sizeOrder[b.displaySize] - sizeOrder[a.displaySize]
-  );
+  // Filter and sort sponsors - memoized to prevent unnecessary re-renders
+  const sortedSponsors = useMemo(() => {
+    // Filter sponsors with approved logos (if logo type)
+    const approvedSponsors = sponsors.filter((s) => {
+      if (s.sponsorType === "logo" && s.logoApprovalStatus !== "approved")
+        return false;
+      return true;
+    });
+
+    // For fixed price campaigns, sort by position ID (numerical order)
+    // For positional campaigns, sort by position ID (numerical order)
+    // For other campaigns, sort by display size (largest first)
+    if (campaignType === "fixed" || campaignType === "positional") {
+      return [...approvedSponsors].sort((a, b) => {
+        const posA = parseInt(a.positionId || "0", 10);
+        const posB = parseInt(b.positionId || "0", 10);
+        return posA - posB;
+      });
+    } else {
+      const sizeOrder = { xlarge: 4, large: 3, medium: 2, small: 1 };
+      return [...approvedSponsors].sort(
+        (a, b) => sizeOrder[b.displaySize] - sizeOrder[a.displaySize]
+      );
+    }
+  }, [sponsors, campaignType]);
 
   if (sortedSponsors.length === 0) {
     return (
@@ -49,6 +68,11 @@ const SizeOrderedRenderer: React.FC<SizeOrderedRendererProps> = ({
         alignItems: "center",
         justifyContent: "center",
         padding: "clamp(12px, 3vw, 20px)",
+        maxWidth: "600px", // Portrait mode - limit width
+        minHeight: "800px", // Portrait mode - taller than wide
+        margin: "0 auto", // Center the container
+        backgroundColor: "#1a1a1a",
+        borderRadius: "8px",
       }}
     >
       {sortedSponsors.map((sponsor) => {
@@ -73,18 +97,22 @@ const SizeOrderedRenderer: React.FC<SizeOrderedRendererProps> = ({
               flexDirection: "column",
               alignItems: "center",
               gap: "clamp(6px, 1.5vw, 8px)",
-              padding: "clamp(8px, 2vw, 12px)",
-              border: "1px solid #3a3a3a",
+              padding: isSimpleList ? "clamp(6px, 1.5vw, 8px)" : "clamp(8px, 2vw, 12px)",
+              border: isSimpleList ? "none" : "1px solid #3a3a3a",
               borderRadius: "8px",
-              backgroundColor: "#2a2a2a",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
+              backgroundColor: isSimpleList ? "transparent" : "#2a2a2a",
+              boxShadow: isSimpleList ? "none" : "0 2px 4px rgba(0,0,0,0.3)",
               transition: "transform 0.2s",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "scale(1.05)";
+              if (!isSimpleList) {
+                e.currentTarget.style.transform = "scale(1.05)";
+              }
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "scale(1)";
+              if (!isSimpleList) {
+                e.currentTarget.style.transform = "scale(1)";
+              }
             }}
           >
             {shouldShowLogo && (

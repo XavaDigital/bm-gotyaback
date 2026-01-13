@@ -2,14 +2,25 @@ import { PricingConfig, SizeTier, SponsorType } from "../types/campaign.types";
 
 /**
  * Calculate the price for a specific position in a positional pricing campaign
- * Supports two modes:
+ * Supports three modes:
+ * - Sections: Different prices for top, middle, and bottom sections
  * - Additive: basePrice + (position × pricePerPosition)
  * - Multiplicative: position × priceMultiplier
  */
 export const calculatePositionPrice = (
   position: number,
-  config: PricingConfig
+  config: PricingConfig,
+  section?: "top" | "middle" | "bottom"
 ): number => {
+  // Section-based pricing (for amount-ordered layout)
+  if (config.sections && section) {
+    const sectionConfig = config.sections[section];
+    if (!sectionConfig) {
+      throw new Error(`Section configuration not found for ${section}`);
+    }
+    return sectionConfig.amount;
+  }
+
   // Multiplicative pricing (e.g., position 40 × $5 = $200)
   if (config.priceMultiplier) {
     if (config.priceMultiplier <= 0) {
@@ -31,7 +42,7 @@ export const calculatePositionPrice = (
   }
 
   throw new Error(
-    "Invalid pricing config for positional pricing: must provide either priceMultiplier or (basePrice + pricePerPosition)"
+    "Invalid pricing config for positional pricing: must provide either sections, priceMultiplier, or (basePrice + pricePerPosition)"
   );
 };
 

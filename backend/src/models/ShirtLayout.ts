@@ -28,6 +28,7 @@ const shirtLayoutSchema = new mongoose.Schema({
       positionId: String, // e.g., "1", "2", "3"
       row: Number,
       col: Number,
+      section: { type: String, enum: ["top", "middle", "bottom"] }, // For section-based layouts
       price: Number, // Calculated based on pricing strategy
       isTaken: { type: Boolean, default: false },
       sponsorId: { type: mongoose.Schema.Types.ObjectId, ref: "SponsorEntry" },
