@@ -109,7 +109,7 @@ export const validatePricingConfig = (
       throw new Error("Fixed pricing requires a valid fixedPrice");
     }
   } else if (campaignType === "positional") {
-    // Must have either multiplicative OR additive pricing
+    // Must have either multiplicative OR additive pricing OR sections-based pricing
     const hasMultiplicative =
       config.priceMultiplier && config.priceMultiplier > 0;
     const hasAdditive =
@@ -117,11 +117,32 @@ export const validatePricingConfig = (
       config.basePrice >= 0 &&
       config.pricePerPosition !== undefined &&
       config.pricePerPosition >= 0;
+    const hasSections = config.sections && (
+      config.sections.top || config.sections.middle || config.sections.bottom
+    );
 
-    if (!hasMultiplicative && !hasAdditive) {
+    if (!hasMultiplicative && !hasAdditive && !hasSections) {
       throw new Error(
-        "Positional pricing requires either priceMultiplier or (basePrice + pricePerPosition)"
+        "Positional pricing requires either priceMultiplier, (basePrice + pricePerPosition), or sections configuration"
       );
+    }
+
+    // Validate sections if provided
+    if (hasSections && config.sections) {
+      const validateSection = (section: any, name: string) => {
+        if (section) {
+          if (!section.amount || section.amount <= 0) {
+            throw new Error(`Section '${name}' requires a valid amount greater than 0`);
+          }
+          if (!section.slots || section.slots <= 0) {
+            throw new Error(`Section '${name}' requires a valid number of slots greater than 0`);
+          }
+        }
+      };
+
+      validateSection(config.sections.top, "top");
+      validateSection(config.sections.middle, "middle");
+      validateSection(config.sections.bottom, "bottom");
     }
   } else if (campaignType === "pay-what-you-want") {
     if (!config.minimumAmount || config.minimumAmount <= 0) {

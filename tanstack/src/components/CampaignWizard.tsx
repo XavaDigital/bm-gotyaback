@@ -1072,7 +1072,7 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                         <>
                           <Alert
                             message="Sections Configuration"
-                            description="Configure pricing and slots for each section (top, middle, bottom)"
+                            description="Configure pricing and slots for each section. Middle section is the premium tier, followed by Top, then Bottom."
                             type="info"
                             showIcon
                             style={{ marginBottom: 16 }}
@@ -1087,9 +1087,76 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                             />
                           )}
 
-                          {/* Top Section */}
+                          {/* Middle Section - Premium Tier */}
                           <Card
-                            title="Top Section"
+                            title={
+                              <span style={{ fontSize: '16px', fontWeight: 600 }}>
+                                Middle Section (Premium Tier)
+                              </span>
+                            }
+                            style={{ marginBottom: 16, borderColor: '#ffd700', borderWidth: 2 }}
+                            styles={{
+                              header: { backgroundColor: '#fffbf0' },
+                              body: { backgroundColor: "#ffffff" }
+                            }}
+                          >
+                            <Row gutter={16}>
+                              <Col span={12}>
+                                <Form.Item
+                                  label="Amount per Slot"
+                                  name={
+                                    mode === "create"
+                                      ? ["pricingConfig", "sections", "middle", "amount"]
+                                      : ["pricing", "sections", "middle", "amount"]
+                                  }
+                                  rules={[
+                                    {
+                                      required: true,
+                                      message: "Please enter amount for middle section",
+                                    },
+                                  ]}
+                                  extra="Price for each slot in the premium middle section"
+                                >
+                                  <InputNumber
+                                    min={0}
+                                    prefix="$"
+                                    style={{ width: "100%" }}
+                                    placeholder="100"
+                                    disabled={mode === "edit" && hasSponsors}
+                                  />
+                                </Form.Item>
+                              </Col>
+                              <Col span={12}>
+                                <Form.Item
+                                  label="Number of Slots"
+                                  name={
+                                    mode === "create"
+                                      ? ["pricingConfig", "sections", "middle", "slots"]
+                                      : ["pricing", "sections", "middle", "slots"]
+                                  }
+                                  rules={[
+                                    {
+                                      required: true,
+                                      message: "Please enter number of slots",
+                                    },
+                                  ]}
+                                  extra="Total slots available in middle section"
+                                >
+                                  <InputNumber
+                                    min={1}
+                                    max={50}
+                                    style={{ width: "100%" }}
+                                    placeholder="5"
+                                    disabled={mode === "edit" && hasSponsors}
+                                  />
+                                </Form.Item>
+                              </Col>
+                            </Row>
+                          </Card>
+
+                          {/* Top Section - Mid Tier */}
+                          <Card
+                            title="Top Section (Mid Tier)"
                             style={{ marginBottom: 16 }}
                             styles={{
                               header: { backgroundColor: "#fafafa" },
@@ -1117,7 +1184,7 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                                     min={0}
                                     prefix="$"
                                     style={{ width: "100%" }}
-                                    placeholder="100"
+                                    placeholder="50"
                                     disabled={mode === "edit" && hasSponsors}
                                   />
                                 </Form.Item>
@@ -1142,69 +1209,6 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                                     min={1}
                                     max={50}
                                     style={{ width: "100%" }}
-                                    placeholder="5"
-                                    disabled={mode === "edit" && hasSponsors}
-                                  />
-                                </Form.Item>
-                              </Col>
-                            </Row>
-                          </Card>
-
-                          {/* Middle Section */}
-                          <Card
-                            title="Middle Section"
-                            style={{ marginBottom: 16 }}
-                            styles={{
-                              header: { backgroundColor: "#fafafa" },
-                              body: { backgroundColor: "#ffffff" }
-                            }}
-                          >
-                            <Row gutter={16}>
-                              <Col span={12}>
-                                <Form.Item
-                                  label="Amount per Slot"
-                                  name={
-                                    mode === "create"
-                                      ? ["pricingConfig", "sections", "middle", "amount"]
-                                      : ["pricing", "sections", "middle", "amount"]
-                                  }
-                                  rules={[
-                                    {
-                                      required: true,
-                                      message: "Please enter amount for middle section",
-                                    },
-                                  ]}
-                                  extra="Price for each slot in the middle section"
-                                >
-                                  <InputNumber
-                                    min={0}
-                                    prefix="$"
-                                    style={{ width: "100%" }}
-                                    placeholder="50"
-                                    disabled={mode === "edit" && hasSponsors}
-                                  />
-                                </Form.Item>
-                              </Col>
-                              <Col span={12}>
-                                <Form.Item
-                                  label="Number of Slots"
-                                  name={
-                                    mode === "create"
-                                      ? ["pricingConfig", "sections", "middle", "slots"]
-                                      : ["pricing", "sections", "middle", "slots"]
-                                  }
-                                  rules={[
-                                    {
-                                      required: true,
-                                      message: "Please enter number of slots",
-                                    },
-                                  ]}
-                                  extra="Total slots available in middle section"
-                                >
-                                  <InputNumber
-                                    min={1}
-                                    max={50}
-                                    style={{ width: "100%" }}
                                     placeholder="10"
                                     disabled={mode === "edit" && hasSponsors}
                                   />
@@ -1213,9 +1217,9 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                             </Row>
                           </Card>
 
-                          {/* Bottom Section */}
+                          {/* Bottom Section - Base Tier */}
                           <Card
-                            title="Bottom Section"
+                            title="Bottom Section (Base Tier)"
                             style={{ marginBottom: 16 }}
                             styles={{
                               header: { backgroundColor: "#fafafa" },
@@ -1268,7 +1272,7 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                                     min={1}
                                     max={50}
                                     style={{ width: "100%" }}
-                                    placeholder="10"
+                                    placeholder="15"
                                     disabled={mode === "edit" && hasSponsors}
                                   />
                                 </Form.Item>

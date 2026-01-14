@@ -13,6 +13,7 @@ import sponsorshipService from "../services/sponsorship.service";
 import ShirtLayout from "../components/ShirtLayout";
 import SponsorCheckoutModal from "../components/SponsorCheckoutModal";
 import FlexibleLayoutRenderer from "../components/FlexibleLayoutRenderer";
+import SectionBasedLayout from "../components/SectionBasedLayout";
 import PublicHeader from "../components/PublicHeader";
 import PublicFooter from "../components/PublicFooter";
 import { Route } from "../routes/campaign.$slug";
@@ -125,6 +126,14 @@ const PublicCampaign: React.FC = () => {
   const totalSpots = layout?.placements.length || 0;
   const takenSpots = layout?.placements.filter((p) => p.isTaken).length || 0;
 
+  // Check if this is a section-based layout
+  const isSectionBasedLayout = campaign.campaignType === 'positional' &&
+                                campaign.layoutStyle === 'amount-ordered' &&
+                                layout?.placements.some(p => p.section !== undefined);
+
+  // Check if this is a word cloud layout (should show simple button, not grid)
+  const isWordCloudLayout = campaign.layoutStyle === 'word-cloud';
+
   return (
     <div
       style={{
@@ -222,7 +231,8 @@ const PublicCampaign: React.FC = () => {
           </Card>
         )}
 
-        {layout && layout.layoutType === "grid" && (
+        {/* Grid Layout - Only show for non-word-cloud layouts */}
+        {layout && layout.layoutType === "grid" && !isWordCloudLayout && (
           <Card
             title={
               <span
@@ -260,6 +270,78 @@ const PublicCampaign: React.FC = () => {
                   No more sponsorships can be accepted.
                 </p>
               </div>
+            ) : isSectionBasedLayout ? (
+              <>
+                <div
+                  style={{
+                    marginBottom: 16,
+                    padding: "clamp(8px, 2vw, 12px)",
+                    backgroundColor: "#1f1f1f",
+                    borderRadius: 4,
+                    border: "1px solid #3a3a3a",
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "clamp(8px, 2vw, 16px)",
+                    alignItems: "center",
+                  }}
+                >
+                  <strong
+                    style={{
+                      color: "#ffffff",
+                      fontSize: "clamp(12px, 2.5vw, 14px)",
+                    }}
+                  >
+                    Legend:
+                  </strong>
+                  <span
+                    style={{
+                      color: "#ffffff",
+                      fontSize: "clamp(12px, 2.5vw, 14px)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: "inline-block",
+                        width: "clamp(12px, 2.5vw, 16px)",
+                        height: "clamp(12px, 2.5vw, 16px)",
+                        backgroundColor: "#52c41a",
+                        borderRadius: 2,
+                      }}
+                    />
+                    Available
+                  </span>
+                  <span
+                    style={{
+                      color: "#ffffff",
+                      fontSize: "clamp(12px, 2.5vw, 14px)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: "inline-block",
+                        width: "clamp(12px, 2.5vw, 16px)",
+                        height: "clamp(12px, 2.5vw, 16px)",
+                        backgroundColor: "#d9d9d9",
+                        borderRadius: 2,
+                      }}
+                    />
+                    Taken
+                  </span>
+                </div>
+                <SectionBasedLayout
+                  placements={layout.placements}
+                  selectedPosition={selectedPosition}
+                  onPositionSelect={handlePositionSelect}
+                  currency={campaign.currency}
+                  isClosed={isClosed}
+                />
+              </>
             ) : (
               <>
                 <div
@@ -379,6 +461,118 @@ const PublicCampaign: React.FC = () => {
                     Make a General Donation
                   </Button>
                 </div>
+              </>
+            )}
+          </Card>
+        )}
+
+        {/* Word Cloud Layout - Simple Sponsor Button */}
+        {layout && layout.layoutType === "grid" && isWordCloudLayout && (
+          <Card
+            title={
+              <span
+                style={{
+                  fontSize: "clamp(18px, 4vw, 24px)",
+                  fontWeight: "600",
+                }}
+              >
+                Become a Sponsor
+              </span>
+            }
+            style={{
+              marginBottom: 24,
+              width: "100%",
+              boxSizing: "border-box",
+            }}
+            extra={
+              layout.totalPositions && (
+                <div style={{ fontSize: "clamp(12px, 2.5vw, 14px)" }}>
+                  {takenSpots} / {totalSpots} sponsors
+                </div>
+              )
+            }
+          >
+            {isClosed ? (
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "clamp(24px, 6vw, 40px)",
+                  color: "#888",
+                }}
+              >
+                <h3 style={{ fontSize: "clamp(18px, 4vw, 24px)" }}>
+                  This campaign has ended
+                </h3>
+                <p style={{ fontSize: "clamp(14px, 2.5vw, 16px)" }}>
+                  No more sponsorships can be accepted.
+                </p>
+              </div>
+            ) : layout.totalPositions && takenSpots >= totalSpots ? (
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "clamp(24px, 6vw, 40px)",
+                  color: "#888",
+                }}
+              >
+                <h3 style={{ fontSize: "clamp(18px, 4vw, 24px)" }}>
+                  All Spots Filled
+                </h3>
+                <p style={{ fontSize: "clamp(14px, 2.5vw, 16px)" }}>
+                  This campaign has reached its maximum number of sponsors.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div
+                  style={{
+                    marginBottom: 24,
+                    padding: "clamp(16px, 3vw, 24px)",
+                    backgroundColor: "#1f1f1f",
+                    borderRadius: 8,
+                    border: "1px solid #3a3a3a",
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: "clamp(14px, 2.5vw, 16px)",
+                      marginBottom: 12,
+                      color: "#ffffff",
+                    }}
+                  >
+                    {campaign.campaignType === "fixed"
+                      ? `Join as a sponsor for $${campaign.pricingConfig?.fixedPrice || 0} ${campaign.currency}. Your name will be displayed in an artistic word cloud layout.`
+                      : `Join as a sponsor! Your name will be displayed in an artistic word cloud layout based on your position.`}
+                  </p>
+                  <p
+                    style={{
+                      fontSize: "clamp(12px, 2.5vw, 14px)",
+                      marginBottom: 0,
+                      color: "#999",
+                    }}
+                  >
+                    💡 All sponsors are displayed together in a creative, cloud-like arrangement.
+                  </p>
+                </div>
+                <Button
+                  type="primary"
+                  size="large"
+                  block
+                  onClick={() => {
+                    setSelectedPosition(undefined);
+                    setSelectedAmount(campaign.pricingConfig?.fixedPrice || 0);
+                    setCheckoutVisible(true);
+                  }}
+                  style={{
+                    height: "clamp(40px, 10vw, 50px)",
+                    fontSize: "clamp(14px, 3vw, 16px)",
+                    fontWeight: 600,
+                  }}
+                >
+                  Become a Sponsor
+                  {campaign.campaignType === "fixed" &&
+                    ` - $${campaign.pricingConfig?.fixedPrice || 0} ${campaign.currency}`}
+                </Button>
               </>
             )}
           </Card>
