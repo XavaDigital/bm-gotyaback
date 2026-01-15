@@ -879,8 +879,7 @@ const CampaignDetail: React.FC = () => {
                 layout={layout}
                 readonly={true}
                 currency={campaign.currency}
-                showPriceGradient={campaign.campaignType === "positional"}
-                sponsors={sponsors}
+                campaignType={campaign.campaignType}
               />
             </>
           ) : (

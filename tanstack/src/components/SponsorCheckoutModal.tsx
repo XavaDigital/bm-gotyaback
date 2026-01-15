@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Form, Input, Radio, Button, message, Alert, Spin, ConfigProvider, theme } from 'antd';
 import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import type { CreateSponsorshipRequest, CampaignPaymentConfig } from '~/types/campaign.types';
+import type { CreateSponsorshipRequest, CampaignPaymentConfig, Campaign } from '~/types/campaign.types';
 import getStripe from '~/utils/stripe';
 import paymentService from '~/services/payment.service';
+import LogoUpload from './LogoUpload';
 
 interface SponsorCheckoutModalProps {
     visible: boolean;
@@ -13,6 +14,7 @@ interface SponsorCheckoutModalProps {
     amount: number;
     currency: string;
     campaignId: string;
+    campaign: Campaign;
 }
 
 // Separate component for Stripe card payment form
@@ -255,6 +257,7 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
     amount,
     currency,
     campaignId,
+    campaign,
 }) => {
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
@@ -262,6 +265,22 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
     const [paymentConfig, setPaymentConfig] = useState<CampaignPaymentConfig | null>(null);
     const [loadingConfig, setLoadingConfig] = useState(true);
     const [stripePromise, setStripePromise] = useState<Promise<any> | null>(null);
+    const [logoFile, setLogoFile] = useState<File | undefined>(undefined);
+
+    // Set default sponsor type based on campaign settings when modal opens
+    useEffect(() => {
+        if (visible && campaign) {
+            // Set default sponsor type based on campaign settings
+            if (campaign.sponsorDisplayType === 'logo-only') {
+                form.setFieldsValue({ sponsorType: 'logo' });
+            } else if (campaign.sponsorDisplayType === 'text-only') {
+                form.setFieldsValue({ sponsorType: 'text' });
+            } else {
+                // Default to text for "both" option
+                form.setFieldsValue({ sponsorType: 'text' });
+            }
+        }
+    }, [visible, campaign, form]);
 
     // Fetch payment config when modal opens
     useEffect(() => {
@@ -297,7 +316,20 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
         try {
             const values = await form.validateFields();
             const finalAmount = positionId ? amount : parseFloat(values.amount);
-            setSponsorData({ ...values, campaignId, positionId, amount: finalAmount });
+
+            // Validate logo upload if required
+            if (values.sponsorType === 'logo' && !logoFile) {
+                message.error('Please upload a logo');
+                return;
+            }
+
+            setSponsorData({
+                ...values,
+                campaignId,
+                positionId,
+                amount: finalAmount,
+                logoFile: logoFile,
+            });
         } catch (error) {
             // Validation error
         }
@@ -438,6 +470,58 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
                             maxLength={100}
                             showCount
                         />
+                    </Form.Item>
+
+                    {/* Sponsor Type Selector - only show if campaign allows both */}
+                    {campaign?.sponsorDisplayType === 'both' && (
+                        <Form.Item
+                            label="Sponsor Type"
+                            name="sponsorType"
+                            rules={[{ required: true, message: 'Please select sponsor type' }]}
+                            initialValue="text"
+                        >
+                            <Radio.Group>
+                                <Radio value="text">Text Only (Name/Message)</Radio>
+                                <Radio value="logo">Logo Only</Radio>
+                            </Radio.Group>
+                        </Form.Item>
+                    )}
+
+                    {/* Logo Upload - show if campaign is logo-only OR if user selected logo type */}
+                    <Form.Item
+                        noStyle
+                        shouldUpdate={(prevValues, currentValues) =>
+                            prevValues.sponsorType !== currentValues.sponsorType
+                        }
+                    >
+                        {({ getFieldValue }) => {
+                            const sponsorType = getFieldValue('sponsorType');
+                            const showLogoUpload =
+                                campaign?.sponsorDisplayType === 'logo-only' ||
+                                (campaign?.sponsorDisplayType === 'both' && sponsorType === 'logo');
+
+                            return showLogoUpload ? (
+                                <>
+                                    <Alert
+                                        message="Logo Display Only"
+                                        description="Only your logo will be displayed on the campaign. You can still enter your name for record-keeping purposes."
+                                        type="info"
+                                        showIcon
+                                        style={{ marginBottom: 16 }}
+                                    />
+                                    <Form.Item
+                                        label="Logo"
+                                        required={
+                                            campaign?.sponsorDisplayType === 'logo-only' ||
+                                            sponsorType === 'logo'
+                                        }
+                                        extra="PNG, JPG, or SVG • Max 2MB • Min 200x200px • Square recommended"
+                                    >
+                                        <LogoUpload value={logoFile} onChange={setLogoFile} />
+                                    </Form.Item>
+                                </>
+                            ) : null;
+                        }}
                     </Form.Item>
 
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Card, Spin, message, Tag, Statistic, List, Empty, Button } from "antd";
+import { Card, Spin, message, Tag, Statistic, List, Empty, Button, Alert } from "antd";
 import { ClockCircleOutlined } from "@ant-design/icons";
 import type {
   Campaign,
@@ -132,7 +132,10 @@ const PublicCampaign: React.FC = () => {
                                 layout?.placements.some(p => p.section !== undefined);
 
   // Check if this is a word cloud layout (should show simple button, not grid)
-  const isWordCloudLayout = campaign.layoutStyle === 'word-cloud';
+  // EXCEPTION: Positional campaigns with word-cloud still need grid for position selection
+  // because position number determines the price
+  const isWordCloudLayout = campaign.layoutStyle === 'word-cloud' &&
+                            campaign.campaignType !== 'positional';
 
   return (
     <div
@@ -255,6 +258,15 @@ const PublicCampaign: React.FC = () => {
               </div>
             }
           >
+            {campaign.sponsorDisplayType === 'logo-only' && (
+              <Alert
+                message="Logo Sponsors Only"
+                description="This campaign accepts logo sponsors only. When you sponsor, you'll upload your logo which will be displayed on the campaign."
+                type="info"
+                showIcon
+                style={{ marginBottom: 16 }}
+              />
+            )}
             {isClosed ? (
               <div
                 style={{
@@ -341,6 +353,56 @@ const PublicCampaign: React.FC = () => {
                   currency={campaign.currency}
                   isClosed={isClosed}
                 />
+                {/* General Donation Option */}
+                <div
+                  style={{
+                    marginTop: 24,
+                    textAlign: "center",
+                    backgroundColor: "#1f1f1f",
+                    padding: "clamp(12px, 3vw, 20px)",
+                    borderRadius: 8,
+                    border: "1px solid #3a3a3a",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  <h4
+                    style={{
+                      marginBottom: 8,
+                      color: "#ffffff",
+                      fontSize: "clamp(15px, 3.5vw, 22px)",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Not looking for a spot on the shirt?
+                  </h4>
+                  <p
+                    style={{
+                      marginBottom: 12,
+                      color: "#cccccc",
+                      fontSize: "clamp(12px, 2.5vw, 15px)",
+                    }}
+                  >
+                    You can still support this campaign by making a general
+                    donation of any amount.
+                  </p>
+                  <Button
+                    type="primary"
+                    onClick={() => {
+                      setSelectedPosition(undefined);
+                      setSelectedAmount(0);
+                      setCheckoutVisible(true);
+                    }}
+                    style={{
+                      height: "clamp(38px, 6vw, 44px)",
+                      fontSize: "clamp(12px, 2.2vw, 14px)",
+                      fontWeight: "600",
+                      padding: "0 clamp(12px, 2.5vw, 20px)",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Make a General Donation
+                  </Button>
+                </div>
               </>
             ) : (
               <>
@@ -406,11 +468,28 @@ const PublicCampaign: React.FC = () => {
                     Taken
                   </span>
                 </div>
+
+                {/* Explanation for Positional + Word Cloud */}
+                {campaign.campaignType === 'positional' && campaign.layoutStyle === 'word-cloud' && (
+                  <Alert
+                    message="Position-Based Pricing with Word Cloud Display"
+                    description="Select a numbered position below to determine your sponsorship price. All sponsors will be displayed in a word cloud format at the same size, regardless of position number."
+                    type="info"
+                    showIcon
+                    style={{
+                      marginBottom: 16,
+                      background: '#1f1f1f',
+                      border: '1px solid #3a3a3a',
+                    }}
+                  />
+                )}
+
                 <ShirtLayout
                   layout={layout}
                   selectedPosition={selectedPosition}
                   onPositionSelect={handlePositionSelect}
                   currency={campaign.currency}
+                  campaignType={campaign.campaignType}
                 />
                 <div
                   style={{
@@ -466,8 +545,8 @@ const PublicCampaign: React.FC = () => {
           </Card>
         )}
 
-        {/* Word Cloud Layout - Simple Sponsor Button */}
-        {layout && layout.layoutType === "grid" && isWordCloudLayout && (
+        {/* Word Cloud Layout - Simple Sponsor Button for ALL campaign types */}
+        {layout && isWordCloudLayout && (
           <Card
             title={
               <span
@@ -542,6 +621,8 @@ const PublicCampaign: React.FC = () => {
                   >
                     {campaign.campaignType === "fixed"
                       ? `Join as a sponsor for $${campaign.pricingConfig?.fixedPrice || 0} ${campaign.currency}. Your name will be displayed in an artistic word cloud layout.`
+                      : campaign.campaignType === "pay-what-you-want"
+                      ? `Join as a sponsor! Choose your contribution amount. Your name will be displayed in an artistic word cloud layout.`
                       : `Join as a sponsor! Your name will be displayed in an artistic word cloud layout based on your position.`}
                   </p>
                   <p
@@ -560,7 +641,15 @@ const PublicCampaign: React.FC = () => {
                   block
                   onClick={() => {
                     setSelectedPosition(undefined);
-                    setSelectedAmount(campaign.pricingConfig?.fixedPrice || 0);
+                    // Set amount based on campaign type
+                    if (campaign.campaignType === "fixed") {
+                      setSelectedAmount(campaign.pricingConfig?.fixedPrice || 0);
+                    } else if (campaign.campaignType === "pay-what-you-want") {
+                      setSelectedAmount(campaign.pricingConfig?.minimumAmount || 0);
+                    } else {
+                      // Positional - amount will be determined by position selection (set to 0 for now)
+                      setSelectedAmount(0);
+                    }
                     setCheckoutVisible(true);
                   }}
                   style={{
@@ -573,13 +662,64 @@ const PublicCampaign: React.FC = () => {
                   {campaign.campaignType === "fixed" &&
                     ` - $${campaign.pricingConfig?.fixedPrice || 0} ${campaign.currency}`}
                 </Button>
+
+                {/* General Donation Option */}
+                <div
+                  style={{
+                    marginTop: 24,
+                    textAlign: "center",
+                    backgroundColor: "#1f1f1f",
+                    padding: "clamp(12px, 3vw, 20px)",
+                    borderRadius: 8,
+                    border: "1px solid #3a3a3a",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  <h4
+                    style={{
+                      marginBottom: 8,
+                      color: "#ffffff",
+                      fontSize: "clamp(15px, 3.5vw, 22px)",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Not looking for a spot on the shirt?
+                  </h4>
+                  <p
+                    style={{
+                      marginBottom: 12,
+                      color: "#cccccc",
+                      fontSize: "clamp(12px, 2.5vw, 15px)",
+                    }}
+                  >
+                    You can still support this campaign by making a general
+                    donation of any amount.
+                  </p>
+                  <Button
+                    type="primary"
+                    onClick={() => {
+                      setSelectedPosition(undefined);
+                      setSelectedAmount(0);
+                      setCheckoutVisible(true);
+                    }}
+                    style={{
+                      height: "clamp(38px, 6vw, 44px)",
+                      fontSize: "clamp(12px, 2.2vw, 14px)",
+                      fontWeight: "600",
+                      padding: "0 clamp(12px, 2.5vw, 20px)",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Make a General Donation
+                  </Button>
+                </div>
               </>
             )}
           </Card>
         )}
 
-        {/* Pay What You Want Section */}
-        {layout && layout.layoutType === "flexible" && (
+        {/* Pay What You Want Section - Only for non-word-cloud layouts */}
+        {layout && layout.layoutType === "flexible" && !isWordCloudLayout && (
           <Card
             title={
               <span
@@ -604,6 +744,15 @@ const PublicCampaign: React.FC = () => {
               )
             }
           >
+            {campaign.sponsorDisplayType === 'logo-only' && (
+              <Alert
+                message="Logo Sponsors Only"
+                description="This campaign accepts logo sponsors only. When you sponsor, you'll upload your logo which will be displayed on the campaign."
+                type="info"
+                showIcon
+                style={{ marginBottom: 16 }}
+              />
+            )}
             {isClosed ? (
               <div style={{ textAlign: "center", padding: 40, color: "#888" }}>
                 <h3>This campaign has ended</h3>
@@ -616,105 +765,105 @@ const PublicCampaign: React.FC = () => {
               </div>
             ) : (
               <>
-                <div style={{ marginBottom: 24 }}>
-                  <p style={{ fontSize: 16, marginBottom: 16 }}>
-                    {campaign.pricingConfig?.sizeTiers &&
-                    campaign.pricingConfig.sizeTiers.length > 0
-                      ? "Choose your contribution amount. Your sponsor display size will be based on your contribution tier."
-                      : `Choose your contribution amount. Minimum contribution: $${
-                          campaign.pricingConfig?.minimumAmount || 0
-                        }`}
+                <div
+                  style={{
+                    marginBottom: 24,
+                    padding: "clamp(16px, 3vw, 24px)",
+                    backgroundColor: "#1f1f1f",
+                    borderRadius: 8,
+                    border: "1px solid #3a3a3a",
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: "clamp(14px, 2.5vw, 16px)",
+                      marginBottom: 12,
+                      color: "#ffffff",
+                    }}
+                  >
+                    {campaign.sponsorDisplayType === 'logo-only'
+                      ? 'Choose your contribution amount. Your logo will be displayed based on the size of your contribution.'
+                      : 'Choose your contribution amount. Your name will be displayed based on the size of your contribution.'}
                   </p>
-
-                  {/* Size Tiers Display - only show if tiers are defined */}
-                  {campaign.pricingConfig?.sizeTiers &&
-                    campaign.pricingConfig.sizeTiers.length > 0 && (
-                      <div style={{ marginBottom: 16 }}>
-                        <strong>Size Tiers:</strong>
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: 12,
-                            marginTop: 12,
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          {campaign.pricingConfig.sizeTiers.map(
-                            (tier, index) => (
-                              <div
-                                key={index}
-                                style={{
-                                  flex: "1 1 200px",
-                                  padding: 12,
-                                  border: "1px solid #d9d9d9",
-                                  borderRadius: 8,
-                                  background: "#fafafa",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    fontWeight: "bold",
-                                    textTransform: "capitalize",
-                                    marginBottom: 4,
-                                  }}
-                                >
-                                  {tier.size}
-                                </div>
-                                <div style={{ fontSize: 14, color: "#666" }}>
-                                  ${tier.minAmount} -{" "}
-                                  {tier.maxAmount ? `$${tier.maxAmount}` : "∞"}
-                                </div>
-                                {campaign.sponsorDisplayType !== "logo-only" &&
-                                  tier.textFontSize && (
-                                    <div
-                                      style={{
-                                        fontSize: 12,
-                                        color: "#999",
-                                        marginTop: 4,
-                                      }}
-                                    >
-                                      Font: {tier.textFontSize}px
-                                    </div>
-                                  )}
-                                {campaign.sponsorDisplayType !== "text-only" &&
-                                  tier.logoWidth && (
-                                    <div
-                                      style={{
-                                        fontSize: 12,
-                                        color: "#999",
-                                        marginTop: 4,
-                                      }}
-                                    >
-                                      Logo: {tier.logoWidth}px
-                                    </div>
-                                  )}
-                              </div>
-                            )
-                          )}
-                        </div>
-                      </div>
-                    )}
+                  <p
+                    style={{
+                      fontSize: "clamp(12px, 2.5vw, 14px)",
+                      marginBottom: 0,
+                      color: "#999",
+                    }}
+                  >
+                    💡 Minimum contribution: ${campaign.pricingConfig?.minimumAmount || 0} {campaign.currency}
+                  </p>
                 </div>
 
-                <div style={{ textAlign: "center" }}>
-                  <Button
-                    type="primary"
-                    size="large"
-                    onClick={() => {
-                      setSelectedPosition(undefined);
-                      setSelectedAmount(
-                        campaign.pricingConfig?.minimumAmount || 0
-                      );
-                      setCheckoutVisible(true);
-                    }}
+                <Button
+                  type="primary"
+                  size="large"
+                  block
+                  onClick={() => {
+                    setSelectedPosition(undefined);
+                    setSelectedAmount(
+                      campaign.pricingConfig?.minimumAmount || 0
+                    );
+                    setCheckoutVisible(true);
+                  }}
+                  style={{
+                    height: "clamp(40px, 10vw, 50px)",
+                    fontSize: "clamp(14px, 3vw, 16px)",
+                    fontWeight: 600,
+                  }}
+                >
+                  Become a Sponsor
+                </Button>
+
+                {/* General Donation Option */}
+                <div
+                  style={{
+                    marginTop: 24,
+                    textAlign: "center",
+                    backgroundColor: "#1f1f1f",
+                    padding: "clamp(12px, 3vw, 20px)",
+                    borderRadius: 8,
+                    border: "1px solid #3a3a3a",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  <h4
                     style={{
-                      height: "60px",
-                      fontSize: "20px",
-                      padding: "0 48px",
+                      marginBottom: 8,
+                      color: "#ffffff",
+                      fontSize: "clamp(15px, 3.5vw, 22px)",
                       fontWeight: "600",
                     }}
                   >
-                    Become a Sponsor
+                    Not looking for a spot on the shirt?
+                  </h4>
+                  <p
+                    style={{
+                      marginBottom: 12,
+                      color: "#cccccc",
+                      fontSize: "clamp(12px, 2.5vw, 15px)",
+                    }}
+                  >
+                    You can still support this campaign by making a general
+                    donation of any amount.
+                  </p>
+                  <Button
+                    type="primary"
+                    onClick={() => {
+                      setSelectedPosition(undefined);
+                      setSelectedAmount(0);
+                      setCheckoutVisible(true);
+                    }}
+                    style={{
+                      height: "clamp(38px, 6vw, 44px)",
+                      fontSize: "clamp(12px, 2.2vw, 14px)",
+                      fontWeight: "600",
+                      padding: "0 clamp(12px, 2.5vw, 20px)",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Make a General Donation
                   </Button>
                 </div>
               </>

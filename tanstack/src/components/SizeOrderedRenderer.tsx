@@ -27,14 +27,20 @@ const SizeOrderedRenderer: React.FC<SizeOrderedRendererProps> = ({
       return true;
     });
 
-    // For fixed price campaigns, sort by position ID (numerical order)
-    // For positional campaigns, sort by position ID (numerical order)
+    // For fixed price campaigns, sort by position ID (numerical order - ascending)
+    // For positional campaigns, sort by position ID (reverse order - highest price first)
     // For other campaigns, sort by display size (largest first)
-    if (campaignType === "fixed" || campaignType === "positional") {
+    if (campaignType === "fixed") {
       return [...approvedSponsors].sort((a, b) => {
         const posA = parseInt(a.positionId || "0", 10);
         const posB = parseInt(b.positionId || "0", 10);
         return posA - posB;
+      });
+    } else if (campaignType === "positional") {
+      return [...approvedSponsors].sort((a, b) => {
+        const posA = parseInt(a.positionId || "0", 10);
+        const posB = parseInt(b.positionId || "0", 10);
+        return posB - posA; // Reverse order - highest position (highest price) first
       });
     } else {
       const sizeOrder = { xlarge: 4, large: 3, medium: 2, small: 1 };

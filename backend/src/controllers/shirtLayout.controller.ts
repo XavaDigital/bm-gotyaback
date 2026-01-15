@@ -51,22 +51,22 @@ export const createLayout = async (req: Request, res: Response) => {
         pricingConfig
       );
     } else {
-      // Determine layout type based on layoutStyle (not just campaign type)
-      // Flexible layouts: word-cloud, size-ordered, amount-ordered (for non-positional)
-      // Grid layout: grid (or when layoutStyle is not specified for fixed/positional)
+      // Determine layout type based on layoutStyle and campaign type
+      // Flexible layouts: word-cloud (all types), size-ordered (PWYW only), amount-ordered (PWYW only)
+      // Grid layout: size-ordered (Fixed/Positional), grid, or when layoutStyle is not specified
       const useFlexibleLayout =
         layoutStyle === "word-cloud" ||
-        layoutStyle === "size-ordered" ||
-        (layoutStyle === "amount-ordered" && campaignType !== "positional");
+        (layoutStyle === "size-ordered" && campaignType === "pay-what-you-want") ||
+        (layoutStyle === "amount-ordered" && campaignType === "pay-what-you-want");
 
       if (useFlexibleLayout) {
-        // Create flexible layout for word-cloud, size-ordered, amount-ordered
+        // Create flexible layout for word-cloud or PWYW with size-ordered/amount-ordered
         layout = await shirtLayoutService.createFlexibleLayout(
           campaignId,
           maxSponsors || totalPositions // Use totalPositions as max if maxSponsors not provided
         );
       } else {
-        // Create grid layout for grid layoutStyle or legacy fixed/positional
+        // Create grid layout for Fixed/Positional with size-ordered, or grid layoutStyle
         if (!totalPositions || !columns) {
           return res.status(400).json({
             message: "Total positions and columns are required for grid layouts",

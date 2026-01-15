@@ -1,5 +1,5 @@
-import React from 'react';
-import type { ShirtLayout as ShirtLayoutType, Position } from '~/types/campaign.types';
+import React, { useMemo } from 'react';
+import type { ShirtLayout as ShirtLayoutType, Position, CampaignType } from '~/types/campaign.types';
 
 interface ShirtLayoutProps {
     layout: ShirtLayoutType;
@@ -7,6 +7,7 @@ interface ShirtLayoutProps {
     onPositionSelect?: (positionId: string, price: number) => void;
     readonly?: boolean;
     currency?: string;
+    campaignType?: CampaignType;
 }
 
 const ShirtLayout: React.FC<ShirtLayoutProps> = ({
@@ -15,7 +16,15 @@ const ShirtLayout: React.FC<ShirtLayoutProps> = ({
     onPositionSelect,
     readonly = false,
     currency = 'NZD',
+    campaignType,
 }) => {
+    // For positional campaigns, reverse the order so highest price is at the top
+    const sortedPlacements = useMemo(() => {
+        if (campaignType === 'positional') {
+            return [...layout.placements].reverse();
+        }
+        return layout.placements;
+    }, [layout.placements, campaignType]);
     const handlePositionClick = (position: Position) => {
         if (readonly || position.isTaken) return;
         if (onPositionSelect) {
@@ -50,7 +59,7 @@ const ShirtLayout: React.FC<ShirtLayoutProps> = ({
                 width: '100%',
             }}
         >
-            {layout.placements.map((position) => (
+            {sortedPlacements.map((position) => (
                 <div
                     key={position.positionId}
                     onClick={() => handlePositionClick(position)}
