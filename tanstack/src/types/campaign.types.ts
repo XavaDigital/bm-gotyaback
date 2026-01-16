@@ -166,7 +166,7 @@ export interface CreateSponsorshipRequest {
     positionId?: string;
     name: string;
     email: string;
-    phone: string;
+    phone?: string;
     message?: string;
     amount: number;
     paymentMethod: 'card' | 'cash';

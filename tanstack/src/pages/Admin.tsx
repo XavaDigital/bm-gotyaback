@@ -67,6 +67,16 @@ const Admin: React.FC = () => {
             render: (text: string) => <strong>{text}</strong>,
         },
         {
+            title: 'ID',
+            dataIndex: '_id',
+            key: '_id',
+            render: (id: string) => (
+                <Text copyable={{ text: id }} style={{ fontSize: '12px', fontFamily: 'monospace' }}>
+                    {id.substring(0, 8)}...
+                </Text>
+            ),
+        },
+        {
             title: 'Owner',
             dataIndex: 'ownerId',
             key: 'owner',
@@ -78,6 +88,26 @@ const Admin: React.FC = () => {
             key: 'campaignType',
             render: (type: string) => (
                 <Tag color={type === 'fixed' ? 'blue' : type === 'positional' ? 'green' : 'orange'}>
+                    {type}
+                </Tag>
+            ),
+        },
+        {
+            title: 'Layout',
+            dataIndex: 'layoutStyle',
+            key: 'layoutStyle',
+            render: (style: string) => (
+                <Tag color="purple">
+                    {style}
+                </Tag>
+            ),
+        },
+        {
+            title: 'Display',
+            dataIndex: 'sponsorDisplayType',
+            key: 'sponsorDisplayType',
+            render: (type: string) => (
+                <Tag color={type === 'logo-only' ? 'cyan' : type === 'both' ? 'geekblue' : 'default'}>
                     {type}
                 </Tag>
             ),
@@ -176,6 +206,7 @@ const Admin: React.FC = () => {
                     >
                         <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
                             Generate test sponsor data for a campaign. This will create random sponsors with paid status.
+                            For logo-only campaigns, placeholder logos will be generated and require approval.
                         </Text>
 
                         <Form

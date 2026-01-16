@@ -260,11 +260,11 @@ const PublicCampaign: React.FC = () => {
           >
             {campaign.sponsorDisplayType === 'logo-only' && (
               <Alert
-                message="Logo Sponsors Only"
+                title="Logo Sponsors Only"
                 description="This campaign accepts logo sponsors only. When you sponsor, you'll upload your logo which will be displayed on the campaign."
                 type="info"
                 showIcon
-                style={{ marginBottom: 16 }}
+                style={{ marginBottom: 16, color: '#000000', backgroundColor: 'transparent', }}
               />
             )}
             {isClosed ? (
@@ -750,7 +750,7 @@ const PublicCampaign: React.FC = () => {
                 description="This campaign accepts logo sponsors only. When you sponsor, you'll upload your logo which will be displayed on the campaign."
                 type="info"
                 showIcon
-                style={{ marginBottom: 16 }}
+                style={{ marginBottom: 16, color: '#000000' }}
               />
             )}
             {isClosed ? (

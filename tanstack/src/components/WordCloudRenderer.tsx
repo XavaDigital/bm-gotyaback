@@ -95,10 +95,21 @@ const WordCloudRenderer: React.FC<WordCloudRendererProps> = ({
       const baseSize =
         sponsor.calculatedFontSize || sponsor.calculatedLogoWidth || 20;
 
-      // More accurate width estimation based on name length
-      const nameLength = sponsor.name.length;
-      const width = Math.max(baseSize * nameLength * 0.6, baseSize * 3);
-      const height = baseSize * 1.5;
+      // Calculate width and height based on sponsor type
+      let width: number;
+      let height: number;
+
+      if (sponsor.sponsorType === "logo" && sponsor.logoUrl) {
+        // For logos: use the calculated logo width directly
+        // Assume logos are roughly square or have a reasonable aspect ratio
+        width = sponsor.calculatedLogoWidth || 100;
+        height = sponsor.calculatedLogoWidth || 100; // Assume square for collision detection
+      } else {
+        // For text: estimate width based on name length
+        const nameLength = sponsor.name.length;
+        width = Math.max(baseSize * nameLength * 0.6, baseSize * 3);
+        height = baseSize * 1.5;
+      }
 
       let placed = false;
       let attempts = 0;

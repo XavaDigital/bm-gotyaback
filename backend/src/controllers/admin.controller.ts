@@ -5,6 +5,14 @@ import { ShirtLayout } from "../models/ShirtLayout";
 import mongoose from "mongoose";
 import * as campaignService from "../services/campaign.service";
 
+// Sample logo URLs for seeding (using real sponsor logos)
+const sampleLogoUrls = [
+  "https://s3.amazonaws.com/media.reviewus.plus/sponsors/logos/temp-1768546097400-h83iuq/attachment_125990042-1768546097401.png",
+  "https://s3.amazonaws.com/media.reviewus.plus/sponsors/logos/temp-1768545854052-sjht05/discord-1768545854052.png",
+  "https://s3.amazonaws.com/media.reviewus.plus/sponsors/logos/temp-1768545775448-35co8k/Lorraine-Tuhoe-Estore-06-600x450-1768545775449.png",
+  "https://s3.amazonaws.com/media.reviewus.plus/sponsors/logos/temp-1768545984396-9jwqw/Hamilton-Hawks-Estore-1024x768-1768545984396.png",
+];
+
 // Helper function to generate random sponsor data based on campaign type
 const generateRandomSponsor = (
   campaignId: string,
@@ -48,7 +56,8 @@ const generateRandomSponsor = (
   let amount: number;
   let positionId: string | undefined;
   let displaySize: "small" | "medium" | "large" | "xlarge";
-  let calculatedFontSize: number;
+  let calculatedFontSize: number | undefined;
+  let calculatedLogoWidth: number | undefined;
 
   // Determine amount and position based on campaign type
   if (layout.layoutType === "grid" && availablePositions.length > 0) {
@@ -65,6 +74,9 @@ const generateRandomSponsor = (
     amount = Math.floor(Math.random() * 180) + 20;
   }
 
+  // Determine sponsor type based on campaign settings
+  const sponsorType = campaign.sponsorDisplayType === "logo-only" ? "logo" : "text";
+
   // Determine display size based on campaign type and amount
   if (campaign.campaignType === "pay-what-you-want" && campaign.pricingConfig?.sizeTiers) {
     // Use size tiers for pay-what-you-want
@@ -76,30 +88,47 @@ const generateRandomSponsor = (
 
     if (tier) {
       displaySize = tier.size;
-      calculatedFontSize = tier.textFontSize || 16;
+      if (sponsorType === "text") {
+        calculatedFontSize = tier.textFontSize || 16;
+      } else {
+        calculatedLogoWidth = tier.logoWidth || 80;
+      }
     } else {
       // Fallback
       displaySize = "medium";
-      calculatedFontSize = 18;
+      if (sponsorType === "text") {
+        calculatedFontSize = 18;
+      } else {
+        calculatedLogoWidth = 80;
+      }
     }
   } else {
     // For fixed/positional, use simple amount-based sizing
     if (amount < 50) {
       displaySize = "small";
       calculatedFontSize = 14;
+      calculatedLogoWidth = 60;
     } else if (amount < 100) {
       displaySize = "medium";
       calculatedFontSize = 18;
+      calculatedLogoWidth = 80;
     } else if (amount < 150) {
       displaySize = "large";
       calculatedFontSize = 24;
+      calculatedLogoWidth = 120;
     } else {
       displaySize = "xlarge";
       calculatedFontSize = 32;
+      calculatedLogoWidth = 160;
     }
   }
 
-  return {
+  // Generate logo URL if sponsor type is logo
+  const logoUrl = sponsorType === "logo"
+    ? sampleLogoUrls[index % sampleLogoUrls.length]
+    : undefined;
+
+  const sponsor: any = {
     campaignId,
     positionId,
     name,
@@ -109,10 +138,20 @@ const generateRandomSponsor = (
     amount,
     paymentMethod: "card" as const,
     paymentStatus: "paid" as const,
-    sponsorType: "text" as const,
+    sponsorType,
     displaySize,
-    calculatedFontSize,
   };
+
+  // Add logo-specific fields
+  if (sponsorType === "logo") {
+    sponsor.logoUrl = logoUrl;
+    sponsor.logoApprovalStatus = "pending"; // Logos need approval
+    sponsor.calculatedLogoWidth = calculatedLogoWidth;
+  } else {
+    sponsor.calculatedFontSize = calculatedFontSize;
+  }
+
+  return sponsor;
 };
 
 export const seedSponsors = async (req: Request, res: Response) => {

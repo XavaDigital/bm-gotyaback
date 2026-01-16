@@ -25,7 +25,14 @@ export const createPaymentIntent = async (
   campaignId: string,
   positionId: string | undefined,
   amount: number,
-  sponsorData: { name: string; email: string; phone: string; message?: string }
+  sponsorData: {
+    name: string;
+    email: string;
+    phone?: string;
+    message?: string;
+    sponsorType?: string;
+    logoUrl?: string;
+  }
 ) => {
   // Get campaign details for metadata
   const campaign = await campaignService.getCampaignById(campaignId);
@@ -50,8 +57,10 @@ export const createPaymentIntent = async (
       positionId: positionId || "none",
       sponsorName: sponsorData.name,
       sponsorEmail: sponsorData.email,
-      sponsorPhone: sponsorData.phone,
+      sponsorPhone: sponsorData.phone || "",
       sponsorMessage: sponsorData.message || "",
+      sponsorType: sponsorData.sponsorType || "text",
+      logoUrl: sponsorData.logoUrl || "",
     },
     // Allow payment methods
     payment_method_types: ["card"],
@@ -103,6 +112,8 @@ const handlePaymentSuccess = async (paymentIntent: Stripe.PaymentIntent) => {
     sponsorEmail,
     sponsorPhone,
     sponsorMessage,
+    sponsorType,
+    logoUrl,
   } = paymentIntent.metadata;
 
   try {
@@ -111,10 +122,12 @@ const handlePaymentSuccess = async (paymentIntent: Stripe.PaymentIntent) => {
       positionId: positionId === "none" ? undefined : positionId,
       name: sponsorName,
       email: sponsorEmail,
-      phone: sponsorPhone,
+      phone: sponsorPhone || undefined,
       message: sponsorMessage || undefined,
       amount: paymentIntent.amount / 100, // Convert from cents
       paymentMethod: "card",
+      sponsorType: (sponsorType as "text" | "logo") || "text",
+      logoUrl: logoUrl || undefined,
     });
 
     // Update sponsorship to paid status

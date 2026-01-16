@@ -24,7 +24,7 @@ const LogoApproval: React.FC = () => {
     });
 
     // Fetch pending logos
-    const { data: pendingLogos, isLoading: logosLoading, refetch } = useQuery({
+    const { data: pendingLogos, isLoading: logosLoading, error: logosError, refetch } = useQuery({
         queryKey: ['pending-logos', id],
         queryFn: () => sponsorshipService.getPendingLogos(id!),
     });
@@ -90,6 +90,16 @@ const LogoApproval: React.FC = () => {
         return (
             <div style={{ textAlign: 'center', padding: 60 }}>
                 <h2>Campaign not found</h2>
+            </div>
+        );
+    }
+
+    if (logosError) {
+        return (
+            <div style={{ textAlign: 'center', padding: 60 }}>
+                <h2>Error loading pending logos</h2>
+                <p>{(logosError as any)?.response?.data?.message || (logosError as Error).message}</p>
+                <Button onClick={() => refetch()}>Retry</Button>
             </div>
         );
     }

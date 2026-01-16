@@ -4,7 +4,7 @@ import campaignService from '~/services/campaign.service'
 import sponsorshipService from '~/services/sponsorship.service'
 import CampaignDetail from '~/pages/CampaignDetail'
 
-export const Route = createFileRoute('/campaigns/$id')({
+export const Route = createFileRoute('/campaigns/$id/')({
   beforeLoad: async () => {
     // Server-side authentication check
     await requireAuth()

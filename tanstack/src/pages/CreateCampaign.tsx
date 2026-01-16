@@ -20,6 +20,8 @@ const CreateCampaign: React.FC = () => {
                                        campaign.layoutStyle === 'amount-ordered' &&
                                        campaign.pricingConfig?.sections;
 
+                const isWordCloud = campaign.layoutStyle === 'word-cloud';
+
                 if (isSectionLayout) {
                     // Section-based layout for positional campaigns
                     await campaignService.createLayout(campaign._id, {
@@ -27,8 +29,16 @@ const CreateCampaign: React.FC = () => {
                         layoutStyle: campaign.layoutStyle,
                         pricingConfig: campaign.pricingConfig,
                     });
+                } else if (isWordCloud) {
+                    // Flexible layout for word-cloud (no grid needed)
+                    await campaignService.createLayout(campaign._id, {
+                        maxSponsors: 0, // 0 = unlimited for word cloud
+                        campaignType: campaign.campaignType,
+                        pricingConfig: campaign.pricingConfig,
+                        layoutStyle: campaign.layoutStyle,
+                    });
                 } else if (layoutData.totalPositions && layoutData.columns) {
-                    // Grid layout for fixed and positional pricing
+                    // Grid layout for size-ordered fixed and positional pricing
                     await campaignService.createLayout(campaign._id, {
                         totalPositions: layoutData.totalPositions,
                         columns: layoutData.columns,

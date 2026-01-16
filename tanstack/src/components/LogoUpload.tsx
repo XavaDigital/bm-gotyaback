@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Upload, message, Image } from "antd";
 import { InboxOutlined } from "@ant-design/icons";
-import type { UploadProps, RcFile } from "antd/es/upload/interface";
+import type { UploadProps, RcFile, UploadFile } from "antd/es/upload/interface";
 
 const { Dragger } = Upload;
 
@@ -21,6 +21,8 @@ const LogoUpload: React.FC<LogoUploadProps> = ({
   const [previewUrl, setPreviewUrl] = useState<string | undefined>(
     value ? URL.createObjectURL(value) : undefined
   );
+  const [currentFile, setCurrentFile] = useState<File | undefined>(value);
+  const [fileList, setFileList] = useState<UploadFile[]>([]);
 
   const validateFile = (file: RcFile): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -82,20 +84,32 @@ const LogoUpload: React.FC<LogoUploadProps> = ({
   };
 
   const handleChange: UploadProps["onChange"] = async (info) => {
-    const { file } = info;
+    const { file, fileList: newFileList } = info;
 
-    if (file.status === "removed") {
+    if (file.status === "removed" || newFileList.length === 0) {
       setPreviewUrl(undefined);
+      setCurrentFile(undefined);
+      setFileList([]);
       onChange?.(undefined);
       return;
     }
 
-    if (file.originFileObj) {
-      const isValid = await validateFile(file.originFileObj as RcFile);
+    // Get the actual file object - use originFileObj if available, otherwise use file itself
+    const fileObj = (file.originFileObj || file) as File;
+
+    // Check if it's a valid File object
+    if (fileObj && fileObj instanceof File) {
+      const isValid = await validateFile(fileObj as RcFile);
+
       if (isValid) {
-        const url = URL.createObjectURL(file.originFileObj);
+        const url = URL.createObjectURL(fileObj);
         setPreviewUrl(url);
-        onChange?.(file.originFileObj as File);
+        setCurrentFile(fileObj);
+        setFileList(newFileList);
+        onChange?.(fileObj);
+      } else {
+        // Validation failed, clear the file list
+        setFileList([]);
       }
     }
   };
@@ -104,10 +118,13 @@ const LogoUpload: React.FC<LogoUploadProps> = ({
     name: "logo",
     multiple: false,
     maxCount: 1,
+    fileList: fileList,
     beforeUpload: () => false, // Prevent auto upload
     onChange: handleChange,
     onRemove: () => {
       setPreviewUrl(undefined);
+      setCurrentFile(undefined);
+      setFileList([]);
       onChange?.(undefined);
     },
   };

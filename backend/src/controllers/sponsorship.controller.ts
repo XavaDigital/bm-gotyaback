@@ -22,7 +22,7 @@ export const createSponsorship = async (req: Request, res: Response) => {
     } = data;
 
     // Validation
-    if (!name || !email || !phone || !amount || !paymentMethod) {
+    if (!name || !email || !amount || !paymentMethod) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
@@ -192,5 +192,30 @@ export const getPendingLogos = async (req: Request, res: Response) => {
     const message = (error as Error).message;
     const status = message.includes("Not authorized") ? 403 : 400;
     res.status(status).json({ message });
+  }
+};
+
+// Upload logo before payment (for card payments)
+export const uploadLogo = async (req: Request, res: Response) => {
+  try {
+    const campaignId = req.params.id;
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ message: "No logo file provided" });
+    }
+
+    // Upload logo to S3 with a temporary ID
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+    const logoUrl = await uploadService.uploadLogoToS3(
+      file.buffer,
+      file.originalname,
+      file.mimetype,
+      tempId
+    );
+
+    res.json({ logoUrl });
+  } catch (error) {
+    res.status(400).json({ message: (error as Error).message });
   }
 };

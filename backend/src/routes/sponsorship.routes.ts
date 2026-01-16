@@ -47,4 +47,11 @@ router.get(
   sponsorshipController.getPendingLogos
 );
 
+// Logo pre-upload route (for card payments)
+router.post(
+  "/campaigns/:id/upload-logo",
+  uploadLogo.single("logoFile"),
+  sponsorshipController.uploadLogo
+);
+
 export default router;

@@ -12,6 +12,8 @@ const paymentService = {
             email: string;
             phone?: string;
             message?: string;
+            sponsorType?: string;
+            logoUrl?: string;
         };
     }) => {
         const response = await apiClient.post('/payment/create-payment-intent', data);

@@ -4,6 +4,7 @@ import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useStri
 import type { CreateSponsorshipRequest, CampaignPaymentConfig, Campaign } from '~/types/campaign.types';
 import getStripe from '~/utils/stripe';
 import paymentService from '~/services/payment.service';
+import sponsorshipService from '~/services/sponsorship.service';
 import LogoUpload from './LogoUpload';
 
 interface SponsorCheckoutModalProps {
@@ -20,7 +21,17 @@ interface SponsorCheckoutModalProps {
 // Separate component for Stripe card payment form
 const StripeCardForm: React.FC<{
     onSubmit: (paymentMethod: 'card' | 'cash') => Promise<void>;
-    sponsorData: { name: string; email: string; phone?: string; message?: string; campaignId: string; positionId?: string; amount: number };
+    sponsorData: {
+        name: string;
+        email: string;
+        phone?: string;
+        message?: string;
+        campaignId: string;
+        positionId?: string;
+        amount: number;
+        sponsorType?: string;
+        logoFile?: File;
+    };
     amount: number;
     currency: string;
     loading: boolean;
@@ -44,6 +55,21 @@ const StripeCardForm: React.FC<{
 
         setProcessing(true);
         try {
+            // Upload logo first if present
+            let logoUrl: string | undefined;
+
+            if (sponsorData.logoFile && sponsorData.sponsorType === 'logo') {
+                try {
+                    const uploadResult = await sponsorshipService.uploadLogo(
+                        sponsorData.campaignId,
+                        sponsorData.logoFile
+                    );
+                    logoUrl = uploadResult.logoUrl;
+                } catch (error: any) {
+                    throw new Error(`Logo upload failed: ${error.message}`);
+                }
+            }
+
             // Call backend to create payment intent
             const { clientSecret } = await paymentService.createPaymentIntent({
                 campaignId: sponsorData.campaignId,
@@ -54,6 +80,8 @@ const StripeCardForm: React.FC<{
                     email: sponsorData.email,
                     phone: sponsorData.phone,
                     message: sponsorData.message,
+                    sponsorType: sponsorData.sponsorType,
+                    logoUrl: logoUrl,
                 },
             });
 
@@ -177,7 +205,17 @@ const StripeCardForm: React.FC<{
 
 const CheckoutForm: React.FC<{
     onSubmit: (paymentMethod: 'card' | 'cash') => Promise<void>;
-    sponsorData: { name: string; email: string; phone?: string; message?: string; campaignId: string; positionId?: string; amount: number };
+    sponsorData: {
+        name: string;
+        email: string;
+        phone?: string;
+        message?: string;
+        campaignId: string;
+        positionId?: string;
+        amount: number;
+        sponsorType?: string;
+        logoFile?: File;
+    };
     amount: number;
     currency: string;
     loading: boolean;
@@ -267,6 +305,10 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
     const [stripePromise, setStripePromise] = useState<Promise<any> | null>(null);
     const [logoFile, setLogoFile] = useState<File | undefined>(undefined);
 
+    const handleLogoChange = (file: File | undefined) => {
+        setLogoFile(file);
+    };
+
     // Set default sponsor type based on campaign settings when modal opens
     useEffect(() => {
         if (visible && campaign) {
@@ -349,6 +391,7 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
 
             form.resetFields();
             setSponsorData(null);
+            setLogoFile(undefined);
             onCancel();
 
             // Show success message for card payments
@@ -387,6 +430,7 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
                     onCancel();
                     form.resetFields();
                     setSponsorData(null);
+                    setLogoFile(undefined);
                 }}
                 footer={null}
                 width={550}
@@ -473,7 +517,7 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
                     </Form.Item>
 
                     {/* Sponsor Type Selector - only show if campaign allows both */}
-                    {campaign?.sponsorDisplayType === 'both' && (
+                    {campaign?.sponsorDisplayType === 'both' ? (
                         <Form.Item
                             label="Sponsor Type"
                             name="sponsorType"
@@ -484,6 +528,11 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
                                 <Radio value="text">Text Only (Name/Message)</Radio>
                                 <Radio value="logo">Logo Only</Radio>
                             </Radio.Group>
+                        </Form.Item>
+                    ) : (
+                        // Hidden field for logo-only or text-only campaigns
+                        <Form.Item name="sponsorType" hidden>
+                            <Input />
                         </Form.Item>
                     )}
 
@@ -517,7 +566,7 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
                                         }
                                         extra="PNG, JPG, or SVG • Max 2MB • Min 200x200px • Square recommended"
                                     >
-                                        <LogoUpload value={logoFile} onChange={setLogoFile} />
+                                        <LogoUpload value={logoFile} onChange={handleLogoChange} />
                                     </Form.Item>
                                 </>
                             ) : null;

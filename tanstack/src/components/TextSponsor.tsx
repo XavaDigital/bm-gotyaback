@@ -24,6 +24,7 @@ const TextSponsor: React.FC<TextSponsorProps> = ({
         transition: "opacity 0.2s",
         display: "inline-block",
         lineHeight: 1.2,
+        textAlign: "center",
       }}
     >
       {name}

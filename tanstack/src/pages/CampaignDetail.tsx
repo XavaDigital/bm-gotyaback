@@ -12,6 +12,7 @@ import {
   Modal,
   Statistic,
   Badge,
+  Alert,
 } from "antd";
 import {
   CloseCircleOutlined,
@@ -31,9 +32,9 @@ import campaignService from "../services/campaign.service";
 import sponsorshipService from "../services/sponsorship.service";
 import EditCampaignModal from "../components/EditCampaignModal";
 import ShirtLayoutComponent from "../components/ShirtLayout";
-import LogoApprovalCard from "../components/LogoApprovalCard";
 import FlexibleLayoutRenderer from "../components/FlexibleLayoutRenderer";
-import { Route } from "../routes/campaigns.$id";
+import GridLayoutRenderer from "../components/GridLayoutRenderer";
+import { Route } from "../routes/campaigns.$id.index";
 
 // Helper function to format campaign type labels
 const formatCampaignType = (type: CampaignType): string => {
@@ -80,7 +81,7 @@ const formatSponsorDisplayType = (type: SponsorDisplayType): string => {
 };
 
 const CampaignDetail: React.FC = () => {
-  const { id } = useParams({ from: '/campaigns/$id' });
+  const { id } = useParams({ from: '/campaigns/$id/' });
   const navigate = useNavigate();
   const loaderData = Route.useLoaderData();
 
@@ -130,22 +131,7 @@ const CampaignDetail: React.FC = () => {
     }
   };
 
-  const handleApproveLogo = async (sponsorId: string) => {
-    await sponsorshipService.approveLogo(sponsorId, { approved: true });
-    // Reload data
-    loadPendingLogos();
-    refetch();
-  };
 
-  const handleRejectLogo = async (sponsorId: string, reason: string) => {
-    await sponsorshipService.approveLogo(sponsorId, {
-      approved: false,
-      rejectionReason: reason,
-    });
-    // Reload data
-    loadPendingLogos();
-    refetch();
-  };
 
   const handleCloseCampaign = () => {
     Modal.confirm({
@@ -737,48 +723,41 @@ const CampaignDetail: React.FC = () => {
         </div>
       </Card>
 
-      {/* Pending Logo Approvals */}
+      {/* Pending Logo Approvals Alert */}
       {pendingLogos.length > 0 && (
-        <Card
-          title={
-            <span style={{ fontSize: "clamp(16px, 3.5vw, 20px)" }}>
+        <Alert
+          message={
+            <span style={{ fontSize: "clamp(14px, 3vw, 16px)" }}>
               <BellOutlined style={{ marginRight: 8 }} />
-              Pending Logo Approvals
-              <Badge
-                count={pendingLogos.length}
-                style={{ marginLeft: 8 }}
-                showZero={false}
-              />
+              {pendingLogos.length} Logo{pendingLogos.length > 1 ? 's' : ''} Pending Approval
             </span>
+          }
+          description={
+            <span style={{ fontSize: "clamp(12px, 2.5vw, 14px)" }}>
+              You have {pendingLogos.length} sponsor logo{pendingLogos.length > 1 ? 's' : ''} waiting for your review.
+            </span>
+          }
+          type="warning"
+          showIcon
+          action={
+            <Button
+              size="small"
+              type="primary"
+              onClick={() => navigate({ to: `/campaigns/${id}/logo-approval` })}
+              style={{
+                fontSize: "clamp(12px, 2.5vw, 14px)",
+                height: "clamp(28px, 5vw, 32px)",
+              }}
+            >
+              Review Logos
+            </Button>
           }
           style={{
             marginBottom: "clamp(16px, 3vw, 24px)",
             width: "100%",
             boxSizing: "border-box",
           }}
-        >
-          {loadingPendingLogos ? (
-            <div
-              style={{
-                textAlign: "center",
-                padding: "clamp(24px, 6vw, 40px)",
-              }}
-            >
-              <Spin />
-            </div>
-          ) : (
-            <div>
-              {pendingLogos.map((sponsor) => (
-                <LogoApprovalCard
-                  key={sponsor._id}
-                  sponsor={sponsor}
-                  onApprove={handleApproveLogo}
-                  onReject={handleRejectLogo}
-                />
-              ))}
-            </div>
-          )}
-        </Card>
+        />
       )}
 
       <Card
@@ -850,8 +829,39 @@ const CampaignDetail: React.FC = () => {
             boxSizing: "border-box",
           }}
         >
-          {layout.layoutType === "grid" && campaign.layoutStyle !== "word-cloud" && campaign.layoutStyle !== "amount-ordered" && campaign.layoutStyle !== "size-ordered" ? (
-            /* Show traditional grid only for campaigns without special layout styles */
+          {layout.layoutType === "grid" && campaign.layoutStyle === "size-ordered" ? (
+            /* Show grid layout with sponsors for Fixed/Positional + Size-ordered */
+            <>
+              <div
+                style={{
+                  marginBottom: 16,
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 8,
+                  alignItems: "center",
+                }}
+              >
+                <Tag color="blue">
+                  {formatCampaignType(campaign.campaignType)}
+                </Tag>
+                <span
+                  style={{
+                    color: "#666",
+                    fontSize: "clamp(12px, 2.5vw, 14px)",
+                  }}
+                >
+                  {layout.rows} rows × {layout.columns} columns = {totalSpots}{" "}
+                  positions
+                </span>
+              </div>
+              <GridLayoutRenderer
+                layout={layout}
+                sponsors={sponsors}
+                sponsorDisplayType={campaign.sponsorDisplayType}
+              />
+            </>
+          ) : layout.layoutType === "grid" ? (
+            /* Show traditional grid for other grid layouts (empty positions) */
             <>
               <div
                 style={{
@@ -883,7 +893,7 @@ const CampaignDetail: React.FC = () => {
               />
             </>
           ) : (
-            /* Show flexible layout renderer for word-cloud, amount-ordered, size-ordered, or flexible layouts */
+            /* Show flexible layout renderer for word-cloud, amount-ordered, or flexible layouts */
             <>
               <div
                 style={{
