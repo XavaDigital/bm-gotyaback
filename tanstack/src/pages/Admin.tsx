@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Card, Form, Input, Button, App, Typography, Space, InputNumber, Divider, Table, Popconfirm, Tag } from 'antd';
-import { ThunderboltOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
+import { Card, Form, Input, Button, App, Typography, Space, InputNumber, Divider, Table, Popconfirm, Tag, Tooltip } from 'antd';
+import { ThunderboltOutlined, DeleteOutlined, EyeOutlined, CheckCircleOutlined, DollarOutlined, ClearOutlined, CopyOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import apiClient from '~/services/apiClient';
@@ -51,6 +51,52 @@ const Admin: React.FC = () => {
         }
     };
 
+    const handleApproveAllLogos = async (campaignId: string) => {
+        setLoading(true);
+        try {
+            const response = await apiClient.post('/admin/approve-all-logos', {
+                campaignId,
+            });
+
+            message.success(`Approved ${response.data.count} logos!`);
+        } catch (error: any) {
+            message.error(error.response?.data?.message || 'Failed to approve logos');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleMarkAllAsPaid = async (campaignId: string) => {
+        setLoading(true);
+        try {
+            const response = await apiClient.post('/admin/mark-all-paid', {
+                campaignId,
+            });
+
+            message.success(`Marked ${response.data.count} sponsors as paid!`);
+        } catch (error: any) {
+            message.error(error.response?.data?.message || 'Failed to mark sponsors as paid');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleClearSponsors = async (campaignId: string) => {
+        setLoading(true);
+        try {
+            const response = await apiClient.post('/admin/clear-sponsors', {
+                campaignId,
+            });
+
+            message.success(`Deleted ${response.data.count} sponsors!`);
+            queryClient.invalidateQueries({ queryKey: ['admin-campaigns'] });
+        } catch (error: any) {
+            message.error(error.response?.data?.message || 'Failed to clear sponsors');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleDeleteCampaign = (campaignId: string) => {
         deleteMutation.mutate(campaignId);
     };
@@ -59,22 +105,17 @@ const Admin: React.FC = () => {
         navigate({ to: '/campaigns/$id', params: { id: campaignId } });
     };
 
+    const handleCopyId = (campaignId: string) => {
+        navigator.clipboard.writeText(campaignId);
+        message.success('Campaign ID copied to clipboard!');
+    };
+
     const columns = [
         {
             title: 'Title',
             dataIndex: 'title',
             key: 'title',
             render: (text: string) => <strong>{text}</strong>,
-        },
-        {
-            title: 'ID',
-            dataIndex: '_id',
-            key: '_id',
-            render: (id: string) => (
-                <Text copyable={{ text: id }} style={{ fontSize: '12px', fontFamily: 'monospace' }}>
-                    {id.substring(0, 8)}...
-                </Text>
-            ),
         },
         {
             title: 'Owner',
@@ -131,15 +172,61 @@ const Admin: React.FC = () => {
         {
             title: 'Actions',
             key: 'actions',
+            width: 220,
             render: (_: any, record: Campaign) => (
-                <Space>
-                    <Button
-                        type="link"
-                        icon={<EyeOutlined />}
-                        onClick={() => handleViewCampaign(record._id)}
+                <Space size="small">
+                    <Tooltip title="Copy Campaign ID">
+                        <Button
+                            type="text"
+                            icon={<CopyOutlined />}
+                            onClick={() => handleCopyId(record._id)}
+                            size="small"
+                        />
+                    </Tooltip>
+                    <Tooltip title="View Campaign">
+                        <Button
+                            type="text"
+                            icon={<EyeOutlined />}
+                            onClick={() => handleViewCampaign(record._id)}
+                            size="small"
+                        />
+                    </Tooltip>
+                    <Tooltip title="Approve All Logos">
+                        <Button
+                            type="text"
+                            icon={<CheckCircleOutlined />}
+                            onClick={() => handleApproveAllLogos(record._id)}
+                            loading={loading}
+                            size="small"
+                        />
+                    </Tooltip>
+                    <Tooltip title="Mark All Paid">
+                        <Button
+                            type="text"
+                            icon={<DollarOutlined />}
+                            onClick={() => handleMarkAllAsPaid(record._id)}
+                            loading={loading}
+                            size="small"
+                        />
+                    </Tooltip>
+                    <Popconfirm
+                        title="Clear All Sponsors"
+                        description="Are you sure you want to delete all sponsors for this campaign? This action cannot be undone."
+                        onConfirm={() => handleClearSponsors(record._id)}
+                        okText="Yes"
+                        cancelText="No"
+                        okButtonProps={{ danger: true }}
                     >
-                        View
-                    </Button>
+                        <Tooltip title="Clear Sponsors">
+                            <Button
+                                type="text"
+                                danger
+                                icon={<ClearOutlined />}
+                                loading={loading}
+                                size="small"
+                            />
+                        </Tooltip>
+                    </Popconfirm>
                     <Popconfirm
                         title="Delete Campaign"
                         description="Are you sure you want to delete this campaign? This will also delete all associated sponsors and layouts."
@@ -148,14 +235,15 @@ const Admin: React.FC = () => {
                         cancelText="No"
                         okButtonProps={{ danger: true }}
                     >
-                        <Button
-                            type="link"
-                            danger
-                            icon={<DeleteOutlined />}
-                            loading={deleteMutation.isPending}
-                        >
-                            Delete
-                        </Button>
+                        <Tooltip title="Delete Campaign">
+                            <Button
+                                type="text"
+                                danger
+                                icon={<DeleteOutlined />}
+                                loading={deleteMutation.isPending}
+                                size="small"
+                            />
+                        </Tooltip>
                     </Popconfirm>
                 </Space>
             ),

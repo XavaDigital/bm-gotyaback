@@ -1,6 +1,7 @@
 import React from "react";
 import type { ShirtLayout, SponsorEntry, SponsorDisplayType } from "~/types/campaign.types";
 import LogoSponsor from "./LogoSponsor";
+import LogoWithNameSponsor from "./LogoWithNameSponsor";
 import TextSponsor from "./TextSponsor";
 
 interface GridLayoutRendererProps {
@@ -18,7 +19,9 @@ const GridLayoutRenderer: React.FC<GridLayoutRendererProps> = ({
   const sponsorMap = new Map<string, SponsorEntry>();
   sponsors.forEach((sponsor) => {
     if (sponsor.positionId && sponsor.paymentStatus === "paid") {
-      sponsorMap.set(sponsor.positionId, sponsor);
+      // Convert positionId to string to ensure consistent comparison
+      const positionKey = String(sponsor.positionId);
+      sponsorMap.set(positionKey, sponsor);
     }
   });
 
@@ -31,7 +34,7 @@ const GridLayoutRenderer: React.FC<GridLayoutRendererProps> = ({
         maxWidth: "min(500px, 100%)",
         margin: "0 auto",
         width: "100%",
-        aspectRatio: "3 / 4", // Portrait orientation
+        overflow: "hidden", // Prevent content from overflowing
       }}
     >
       <div
@@ -39,12 +42,13 @@ const GridLayoutRenderer: React.FC<GridLayoutRendererProps> = ({
           display: "grid",
           gridTemplateColumns: `repeat(${layout.columns}, 1fr)`,
           gap: "clamp(12px, 3vw, 24px)",
-          height: "100%",
           alignContent: "start",
         }}
       >
         {layout.placements.map((position) => {
-          const sponsor = sponsorMap.get(position.positionId);
+          // Convert positionId to string to ensure consistent comparison
+          const positionKey = String(position.positionId);
+          const sponsor = sponsorMap.get(positionKey);
 
           return (
             <div
@@ -59,7 +63,9 @@ const GridLayoutRenderer: React.FC<GridLayoutRendererProps> = ({
                 alignItems: "center",
                 justifyContent: "center",
                 minHeight: "clamp(80px, 15vw, 120px)",
+                maxHeight: "clamp(100px, 20vw, 150px)",
                 position: "relative",
+                overflow: "hidden",
               }}
             >
               {/* Position number badge - only show for empty positions */}
@@ -83,8 +89,22 @@ const GridLayoutRenderer: React.FC<GridLayoutRendererProps> = ({
 
             {sponsor ? (
               <>
-                {/* Show logo if sponsor has logo and display type allows it */}
+                {/* Show logo with name if sponsor has logo, displayName, and display type is 'both' */}
                 {sponsor.sponsorType === "logo" &&
+                sponsor.logoUrl &&
+                sponsor.logoApprovalStatus === "approved" &&
+                sponsorDisplayType === "both" &&
+                sponsor.displayName ? (
+                  <LogoWithNameSponsor
+                    name={sponsor.name}
+                    displayName={sponsor.displayName}
+                    logoUrl={sponsor.logoUrl}
+                    logoWidth={sponsor.calculatedLogoWidth || 100}
+                    message={sponsor.message}
+                    isPending={sponsor.paymentStatus === "pending"}
+                  />
+                ) : /* Show logo only if sponsor has logo and display type is logo-only or both (without displayName) */
+                sponsor.sponsorType === "logo" &&
                 sponsor.logoUrl &&
                 sponsor.logoApprovalStatus === "approved" &&
                 (sponsorDisplayType === "logo-only" || sponsorDisplayType === "both") ? (
@@ -99,16 +119,12 @@ const GridLayoutRenderer: React.FC<GridLayoutRendererProps> = ({
 
                 {/* Show text if display type allows it */}
                 {(sponsorDisplayType === "text-only" ||
-                  sponsorDisplayType === "both" ||
+                  (sponsorDisplayType === "both" && sponsor.sponsorType === "text") ||
                   (sponsorDisplayType === "logo-only" && sponsor.sponsorType === "text")) && (
                   <TextSponsor
                     name={sponsor.name}
                     fontSize={sponsor.calculatedFontSize || 16}
-                    message={
-                      sponsorDisplayType === "logo-only" && sponsor.sponsorType === "logo"
-                        ? undefined
-                        : sponsor.message
-                    }
+                    message={sponsor.message}
                     isPending={sponsor.paymentStatus === "pending"}
                   />
                 )}

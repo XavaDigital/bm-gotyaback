@@ -11,6 +11,19 @@ const sampleLogoUrls = [
   "https://s3.amazonaws.com/media.reviewus.plus/sponsors/logos/temp-1768545854052-sjht05/discord-1768545854052.png",
   "https://s3.amazonaws.com/media.reviewus.plus/sponsors/logos/temp-1768545775448-35co8k/Lorraine-Tuhoe-Estore-06-600x450-1768545775449.png",
   "https://s3.amazonaws.com/media.reviewus.plus/sponsors/logos/temp-1768545984396-9jwqw/Hamilton-Hawks-Estore-1024x768-1768545984396.png",
+  // Repeat logos to have more variety for seeding
+  "https://s3.amazonaws.com/media.reviewus.plus/sponsors/logos/temp-1768546097400-h83iuq/attachment_125990042-1768546097401.png",
+  "https://s3.amazonaws.com/media.reviewus.plus/sponsors/logos/temp-1768545854052-sjht05/discord-1768545854052.png",
+  "https://s3.amazonaws.com/media.reviewus.plus/sponsors/logos/temp-1768545775448-35co8k/Lorraine-Tuhoe-Estore-06-600x450-1768545775449.png",
+  "https://s3.amazonaws.com/media.reviewus.plus/sponsors/logos/temp-1768545984396-9jwqw/Hamilton-Hawks-Estore-1024x768-1768545984396.png",
+  "https://s3.amazonaws.com/media.reviewus.plus/sponsors/logos/temp-1768546097400-h83iuq/attachment_125990042-1768546097401.png",
+  "https://s3.amazonaws.com/media.reviewus.plus/sponsors/logos/temp-1768545854052-sjht05/discord-1768545854052.png",
+  "https://s3.amazonaws.com/media.reviewus.plus/sponsors/logos/temp-1768545775448-35co8k/Lorraine-Tuhoe-Estore-06-600x450-1768545775449.png",
+  "https://s3.amazonaws.com/media.reviewus.plus/sponsors/logos/temp-1768545984396-9jwqw/Hamilton-Hawks-Estore-1024x768-1768545984396.png",
+  "https://s3.amazonaws.com/media.reviewus.plus/sponsors/logos/temp-1768546097400-h83iuq/attachment_125990042-1768546097401.png",
+  "https://s3.amazonaws.com/media.reviewus.plus/sponsors/logos/temp-1768545854052-sjht05/discord-1768545854052.png",
+  "https://s3.amazonaws.com/media.reviewus.plus/sponsors/logos/temp-1768545775448-35co8k/Lorraine-Tuhoe-Estore-06-600x450-1768545775449.png",
+  "https://s3.amazonaws.com/media.reviewus.plus/sponsors/logos/temp-1768545984396-9jwqw/Hamilton-Hawks-Estore-1024x768-1768545984396.png",
 ];
 
 // Helper function to generate random sponsor data based on campaign type
@@ -19,18 +32,75 @@ const generateRandomSponsor = (
   index: number,
   campaign: any,
   layout: any,
-  availablePositions: any[]
+  availablePositions: any[],
 ) => {
   const firstNames = [
-    "John", "Jane", "Michael", "Sarah", "David", "Emily", "Chris", "Jessica",
-    "Daniel", "Ashley", "Matthew", "Amanda", "James", "Melissa", "Robert",
-    "Jennifer", "William", "Linda", "Richard", "Patricia", "Thomas", "Nancy"
+    "John",
+    "Jane",
+    "Michael",
+    "Sarah",
+    "David",
+    "Emily",
+    "Chris",
+    "Jessica",
+    "Daniel",
+    "Ashley",
+    "Matthew",
+    "Amanda",
+    "James",
+    "Melissa",
+    "Robert",
+    "Jennifer",
+    "William",
+    "Linda",
+    "Richard",
+    "Patricia",
+    "Thomas",
+    "Nancy",
   ];
 
   const lastNames = [
-    "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller",
-    "Davis", "Rodriguez", "Martinez", "Hernandez", "Lopez", "Gonzalez",
-    "Wilson", "Anderson", "Thomas", "Taylor", "Moore", "Jackson", "Martin"
+    "Smith",
+    "Johnson",
+    "Williams",
+    "Brown",
+    "Jones",
+    "Garcia",
+    "Miller",
+    "Davis",
+    "Rodriguez",
+    "Martinez",
+    "Hernandez",
+    "Lopez",
+    "Gonzalez",
+    "Wilson",
+    "Anderson",
+    "Thomas",
+    "Taylor",
+    "Moore",
+    "Jackson",
+    "Martin",
+  ];
+
+  const businessSuffixes = [
+    "& Co.",
+    "Enterprises",
+    "Group",
+    "Industries",
+    "Solutions",
+    "Services",
+    "Corporation",
+    "LLC",
+    "Inc.",
+    "Partners",
+    "Associates",
+    "Consulting",
+    "Holdings",
+    "Ventures",
+    "Capital",
+    "Technologies",
+    "Systems",
+    "Designs",
   ];
 
   const messages = [
@@ -75,10 +145,21 @@ const generateRandomSponsor = (
   }
 
   // Determine sponsor type based on campaign settings
-  const sponsorType = campaign.sponsorDisplayType === "logo-only" ? "logo" : "text";
+  let sponsorType: "text" | "logo";
+  if (campaign.sponsorDisplayType === "logo-only") {
+    sponsorType = "logo";
+  } else if (campaign.sponsorDisplayType === "text-only") {
+    sponsorType = "text";
+  } else {
+    // For "both", always choose logo so we have the image
+    sponsorType = "logo";
+  }
 
   // Determine display size based on campaign type and amount
-  if (campaign.campaignType === "pay-what-you-want" && campaign.pricingConfig?.sizeTiers) {
+  if (
+    campaign.campaignType === "pay-what-you-want" &&
+    campaign.pricingConfig?.sizeTiers
+  ) {
     // Use size tiers for pay-what-you-want
     const tier = campaign.pricingConfig.sizeTiers.find((t: any) => {
       const minMatch = !t.minAmount || amount >= t.minAmount;
@@ -124,9 +205,19 @@ const generateRandomSponsor = (
   }
 
   // Generate logo URL if sponsor type is logo
-  const logoUrl = sponsorType === "logo"
-    ? sampleLogoUrls[index % sampleLogoUrls.length]
-    : undefined;
+  const logoUrl =
+    sponsorType === "logo"
+      ? sampleLogoUrls[index % sampleLogoUrls.length]
+      : undefined;
+
+  // Generate displayName for logo sponsors when campaign display type is "both"
+  let displayName: string | undefined;
+  if (sponsorType === "logo" && campaign.sponsorDisplayType === "both") {
+    // Generate a business name different from the personal name
+    const businessSuffix =
+      businessSuffixes[Math.floor(Math.random() * businessSuffixes.length)];
+    displayName = `${lastName} ${businessSuffix}`;
+  }
 
   const sponsor: any = {
     campaignId,
@@ -145,8 +236,11 @@ const generateRandomSponsor = (
   // Add logo-specific fields
   if (sponsorType === "logo") {
     sponsor.logoUrl = logoUrl;
-    sponsor.logoApprovalStatus = "pending"; // Logos need approval
+    sponsor.logoApprovalStatus = "approved"; // Auto-approve seeded logos
     sponsor.calculatedLogoWidth = calculatedLogoWidth;
+    if (displayName) {
+      sponsor.displayName = displayName;
+    }
   } else {
     sponsor.calculatedFontSize = calculatedFontSize;
   }
@@ -168,7 +262,9 @@ export const seedSponsors = async (req: Request, res: Response) => {
     }
 
     if (numberOfSponsors < 1 || numberOfSponsors > 100) {
-      return res.status(400).json({ message: "Number of sponsors must be between 1 and 100" });
+      return res
+        .status(400)
+        .json({ message: "Number of sponsors must be between 1 and 100" });
     }
 
     // Check if campaign exists
@@ -180,7 +276,10 @@ export const seedSponsors = async (req: Request, res: Response) => {
     // Get layout for the campaign
     const layout = await ShirtLayout.findOne({ campaignId });
     if (!layout) {
-      return res.status(404).json({ message: "Layout not found for this campaign. Please create a layout first." });
+      return res.status(404).json({
+        message:
+          "Layout not found for this campaign. Please create a layout first.",
+      });
     }
 
     // Get available positions for grid layouts
@@ -199,7 +298,15 @@ export const seedSponsors = async (req: Request, res: Response) => {
     // Generate and insert sponsors
     const sponsors = [];
     for (let i = 0; i < numberOfSponsors; i++) {
-      sponsors.push(generateRandomSponsor(campaignId, i, campaign, layout, availablePositions));
+      sponsors.push(
+        generateRandomSponsor(
+          campaignId,
+          i,
+          campaign,
+          layout,
+          availablePositions,
+        ),
+      );
     }
 
     const result = await SponsorEntry.insertMany(sponsors);
@@ -208,7 +315,9 @@ export const seedSponsors = async (req: Request, res: Response) => {
     if (layout.layoutType === "grid") {
       for (const sponsor of result) {
         if (sponsor.positionId) {
-          const placement = layout.placements.find((p: any) => p.positionId === sponsor.positionId);
+          const placement = layout.placements.find(
+            (p: any) => p.positionId === sponsor.positionId,
+          );
           if (placement) {
             placement.isTaken = true;
             placement.sponsorId = sponsor._id;
@@ -246,5 +355,115 @@ export const deleteCampaign = async (req: Request, res: Response) => {
     const message = (error as Error).message;
     const status = message.includes("not found") ? 404 : 400;
     res.status(status).json({ message });
+  }
+};
+
+export const approveAllLogos = async (req: Request, res: Response) => {
+  try {
+    const { campaignId } = req.body;
+
+    if (!campaignId) {
+      return res.status(400).json({ message: "Missing campaignId" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(campaignId)) {
+      return res.status(400).json({ message: "Invalid campaign ID" });
+    }
+
+    const { SponsorEntry } = require("../models/SponsorEntry");
+
+    // Update all pending logos to approved
+    const result = await SponsorEntry.updateMany(
+      {
+        campaignId,
+        sponsorType: "logo",
+        logoApprovalStatus: "pending",
+      },
+      {
+        $set: { logoApprovalStatus: "approved" },
+      },
+    );
+
+    res.json({
+      message: `Approved ${result.modifiedCount} logos`,
+      count: result.modifiedCount,
+    });
+  } catch (error) {
+    console.error("Error approving logos:", error);
+    res.status(500).json({ message: (error as Error).message });
+  }
+};
+
+export const markAllAsPaid = async (req: Request, res: Response) => {
+  try {
+    const { campaignId } = req.body;
+
+    if (!campaignId) {
+      return res.status(400).json({ message: "Missing campaignId" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(campaignId)) {
+      return res.status(400).json({ message: "Invalid campaign ID" });
+    }
+
+    const { SponsorEntry } = require("../models/SponsorEntry");
+
+    // Update all pending payments to paid
+    const result = await SponsorEntry.updateMany(
+      {
+        campaignId,
+        paymentStatus: "pending",
+      },
+      {
+        $set: { paymentStatus: "paid" },
+      },
+    );
+
+    res.json({
+      message: `Marked ${result.modifiedCount} sponsors as paid`,
+      count: result.modifiedCount,
+    });
+  } catch (error) {
+    console.error("Error marking sponsors as paid:", error);
+    res.status(500).json({ message: (error as Error).message });
+  }
+};
+
+export const clearSponsors = async (req: Request, res: Response) => {
+  try {
+    const { campaignId } = req.body;
+
+    if (!campaignId) {
+      return res.status(400).json({ message: "Missing campaignId" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(campaignId)) {
+      return res.status(400).json({ message: "Invalid campaign ID" });
+    }
+
+    const { SponsorEntry } = require("../models/SponsorEntry");
+
+    // Clear shirt layout positions
+    const layout = await ShirtLayout.findOne({ campaignId });
+    if (layout && layout.placements && layout.placements.length > 0) {
+      layout.placements.forEach((placement: any) => {
+        placement.isTaken = false;
+        placement.sponsorId = undefined;
+      });
+      await layout.save();
+    }
+
+    // Delete all sponsors for this campaign
+    const result = await SponsorEntry.deleteMany({
+      campaignId,
+    });
+
+    res.json({
+      message: `Deleted ${result.deletedCount} sponsors and cleared layout`,
+      count: result.deletedCount,
+    });
+  } catch (error) {
+    console.error("Error clearing sponsors:", error);
+    res.status(500).json({ message: (error as Error).message });
   }
 };

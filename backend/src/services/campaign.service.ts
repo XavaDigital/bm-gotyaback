@@ -28,7 +28,7 @@ export const createCampaign = async (userId: string, campaignData: any) => {
   // Validate Stripe configuration if enableStripePayments is true
   if (campaignData.enableStripePayments && !process.env.STRIPE_SECRET_KEY) {
     throw new Error(
-      "Cannot enable Stripe payments: Stripe is not configured on this server"
+      "Cannot enable Stripe payments: Stripe is not configured on this server",
     );
   }
 
@@ -44,7 +44,7 @@ export const createCampaign = async (userId: string, campaignData: any) => {
   if (campaignData.pricingConfig && campaignData.campaignType) {
     validatePricingConfig(
       campaignData.campaignType,
-      campaignData.pricingConfig
+      campaignData.pricingConfig,
     );
   }
 
@@ -67,7 +67,7 @@ export const getCampaignById = async (campaignId: string) => {
 
   const campaign = await Campaign.findById(campaignId).populate(
     "ownerId",
-    "name email"
+    "name email",
   );
 
   if (!campaign) {
@@ -80,7 +80,7 @@ export const getCampaignById = async (campaignId: string) => {
 export const getCampaignBySlug = async (slug: string) => {
   const campaign = await Campaign.findOne({ slug }).populate(
     "ownerId",
-    "name email"
+    "name email",
   );
 
   if (!campaign) {
@@ -93,7 +93,7 @@ export const getCampaignBySlug = async (slug: string) => {
 export const updateCampaign = async (
   campaignId: string,
   userId: string,
-  updates: any
+  updates: any,
 ) => {
   const campaign = await Campaign.findById(campaignId);
 
@@ -119,7 +119,7 @@ export const updateCampaign = async (
   // Validate Stripe configuration if trying to enable Stripe payments
   if (updates.enableStripePayments && !process.env.STRIPE_SECRET_KEY) {
     throw new Error(
-      "Cannot enable Stripe payments: Stripe is not configured on this server"
+      "Cannot enable Stripe payments: Stripe is not configured on this server",
     );
   }
 
@@ -181,9 +181,116 @@ export const closeCampaign = async (campaignId: string, userId: string) => {
 };
 
 export const getUserCampaigns = async (userId: string) => {
-  const campaigns = await Campaign.find({ ownerId: userId }).sort({
-    createdAt: -1,
-  });
+  const campaigns = await Campaign.aggregate([
+    {
+      $match: {
+        ownerId: new mongoose.Types.ObjectId(userId),
+      },
+    },
+    // Lookup Sponsors
+    {
+      $lookup: {
+        from: "sponsorentries",
+        localField: "_id",
+        foreignField: "campaignId",
+        as: "sponsors",
+      },
+    },
+    // Lookup Layout
+    {
+      $lookup: {
+        from: "shirtlayouts",
+        localField: "_id",
+        foreignField: "campaignId",
+        as: "layout",
+      },
+    },
+    // Add stats fields
+    {
+      $addFields: {
+        stats: {
+          totalPledged: {
+            $sum: {
+              $map: {
+                input: {
+                  $filter: {
+                    input: "$sponsors",
+                    as: "s",
+                    cond: { $eq: ["$$s.paymentStatus", "paid"] },
+                  },
+                },
+                as: "paidSponsor",
+                in: "$$paidSponsor.amount",
+              },
+            },
+          },
+          totalPending: {
+            $sum: {
+              $map: {
+                input: {
+                  $filter: {
+                    input: "$sponsors",
+                    as: "s",
+                    cond: { $eq: ["$$s.paymentStatus", "pending"] },
+                  },
+                },
+                as: "pendingSponsor",
+                in: "$$pendingSponsor.amount",
+              },
+            },
+          },
+          sponsorCount: {
+            $size: {
+              $filter: {
+                input: "$sponsors",
+                as: "s",
+                cond: { $eq: ["$$s.paymentStatus", "paid"] },
+              },
+            },
+          },
+          pendingCount: {
+            $size: {
+              $filter: {
+                input: "$sponsors",
+                as: "s",
+                cond: { $eq: ["$$s.paymentStatus", "pending"] },
+              },
+            },
+          },
+          positionsTotal: {
+            $let: {
+              vars: { layoutDoc: { $arrayElemAt: ["$layout", 0] } },
+              in: { $size: { $ifNull: ["$$layoutDoc.placements", []] } },
+            },
+          },
+          positionsClaimed: {
+            $let: {
+              vars: { layoutDoc: { $arrayElemAt: ["$layout", 0] } },
+              in: {
+                $size: {
+                  $filter: {
+                    input: { $ifNull: ["$$layoutDoc.placements", []] },
+                    as: "p",
+                    cond: { $eq: ["$$p.isTaken", true] },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    // Project to remove large joined arrays
+    {
+      $project: {
+        sponsors: 0,
+        layout: 0,
+      },
+    },
+    {
+      $sort: { createdAt: -1 },
+    },
+  ]);
   return campaigns;
 };
 
@@ -202,7 +309,7 @@ export const validateCampaignIsOpen = (campaign: any) => {
 export const updateCampaignPricing = async (
   campaignId: string,
   userId: string,
-  pricingData: any
+  pricingData: any,
 ) => {
   const campaign = await Campaign.findById(campaignId);
 
@@ -230,7 +337,7 @@ export const updateCampaignPricing = async (
     .exists({ campaignId });
   if (hasSponsors) {
     throw new Error(
-      "Cannot update pricing because campaign already has sponsors"
+      "Cannot update pricing because campaign already has sponsors",
     );
   }
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Card, Spin, message, Tag, Statistic, List, Empty, Button, Alert } from "antd";
+import { Card, Spin, message, Statistic, Empty, Button, Alert } from "antd";
 import { ClockCircleOutlined } from "@ant-design/icons";
 import type {
   Campaign,
@@ -13,6 +13,7 @@ import sponsorshipService from "../services/sponsorship.service";
 import ShirtLayout from "../components/ShirtLayout";
 import SponsorCheckoutModal from "../components/SponsorCheckoutModal";
 import FlexibleLayoutRenderer from "../components/FlexibleLayoutRenderer";
+import GridLayoutRenderer from "../components/GridLayoutRenderer";
 import SectionBasedLayout from "../components/SectionBasedLayout";
 import PublicHeader from "../components/PublicHeader";
 import PublicFooter from "../components/PublicFooter";
@@ -883,62 +884,20 @@ const PublicCampaign: React.FC = () => {
               description="No sponsors yet. Be the first!"
               image={Empty.PRESENTED_IMAGE_SIMPLE}
             />
-          ) : campaign.layoutStyle === "word-cloud" ||
-             campaign.layoutStyle === "amount-ordered" ||
-             campaign.layoutStyle === "size-ordered" ||
-             (campaign.campaignType === "pay-what-you-want" && layout?.layoutType === "flexible") ? (
+          ) : layout?.layoutType === "grid" ? (
+            /* Use GridLayoutRenderer for grid layouts - same as campaign detail page */
+            <GridLayoutRenderer
+              layout={layout}
+              sponsors={sponsors}
+              sponsorDisplayType={campaign.sponsorDisplayType}
+            />
+          ) : (
             /* Use flexible layout renderer for word-cloud, amount-ordered, size-ordered, or flexible layouts */
             <FlexibleLayoutRenderer
               sponsors={sponsors}
               layoutStyle={campaign.layoutStyle}
               sponsorDisplayType={campaign.sponsorDisplayType}
               campaignType={campaign.campaignType}
-            />
-          ) : (
-            /* Traditional list for grid layouts without special layout styles */
-            <List
-              dataSource={sponsors}
-              renderItem={(sponsor) => (
-                <List.Item
-                  style={{
-                    opacity: sponsor.paymentStatus === "pending" ? 0.6 : 1,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                      width: "100%",
-                    }}
-                  >
-                    {sponsor.sponsorType === "logo" &&
-                    sponsor.logoUrl &&
-                    sponsor.logoApprovalStatus === "approved" ? (
-                      <img
-                        src={sponsor.logoUrl}
-                        alt={sponsor.name}
-                        style={{
-                          width: 60,
-                          height: 60,
-                          objectFit: "contain",
-                          border: "1px solid #e8e8e8",
-                          borderRadius: 4,
-                          padding: 4,
-                        }}
-                      />
-                    ) : null}
-                    <List.Item.Meta
-                      title={sponsor.name}
-                      description={sponsor.message || "No message"}
-                    />
-                    {sponsor.positionId && <Tag>{sponsor.positionId}</Tag>}
-                    {sponsor.paymentStatus === "pending" && (
-                      <Tag color="orange">Pending Payment</Tag>
-                    )}
-                  </div>
-                </List.Item>
-              )}
             />
           )}
         </Card>

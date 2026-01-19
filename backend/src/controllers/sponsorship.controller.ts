@@ -19,6 +19,7 @@ export const createSponsorship = async (req: Request, res: Response) => {
       amount,
       paymentMethod,
       sponsorType,
+      displayName,
     } = data;
 
     // Validation
@@ -38,7 +39,7 @@ export const createSponsorship = async (req: Request, res: Response) => {
         file.buffer,
         file.originalname,
         file.mimetype,
-        tempId
+        tempId,
       );
     }
 
@@ -52,6 +53,7 @@ export const createSponsorship = async (req: Request, res: Response) => {
       paymentMethod,
       sponsorType,
       logoUrl,
+      displayName,
     });
 
     res.status(201).json(sponsorship);
@@ -97,7 +99,7 @@ export const markAsPaid = async (req: Request, res: Response) => {
 
     const sponsorship = await sponsorshipService.markAsPaid(
       sponsorshipId,
-      userId.toString()
+      userId.toString(),
     );
     res.json(sponsorship);
   } catch (error) {
@@ -126,7 +128,7 @@ export const updatePaymentStatus = async (req: Request, res: Response) => {
     const sponsorship = await sponsorshipService.updatePaymentStatus(
       sponsorshipId,
       userId.toString(),
-      status
+      status,
     );
     res.json(sponsorship);
   } catch (error) {
@@ -134,8 +136,8 @@ export const updatePaymentStatus = async (req: Request, res: Response) => {
     const status = message.includes("Not authorized")
       ? 403
       : message.includes("Cannot manually change")
-      ? 400
-      : 400;
+        ? 400
+        : 400;
     res.status(status).json({ message });
   }
 };
@@ -161,7 +163,7 @@ export const approveLogo = async (req: Request, res: Response) => {
       sponsorshipId,
       userId.toString(),
       approved,
-      rejectionReason
+      rejectionReason,
     );
 
     res.json(sponsorship);
@@ -184,7 +186,7 @@ export const getPendingLogos = async (req: Request, res: Response) => {
 
     const pendingLogos = await sponsorshipService.getPendingLogoApprovals(
       campaignId,
-      userId.toString()
+      userId.toString(),
     );
 
     res.json(pendingLogos);
@@ -211,11 +213,34 @@ export const uploadLogo = async (req: Request, res: Response) => {
       file.buffer,
       file.originalname,
       file.mimetype,
-      tempId
+      tempId,
     );
 
     res.json({ logoUrl });
   } catch (error) {
     res.status(400).json({ message: (error as Error).message });
+  }
+};
+
+// Approve all pending logos for a campaign
+export const approveAllLogos = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?._id;
+    const campaignId = req.params.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+
+    const result = await sponsorshipService.approveAllLogoSponsorships(
+      campaignId,
+      userId.toString(),
+    );
+
+    res.json(result);
+  } catch (error) {
+    const message = (error as Error).message;
+    const status = message.includes("Not authorized") ? 403 : 400;
+    res.status(status).json({ message });
   }
 };

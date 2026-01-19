@@ -18,7 +18,8 @@ export const createSponsorship = async (
     paymentMethod: "card" | "cash";
     sponsorType?: SponsorType;
     logoUrl?: string;
-  }
+    displayName?: string;
+  },
 ) => {
   // Get campaign and validate it's open
   const campaign = await Campaign.findById(campaignId);
@@ -39,7 +40,7 @@ export const createSponsorship = async (
     // Get position details to verify price
     const position = await shirtLayoutService.getPositionDetails(
       layout._id.toString(),
-      sponsorData.positionId
+      sponsorData.positionId,
     );
 
     // Verify amount matches position price
@@ -51,7 +52,7 @@ export const createSponsorship = async (
     try {
       await shirtLayoutService.reservePosition(
         layout._id.toString(),
-        sponsorData.positionId
+        sponsorData.positionId,
       );
     } catch (error) {
       throw new Error("Position not available or already taken");
@@ -71,7 +72,7 @@ export const createSponsorship = async (
       // Use size tiers if defined
       const tier = calculateSizeTier(
         sponsorData.amount,
-        campaign.pricingConfig.sizeTiers as any
+        campaign.pricingConfig.sizeTiers as any,
       );
 
       if (tier) {
@@ -80,7 +81,7 @@ export const createSponsorship = async (
         const sizes = calculateDisplaySizes(
           sponsorData.amount,
           tier,
-          sponsorType
+          sponsorType,
         );
         calculatedFontSize = sizes.fontSize;
         calculatedLogoWidth = sizes.logoWidth;
@@ -118,6 +119,7 @@ export const createSponsorship = async (
         sponsorData.paymentMethod === "cash" ? "pending" : "pending",
       sponsorType: sponsorData.sponsorType || "text",
       logoUrl: sponsorData.logoUrl,
+      displayName: sponsorData.displayName,
       logoApprovalStatus,
       displaySize,
       calculatedFontSize,
@@ -135,7 +137,7 @@ export const createSponsorship = async (
       const layout = await shirtLayoutService.getLayoutByCampaignId(campaignId);
       await shirtLayoutService.releasePosition(
         layout._id.toString(),
-        sponsorData.positionId
+        sponsorData.positionId,
       );
     }
     throw error;
@@ -186,7 +188,7 @@ export const markAsPaid = async (sponsorshipId: string, userId: string) => {
 export const updatePaymentStatus = async (
   sponsorshipId: string,
   userId: string,
-  newStatus: "pending" | "paid"
+  newStatus: "pending" | "paid",
 ) => {
   if (!mongoose.Types.ObjectId.isValid(sponsorshipId)) {
     throw new Error("Invalid sponsorship ID");
@@ -205,14 +207,14 @@ export const updatePaymentStatus = async (
 
   if (campaign.ownerId.toString() !== userId) {
     throw new Error(
-      "Not authorized to update payment status for this sponsorship"
+      "Not authorized to update payment status for this sponsorship",
     );
   }
 
   // Only allow status changes for cash/manual payments
   if (sponsorship.paymentMethod === "card") {
     throw new Error(
-      "Cannot manually change payment status for card payments. Card payments are managed by Stripe."
+      "Cannot manually change payment status for card payments. Card payments are managed by Stripe.",
     );
   }
 
@@ -223,16 +225,17 @@ export const updatePaymentStatus = async (
   return sponsorship;
 };
 
-// Get public sponsor list (text sponsors + approved logo sponsors)
+// Get public sponsor list (paid sponsors with text or approved logos)
 export const getPublicSponsors = async (campaignId: string) => {
   const sponsors = await SponsorEntry.find({
     campaignId,
+    paymentStatus: "paid", // Only show paid sponsors
     $or: [
       { sponsorType: "text" }, // All text sponsors
       { sponsorType: "logo", logoApprovalStatus: "approved" }, // Only approved logo sponsors
     ],
   }).select(
-    "name message positionId createdAt sponsorType logoUrl displaySize calculatedFontSize calculatedLogoWidth paymentStatus amount"
+    "name message positionId createdAt sponsorType logoUrl displayName logoApprovalStatus displaySize calculatedFontSize calculatedLogoWidth paymentStatus amount",
   );
 
   return sponsors;
@@ -240,11 +243,11 @@ export const getPublicSponsors = async (campaignId: string) => {
 
 export const validatePositionAvailable = async (
   layoutId: string,
-  positionId: string
+  positionId: string,
 ) => {
   const position = await shirtLayoutService.getPositionDetails(
     layoutId,
-    positionId
+    positionId,
   );
 
   if (position.isTaken) {
@@ -259,7 +262,7 @@ export const approveLogoSponsorship = async (
   sponsorshipId: string,
   userId: string,
   approved: boolean,
-  rejectionReason?: string
+  rejectionReason?: string,
 ) => {
   if (!mongoose.Types.ObjectId.isValid(sponsorshipId)) {
     throw new Error("Invalid sponsorship ID");
@@ -296,7 +299,7 @@ export const approveLogoSponsorship = async (
 // Get pending logo approvals for a campaign
 export const getPendingLogoApprovals = async (
   campaignId: string,
-  userId: string
+  userId: string,
 ) => {
   if (!mongoose.Types.ObjectId.isValid(campaignId)) {
     throw new Error("Invalid campaign ID");
@@ -319,4 +322,38 @@ export const getPendingLogoApprovals = async (
   }).sort({ createdAt: -1 });
 
   return pendingLogos;
+};
+
+// Approve all pending logos for a campaign
+export const approveAllLogoSponsorships = async (
+  campaignId: string,
+  userId: string,
+) => {
+  if (!mongoose.Types.ObjectId.isValid(campaignId)) {
+    throw new Error("Invalid campaign ID");
+  }
+
+  // Verify campaign ownership
+  const campaign = await Campaign.findById(campaignId);
+  if (!campaign) {
+    throw new Error("Campaign not found");
+  }
+
+  if (campaign.ownerId.toString() !== userId) {
+    throw new Error("Not authorized to approve logos for this campaign");
+  }
+
+  // Update all pending logos to approved
+  const result = await SponsorEntry.updateMany(
+    {
+      campaignId,
+      sponsorType: "logo",
+      logoApprovalStatus: "pending",
+    },
+    {
+      $set: { logoApprovalStatus: "approved" },
+    },
+  );
+
+  return result;
 };

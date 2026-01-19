@@ -32,6 +32,7 @@ export const createPaymentIntent = async (
     message?: string;
     sponsorType?: string;
     logoUrl?: string;
+    displayName?: string;
   }
 ) => {
   // Get campaign details for metadata
@@ -61,6 +62,7 @@ export const createPaymentIntent = async (
       sponsorMessage: sponsorData.message || "",
       sponsorType: sponsorData.sponsorType || "text",
       logoUrl: sponsorData.logoUrl || "",
+      displayName: sponsorData.displayName || "",
     },
     // Allow payment methods
     payment_method_types: ["card"],
@@ -114,6 +116,7 @@ const handlePaymentSuccess = async (paymentIntent: Stripe.PaymentIntent) => {
     sponsorMessage,
     sponsorType,
     logoUrl,
+    displayName,
   } = paymentIntent.metadata;
 
   try {
@@ -128,6 +131,7 @@ const handlePaymentSuccess = async (paymentIntent: Stripe.PaymentIntent) => {
       paymentMethod: "card",
       sponsorType: (sponsorType as "text" | "logo") || "text",
       logoUrl: logoUrl || undefined,
+      displayName: displayName || undefined,
     });
 
     // Update sponsorship to paid status

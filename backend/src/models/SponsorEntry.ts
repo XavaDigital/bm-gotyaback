@@ -23,6 +23,7 @@ const sponsorEntrySchema = new mongoose.Schema(
     // Sponsor type and display
     sponsorType: { type: String, enum: ["text", "logo"], default: "text" },
     logoUrl: { type: String }, // For logo sponsors
+    displayName: { type: String }, // For logo sponsors with name+logo display (different from sponsor name)
 
     // Logo approval workflow
     logoApprovalStatus: {

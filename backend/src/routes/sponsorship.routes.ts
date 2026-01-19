@@ -9,49 +9,54 @@ const router = Router();
 router.post(
   "/campaigns/:id/sponsor",
   uploadLogo.single("logoFile"),
-  sponsorshipController.createSponsorship
+  sponsorshipController.createSponsorship,
 );
 
 // Public sponsor list (only paid sponsors)
 router.get(
   "/campaigns/:id/public-sponsors",
-  sponsorshipController.getPublicSponsors
+  sponsorshipController.getPublicSponsors,
 );
 
 // Protected routes (campaign owner only)
 router.get(
   "/campaigns/:id/sponsors",
   protect,
-  sponsorshipController.getSponsors
+  sponsorshipController.getSponsors,
 );
 router.post(
   "/sponsorships/:sponsorshipId/mark-paid",
   protect,
-  sponsorshipController.markAsPaid
+  sponsorshipController.markAsPaid,
 );
 router.patch(
   "/sponsorships/:sponsorshipId/payment-status",
   protect,
-  sponsorshipController.updatePaymentStatus
+  sponsorshipController.updatePaymentStatus,
 );
 
 // Logo approval routes
 router.post(
   "/sponsorships/:sponsorshipId/approve-logo",
   protect,
-  sponsorshipController.approveLogo
+  sponsorshipController.approveLogo,
 );
 router.get(
   "/campaigns/:id/pending-logos",
   protect,
-  sponsorshipController.getPendingLogos
+  sponsorshipController.getPendingLogos,
+);
+router.post(
+  "/campaigns/:id/approve-all-logos",
+  protect,
+  sponsorshipController.approveAllLogos,
 );
 
 // Logo pre-upload route (for card payments)
 router.post(
   "/campaigns/:id/upload-logo",
   uploadLogo.single("logoFile"),
-  sponsorshipController.uploadLogo
+  sponsorshipController.uploadLogo,
 );
 
 export default router;

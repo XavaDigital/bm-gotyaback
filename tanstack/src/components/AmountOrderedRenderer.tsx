@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import type { SponsorEntry, SponsorDisplayType } from "~/types/campaign.types";
 import TextSponsor from "./TextSponsor";
 import LogoSponsor from "./LogoSponsor";
+import LogoWithNameSponsor from "./LogoWithNameSponsor";
 
 interface AmountOrderedRendererProps {
   sponsors: SponsorEntry[];
@@ -154,15 +155,22 @@ const AmountOrderedRenderer: React.FC<AmountOrderedRendererProps> = ({
           {tier.sponsors.map((sponsor) => {
             const isPending = sponsor.paymentStatus === "pending";
 
-            const shouldShowText =
-              sponsorDisplayType === "text-only" ||
-              sponsorDisplayType === "both" ||
-              (sponsorDisplayType === "logo-only" && sponsor.sponsorType === "text");
-
-            const shouldShowLogo =
+            const shouldShowLogoWithName =
               sponsor.sponsorType === "logo" &&
               sponsor.logoUrl &&
-              (sponsorDisplayType === "logo-only" || sponsorDisplayType === "both");
+              sponsorDisplayType === "both" &&
+              sponsor.displayName;
+
+            const shouldShowLogoOnly =
+              sponsor.sponsorType === "logo" &&
+              sponsor.logoUrl &&
+              (sponsorDisplayType === "logo-only" ||
+               (sponsorDisplayType === "both" && !sponsor.displayName));
+
+            const shouldShowText =
+              sponsorDisplayType === "text-only" ||
+              (sponsorDisplayType === "both" && sponsor.sponsorType === "text") ||
+              (sponsorDisplayType === "logo-only" && sponsor.sponsorType === "text");
 
             return (
               <div
@@ -175,7 +183,17 @@ const AmountOrderedRenderer: React.FC<AmountOrderedRendererProps> = ({
                   padding: "clamp(6px, 1.5vw, 8px)",
                 }}
               >
-                {shouldShowLogo && (
+                {shouldShowLogoWithName && (
+                  <LogoWithNameSponsor
+                    name={sponsor.name}
+                    displayName={sponsor.displayName!}
+                    logoUrl={sponsor.logoUrl!}
+                    logoWidth={sponsor.calculatedLogoWidth || 100}
+                    message={sponsor.message}
+                    isPending={isPending}
+                  />
+                )}
+                {shouldShowLogoOnly && (
                   <LogoSponsor
                     name={sponsor.name}
                     logoUrl={sponsor.logoUrl!}
@@ -188,7 +206,7 @@ const AmountOrderedRenderer: React.FC<AmountOrderedRendererProps> = ({
                   <TextSponsor
                     name={sponsor.name}
                     fontSize={sponsor.calculatedFontSize || 16}
-                    message={!shouldShowLogo ? sponsor.message : undefined}
+                    message={sponsor.message}
                     isPending={isPending}
                   />
                 )}

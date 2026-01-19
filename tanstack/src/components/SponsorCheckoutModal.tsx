@@ -31,6 +31,7 @@ const StripeCardForm: React.FC<{
         amount: number;
         sponsorType?: string;
         logoFile?: File;
+        displayName?: string;
     };
     amount: number;
     currency: string;
@@ -82,6 +83,7 @@ const StripeCardForm: React.FC<{
                     message: sponsorData.message,
                     sponsorType: sponsorData.sponsorType,
                     logoUrl: logoUrl,
+                    displayName: sponsorData.displayName,
                 },
             });
 
@@ -215,6 +217,7 @@ const CheckoutForm: React.FC<{
         amount: number;
         sponsorType?: string;
         logoFile?: File;
+        displayName?: string;
     };
     amount: number;
     currency: string;
@@ -318,8 +321,8 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
             } else if (campaign.sponsorDisplayType === 'text-only') {
                 form.setFieldsValue({ sponsorType: 'text' });
             } else {
-                // Default to text for "both" option
-                form.setFieldsValue({ sponsorType: 'text' });
+                // Default to logo for "both" option (logo with name)
+                form.setFieldsValue({ sponsorType: 'logo' });
             }
         }
     }, [visible, campaign, form]);
@@ -516,25 +519,10 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
                         />
                     </Form.Item>
 
-                    {/* Sponsor Type Selector - only show if campaign allows both */}
-                    {campaign?.sponsorDisplayType === 'both' ? (
-                        <Form.Item
-                            label="Sponsor Type"
-                            name="sponsorType"
-                            rules={[{ required: true, message: 'Please select sponsor type' }]}
-                            initialValue="text"
-                        >
-                            <Radio.Group>
-                                <Radio value="text">Text Only (Name/Message)</Radio>
-                                <Radio value="logo">Logo Only</Radio>
-                            </Radio.Group>
-                        </Form.Item>
-                    ) : (
-                        // Hidden field for logo-only or text-only campaigns
-                        <Form.Item name="sponsorType" hidden>
-                            <Input />
-                        </Form.Item>
-                    )}
+                    {/* Hidden field for sponsor type - set by campaign settings */}
+                    <Form.Item name="sponsorType" hidden>
+                        <Input />
+                    </Form.Item>
 
                     {/* Logo Upload - show if campaign is logo-only OR if user selected logo type */}
                     <Form.Item
@@ -552,8 +540,12 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
                             return showLogoUpload ? (
                                 <>
                                     <Alert
-                                        message="Logo Display Only"
-                                        description="Only your logo will be displayed on the campaign. You can still enter your name for record-keeping purposes."
+                                        message={campaign?.sponsorDisplayType === 'logo-only' ? "Logo Display Only" : "Logo with Name Display"}
+                                        description={
+                                            campaign?.sponsorDisplayType === 'logo-only'
+                                                ? "Only your logo will be displayed on the campaign. You can still enter your name for record-keeping purposes."
+                                                : "Your logo will be displayed with a name underneath. The display name can be different from your sponsor name (e.g., business name vs. personal name)."
+                                        }
                                         type="info"
                                         showIcon
                                         style={{ marginBottom: 16 }}
@@ -569,6 +561,31 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
                                         <LogoUpload value={logoFile} onChange={handleLogoChange} />
                                     </Form.Item>
                                 </>
+                            ) : null;
+                        }}
+                    </Form.Item>
+
+                    {/* Display Name - show only for name+logo display (both type with logo selected) */}
+                    <Form.Item
+                        noStyle
+                        shouldUpdate={(prevValues, currentValues) =>
+                            prevValues.sponsorType !== currentValues.sponsorType
+                        }
+                    >
+                        {({ getFieldValue }) => {
+                            const sponsorType = getFieldValue('sponsorType');
+                            const showDisplayName =
+                                campaign?.sponsorDisplayType === 'both' && sponsorType === 'logo';
+
+                            return showDisplayName ? (
+                                <Form.Item
+                                    label="Display Name"
+                                    name="displayName"
+                                    rules={[{ required: true, message: 'Please enter a display name' }]}
+                                    extra="This name will appear below your logo on the campaign (e.g., your business name)"
+                                >
+                                    <Input placeholder="e.g., Smith Family Business" />
+                                </Form.Item>
                             ) : null;
                         }}
                     </Form.Item>
