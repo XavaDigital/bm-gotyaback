@@ -33,7 +33,7 @@ export const createPaymentIntent = async (
     sponsorType?: string;
     logoUrl?: string;
     displayName?: string;
-  }
+  },
 ) => {
   // Get campaign details for metadata
   const campaign = await campaignService.getCampaignById(campaignId);
@@ -64,9 +64,16 @@ export const createPaymentIntent = async (
       logoUrl: sponsorData.logoUrl || "",
       displayName: sponsorData.displayName || "",
     },
-    // Allow payment methods
-    payment_method_types: ["card"],
+    // Explicitly allow payment methods to debug visibility
+    payment_method_types: ["card", "afterpay_clearpay"],
   });
+
+  console.log(
+    `Created PaymentIntent ${paymentIntent.id} with methods:`,
+    paymentIntent.payment_method_types,
+  );
+  console.log(`Currency: ${paymentIntent.currency}`);
+  console.log(`Amount: ${paymentIntent.amount}`);
 
   return {
     clientSecret: paymentIntent.client_secret,
@@ -76,7 +83,7 @@ export const createPaymentIntent = async (
 
 export const handleWebhook = async (
   rawBody: string | Buffer,
-  signature: string
+  signature: string,
 ) => {
   const stripe = getStripe();
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET as string;
@@ -87,7 +94,7 @@ export const handleWebhook = async (
     event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
   } catch (err) {
     throw new Error(
-      `Webhook signature verification failed: ${(err as Error).message}`
+      `Webhook signature verification failed: ${(err as Error).message}`,
     );
   }
 
@@ -128,7 +135,7 @@ const handlePaymentSuccess = async (paymentIntent: Stripe.PaymentIntent) => {
       phone: sponsorPhone || undefined,
       message: sponsorMessage || undefined,
       amount: paymentIntent.amount / 100, // Convert from cents
-      paymentMethod: "card",
+      paymentMethod: (paymentIntent.payment_method_types?.[0] as any) || "card",
       sponsorType: (sponsorType as "text" | "logo") || "text",
       logoUrl: logoUrl || undefined,
       displayName: displayName || undefined,
@@ -158,7 +165,7 @@ const handlePaymentFailure = async (paymentIntent: Stripe.PaymentIntent) => {
   const { campaignId, positionId, sponsorName } = paymentIntent.metadata;
 
   console.log(
-    `Payment failed for campaign ${campaignId}, position ${positionId}, sponsor ${sponsorName}`
+    `Payment failed for campaign ${campaignId}, position ${positionId}, sponsor ${sponsorName}`,
   );
 
   // Could implement cleanup logic here if needed

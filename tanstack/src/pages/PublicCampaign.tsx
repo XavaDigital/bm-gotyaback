@@ -20,13 +20,17 @@ import PublicFooter from "../components/PublicFooter";
 import { Route } from "../routes/campaign.$slug";
 
 const PublicCampaign: React.FC = () => {
-  const { slug } = useParams({ from: '/campaign/$slug' });
+  const { slug } = useParams({ from: "/campaign/$slug" });
   const loaderData = Route.useLoaderData();
 
   // Use TanStack Query with loader data as placeholder
   // Use placeholderData instead of initialData so it always refetches on mount
-  const { data: campaignData, isLoading, refetch } = useQuery({
-    queryKey: ['public-campaign', slug],
+  const {
+    data: campaignData,
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ["public-campaign", slug],
     queryFn: async () => {
       const campaign = await campaignService.getPublicCampaign(slug!);
       const [sponsors, layout] = await Promise.all([
@@ -35,7 +39,11 @@ const PublicCampaign: React.FC = () => {
       ]);
       return { campaign, sponsors, layout };
     },
-    placeholderData: loaderData,
+    placeholderData: loaderData as {
+      campaign: Campaign;
+      sponsors: SponsorEntry[];
+      layout: ShirtLayoutType;
+    },
     staleTime: 0, // Always refetch on mount
   });
 
@@ -66,6 +74,20 @@ const PublicCampaign: React.FC = () => {
       throw error;
     }
   };
+
+  // Handle payment success redirect from Stripe (Afterpay/redirect-based methods)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("payment_success") === "true") {
+      message.success(
+        "Payment successful! Your sponsorship is being processed and will update shortly.",
+      );
+      // Clean up the URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      // Trigger a refetch to show the new sponsor
+      refetch();
+    }
+  }, [refetch]);
 
   // Auto-reload campaign data periodically after modal closes to catch webhook updates
   useEffect(() => {
@@ -128,15 +150,17 @@ const PublicCampaign: React.FC = () => {
   const takenSpots = layout?.placements.filter((p) => p.isTaken).length || 0;
 
   // Check if this is a section-based layout
-  const isSectionBasedLayout = campaign.campaignType === 'positional' &&
-                                campaign.layoutStyle === 'amount-ordered' &&
-                                layout?.placements.some(p => p.section !== undefined);
+  const isSectionBasedLayout =
+    campaign.campaignType === "positional" &&
+    campaign.layoutStyle === "amount-ordered" &&
+    layout?.placements.some((p) => p.section !== undefined);
 
   // Check if this is a word cloud layout (should show simple button, not grid)
   // EXCEPTION: Positional campaigns with word-cloud still need grid for position selection
   // because position number determines the price
-  const isWordCloudLayout = campaign.layoutStyle === 'word-cloud' &&
-                            campaign.campaignType !== 'positional';
+  const isWordCloudLayout =
+    campaign.layoutStyle === "word-cloud" &&
+    campaign.campaignType !== "positional";
 
   return (
     <div
@@ -171,6 +195,22 @@ const PublicCampaign: React.FC = () => {
           {campaign.title}
         </h1>
 
+        {/* Header Image */}
+        {campaign.headerImageUrl && (
+          <div style={{ marginBottom: 24 }}>
+            <img
+              src={campaign.headerImageUrl}
+              alt={campaign.title}
+              style={{
+                width: "100%",
+                height: "250px", // Fixed height for banner look
+                borderRadius: 8,
+                objectFit: "cover",
+              }}
+            />
+          </div>
+        )}
+
         {/* Time Remaining - Full Width */}
         {!isClosed && deadline && (
           <Card
@@ -196,22 +236,6 @@ const PublicCampaign: React.FC = () => {
               }}
             />
           </Card>
-        )}
-
-        {/* Header Image */}
-        {campaign.headerImageUrl && (
-          <div style={{ marginBottom: 24 }}>
-            <img
-              src={campaign.headerImageUrl}
-              alt={campaign.title}
-              style={{
-                width: "100%",
-                height: "auto",
-                borderRadius: 8,
-                objectFit: "cover",
-              }}
-            />
-          </div>
         )}
 
         {/* Description - Full Width */}
@@ -259,13 +283,17 @@ const PublicCampaign: React.FC = () => {
               </div>
             }
           >
-            {campaign.sponsorDisplayType === 'logo-only' && (
+            {campaign.sponsorDisplayType === "logo-only" && (
               <Alert
                 title="Logo Sponsors Only"
                 description="This campaign accepts logo sponsors only. When you sponsor, you'll upload your logo which will be displayed on the campaign."
                 type="info"
                 showIcon
-                style={{ marginBottom: 16, color: '#000000', backgroundColor: 'transparent', }}
+                style={{
+                  marginBottom: 16,
+                  color: "#000000",
+                  backgroundColor: "transparent",
+                }}
               />
             )}
             {isClosed ? (
@@ -471,19 +499,20 @@ const PublicCampaign: React.FC = () => {
                 </div>
 
                 {/* Explanation for Positional + Word Cloud */}
-                {campaign.campaignType === 'positional' && campaign.layoutStyle === 'word-cloud' && (
-                  <Alert
-                    message="Position-Based Pricing with Word Cloud Display"
-                    description="Select a numbered position below to determine your sponsorship price. All sponsors will be displayed in a word cloud format at the same size, regardless of position number."
-                    type="info"
-                    showIcon
-                    style={{
-                      marginBottom: 16,
-                      background: '#1f1f1f',
-                      border: '1px solid #3a3a3a',
-                    }}
-                  />
-                )}
+                {campaign.campaignType === "positional" &&
+                  campaign.layoutStyle === "word-cloud" && (
+                    <Alert
+                      message="Position-Based Pricing with Word Cloud Display"
+                      description="Select a numbered position below to determine your sponsorship price. All sponsors will be displayed in a word cloud format at the same size, regardless of position number."
+                      type="info"
+                      showIcon
+                      style={{
+                        marginBottom: 16,
+                        background: "#1f1f1f",
+                        border: "1px solid #3a3a3a",
+                      }}
+                    />
+                  )}
 
                 <ShirtLayout
                   layout={layout}
@@ -623,8 +652,8 @@ const PublicCampaign: React.FC = () => {
                     {campaign.campaignType === "fixed"
                       ? `Join as a sponsor for $${campaign.pricingConfig?.fixedPrice || 0} ${campaign.currency}. Your name will be displayed in an artistic word cloud layout.`
                       : campaign.campaignType === "pay-what-you-want"
-                      ? `Join as a sponsor! Choose your contribution amount. Your name will be displayed in an artistic word cloud layout.`
-                      : `Join as a sponsor! Your name will be displayed in an artistic word cloud layout based on your position.`}
+                        ? `Join as a sponsor! Choose your contribution amount. Your name will be displayed in an artistic word cloud layout.`
+                        : `Join as a sponsor! Your name will be displayed in an artistic word cloud layout based on your position.`}
                   </p>
                   <p
                     style={{
@@ -633,7 +662,8 @@ const PublicCampaign: React.FC = () => {
                       color: "#999",
                     }}
                   >
-                    💡 All sponsors are displayed together in a creative, cloud-like arrangement.
+                    💡 All sponsors are displayed together in a creative,
+                    cloud-like arrangement.
                   </p>
                 </div>
                 <Button
@@ -644,9 +674,13 @@ const PublicCampaign: React.FC = () => {
                     setSelectedPosition(undefined);
                     // Set amount based on campaign type
                     if (campaign.campaignType === "fixed") {
-                      setSelectedAmount(campaign.pricingConfig?.fixedPrice || 0);
+                      setSelectedAmount(
+                        campaign.pricingConfig?.fixedPrice || 0,
+                      );
                     } else if (campaign.campaignType === "pay-what-you-want") {
-                      setSelectedAmount(campaign.pricingConfig?.minimumAmount || 0);
+                      setSelectedAmount(
+                        campaign.pricingConfig?.minimumAmount || 0,
+                      );
                     } else {
                       // Positional - amount will be determined by position selection (set to 0 for now)
                       setSelectedAmount(0);
@@ -745,13 +779,13 @@ const PublicCampaign: React.FC = () => {
               )
             }
           >
-            {campaign.sponsorDisplayType === 'logo-only' && (
+            {campaign.sponsorDisplayType === "logo-only" && (
               <Alert
                 message="Logo Sponsors Only"
                 description="This campaign accepts logo sponsors only. When you sponsor, you'll upload your logo which will be displayed on the campaign."
                 type="info"
                 showIcon
-                style={{ marginBottom: 16, color: '#000000' }}
+                style={{ marginBottom: 16, color: "#000000" }}
               />
             )}
             {isClosed ? (
@@ -782,9 +816,9 @@ const PublicCampaign: React.FC = () => {
                       color: "#ffffff",
                     }}
                   >
-                    {campaign.sponsorDisplayType === 'logo-only'
-                      ? 'Choose your contribution amount. Your logo will be displayed based on the size of your contribution.'
-                      : 'Choose your contribution amount. Your name will be displayed based on the size of your contribution.'}
+                    {campaign.sponsorDisplayType === "logo-only"
+                      ? "Choose your contribution amount. Your logo will be displayed based on the size of your contribution."
+                      : "Choose your contribution amount. Your name will be displayed based on the size of your contribution."}
                   </p>
                   <p
                     style={{
@@ -793,7 +827,9 @@ const PublicCampaign: React.FC = () => {
                       color: "#999",
                     }}
                   >
-                    💡 Minimum contribution: ${campaign.pricingConfig?.minimumAmount || 0} {campaign.currency}
+                    💡 Minimum contribution: $
+                    {campaign.pricingConfig?.minimumAmount || 0}{" "}
+                    {campaign.currency}
                   </p>
                 </div>
 
@@ -804,7 +840,7 @@ const PublicCampaign: React.FC = () => {
                   onClick={() => {
                     setSelectedPosition(undefined);
                     setSelectedAmount(
-                      campaign.pricingConfig?.minimumAmount || 0
+                      campaign.pricingConfig?.minimumAmount || 0,
                     );
                     setCheckoutVisible(true);
                   }}

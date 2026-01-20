@@ -152,6 +152,10 @@ const EditCampaignModal: React.FC<EditCampaignModalProps> = ({
         updateData.endDate = submittedCampaignData.endDate;
       }
 
+      if (submittedCampaignData.headerImageFile) {
+        updateData.headerImageFile = submittedCampaignData.headerImageFile;
+      }
+
       if (campaign) {
         await campaignService.updateCampaign(campaign._id, updateData);
 
@@ -166,7 +170,7 @@ const EditCampaignModal: React.FC<EditCampaignModalProps> = ({
         ) {
           console.log(
             "Attempting to update pricing:",
-            submittedCampaignData.pricing
+            submittedCampaignData.pricing,
           );
 
           // Backend expects pricing values directly in the body, NOT nested under pricingConfig
@@ -185,7 +189,7 @@ const EditCampaignModal: React.FC<EditCampaignModalProps> = ({
           } else if (campaign.campaignType === "positional") {
             const basePrice = Number(submittedCampaignData.pricing.basePrice);
             const pricePerPosition = Number(
-              submittedCampaignData.pricing.pricePerPosition
+              submittedCampaignData.pricing.pricePerPosition,
             );
 
             console.log("Positional pricing values:", {
@@ -220,7 +224,7 @@ const EditCampaignModal: React.FC<EditCampaignModalProps> = ({
     } catch (error: any) {
       console.error("Update error:", error);
       message.error(
-        error.response?.data?.message || "Failed to update campaign"
+        error.response?.data?.message || "Failed to update campaign",
       );
     } finally {
       setLoading(false);

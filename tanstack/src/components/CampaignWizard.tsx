@@ -13,12 +13,8 @@ import {
   Alert,
   Row,
   Col,
-  Upload,
-  message,
 } from "antd";
-import { UploadOutlined } from "@ant-design/icons";
-import type { FormInstance } from "antd";
-import type { UploadFile } from "antd/es/upload/interface";
+import ImageUpload from "./ImageUpload";
 import RichTextEditor from "./RichTextEditor";
 
 const { RangePicker } = DatePicker;
@@ -51,10 +47,7 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
   const [layoutData, setLayoutData] = useState<any>(initialLayoutData);
   const [form] = Form.useForm();
   const [headerImageFile, setHeaderImageFile] = useState<File | undefined>(
-    undefined
-  );
-  const [headerImageFileList, setHeaderImageFileList] = useState<UploadFile[]>(
-    []
+    undefined,
   );
 
   // Custom styles for form labels and radio buttons
@@ -172,7 +165,7 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
         console.log("Step 2 - campaignData.pricing:", campaignData.pricing);
         console.log(
           "Step 2 - campaignData.layoutConfig:",
-          campaignData.layoutConfig
+          campaignData.layoutConfig,
         );
 
         if (campaignData.pricing) {
@@ -186,12 +179,12 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
         console.log("Setting edit mode configuration values:", editModeValues);
         console.log(
           "Current form values before setFieldsValue:",
-          form.getFieldsValue()
+          form.getFieldsValue(),
         );
         form.setFieldsValue(editModeValues);
         console.log(
           "Current form values after setFieldsValue:",
-          form.getFieldsValue()
+          form.getFieldsValue(),
         );
       }
     } else if (current === 3) {
@@ -320,47 +313,17 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
             label="Header Image"
             extra="Optional banner image displayed at the top of your campaign page (max 5MB, PNG or JPG)"
           >
-            <Upload
-              accept="image/png,image/jpeg,image/jpg"
-              maxCount={1}
-              fileList={headerImageFileList}
-              beforeUpload={(file) => {
-                // Validate file type
-                const isImage =
-                  file.type === "image/png" ||
-                  file.type === "image/jpeg" ||
-                  file.type === "image/jpg";
-                if (!isImage) {
-                  message.error("You can only upload PNG or JPG files!");
-                  return Upload.LIST_IGNORE;
+            <ImageUpload
+              type="cover"
+              value={campaignData.headerImageUrl}
+              onChange={(file) => {
+                if (file) {
+                  setHeaderImageFile(file);
+                } else {
+                  setHeaderImageFile(undefined);
                 }
-
-                // Validate file size (5MB)
-                const isLt5M = file.size / 1024 / 1024 < 5;
-                if (!isLt5M) {
-                  message.error("Image must be smaller than 5MB!");
-                  return Upload.LIST_IGNORE;
-                }
-
-                setHeaderImageFile(file);
-                setHeaderImageFileList([
-                  {
-                    uid: file.uid,
-                    name: file.name,
-                    status: "done",
-                    url: URL.createObjectURL(file),
-                  },
-                ]);
-                return false; // Prevent auto upload
               }}
-              onRemove={() => {
-                setHeaderImageFile(undefined);
-                setHeaderImageFileList([]);
-              }}
-              listType="picture"
-            >
-              <Button icon={<UploadOutlined />}>Select Image</Button>
-            </Upload>
+            />
           </Form.Item>
 
           <Form.Item
@@ -396,6 +359,15 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
             layoutStyle: campaignData.layoutStyle || "size-ordered",
           }}
         >
+          {mode === "edit" && hasSponsors && (
+            <Alert
+              message="Campaign Type Locked"
+              description="Cannot change campaign type or sponsor display settings after sponsors have joined."
+              type="warning"
+              showIcon
+              style={{ marginBottom: 16 }}
+            />
+          )}
           <Form.Item
             label="Pricing Strategy"
             name="campaignType"
@@ -403,7 +375,11 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
               { required: true, message: "Please select a pricing strategy" },
             ]}
           >
-            <Radio.Group style={{ width: "100%" }} className="campaign-wizard-radio-group">
+            <Radio.Group
+              style={{ width: "100%" }}
+              className="campaign-wizard-radio-group"
+              disabled={mode === "edit" && hasSponsors}
+            >
               <Form.Item noStyle shouldUpdate>
                 {({ getFieldValue }) => {
                   const selectedType = getFieldValue("campaignType");
@@ -411,21 +387,37 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                   return (
                     <Row gutter={16}>
                       <Col span={8}>
-                        <Radio value="fixed" style={{ width: "100%" }} className="campaign-wizard-radio">
+                        <Radio
+                          value="fixed"
+                          style={{ width: "100%" }}
+                          className="campaign-wizard-radio"
+                        >
                           <Card
                             className="campaign-wizard-card"
                             style={{
                               height: "100%",
-                              cursor: "pointer",
-                              backgroundColor: selectedType === "fixed" ? "#fef0f2" : "#ffffff",
-                              borderColor: selectedType === "fixed" ? "#C8102E" : "#d9d9d9",
+                              cursor:
+                                mode === "edit" && hasSponsors
+                                  ? "not-allowed"
+                                  : "pointer",
+                              opacity: mode === "edit" && hasSponsors ? 0.6 : 1,
+                              backgroundColor:
+                                selectedType === "fixed"
+                                  ? "#fef0f2"
+                                  : "#ffffff",
+                              borderColor:
+                                selectedType === "fixed"
+                                  ? "#C8102E"
+                                  : "#d9d9d9",
                               borderWidth: selectedType === "fixed" ? 2 : 1,
                               transition: "all 0.3s ease",
                             }}
-                            hoverable
+                            hoverable={!(mode === "edit" && hasSponsors)}
                           >
                             <div>
-                              <strong style={{ fontSize: "16px", color: "#262626" }}>
+                              <strong
+                                style={{ fontSize: "16px", color: "#262626" }}
+                              >
                                 Fixed Price
                               </strong>
                               <p
@@ -442,21 +434,38 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                         </Radio>
                       </Col>
                       <Col span={8}>
-                        <Radio value="positional" style={{ width: "100%" }} className="campaign-wizard-radio">
+                        <Radio
+                          value="positional"
+                          style={{ width: "100%" }}
+                          className="campaign-wizard-radio"
+                        >
                           <Card
                             className="campaign-wizard-card"
                             style={{
                               height: "100%",
-                              cursor: "pointer",
-                              backgroundColor: selectedType === "positional" ? "#fef0f2" : "#ffffff",
-                              borderColor: selectedType === "positional" ? "#C8102E" : "#d9d9d9",
-                              borderWidth: selectedType === "positional" ? 2 : 1,
+                              cursor:
+                                mode === "edit" && hasSponsors
+                                  ? "not-allowed"
+                                  : "pointer",
+                              opacity: mode === "edit" && hasSponsors ? 0.6 : 1,
+                              backgroundColor:
+                                selectedType === "positional"
+                                  ? "#fef0f2"
+                                  : "#ffffff",
+                              borderColor:
+                                selectedType === "positional"
+                                  ? "#C8102E"
+                                  : "#d9d9d9",
+                              borderWidth:
+                                selectedType === "positional" ? 2 : 1,
                               transition: "all 0.3s ease",
                             }}
-                            hoverable
+                            hoverable={!(mode === "edit" && hasSponsors)}
                           >
                             <div>
-                              <strong style={{ fontSize: "16px", color: "#262626" }}>
+                              <strong
+                                style={{ fontSize: "16px", color: "#262626" }}
+                              >
                                 Positional Pricing
                               </strong>
                               <p
@@ -466,29 +475,46 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                                   marginBottom: 0,
                                 }}
                               >
-                                Price increases based on position number (e.g., $20 + $2
-                                per position)
+                                Price increases based on position number (e.g.,
+                                $20 + $2 per position)
                               </p>
                             </div>
                           </Card>
                         </Radio>
                       </Col>
                       <Col span={8}>
-                        <Radio value="pay-what-you-want" style={{ width: "100%" }} className="campaign-wizard-radio">
+                        <Radio
+                          value="pay-what-you-want"
+                          style={{ width: "100%" }}
+                          className="campaign-wizard-radio"
+                        >
                           <Card
                             className="campaign-wizard-card"
                             style={{
                               height: "100%",
-                              cursor: "pointer",
-                              backgroundColor: selectedType === "pay-what-you-want" ? "#fef0f2" : "#ffffff",
-                              borderColor: selectedType === "pay-what-you-want" ? "#C8102E" : "#d9d9d9",
-                              borderWidth: selectedType === "pay-what-you-want" ? 2 : 1,
+                              cursor:
+                                mode === "edit" && hasSponsors
+                                  ? "not-allowed"
+                                  : "pointer",
+                              opacity: mode === "edit" && hasSponsors ? 0.6 : 1,
+                              backgroundColor:
+                                selectedType === "pay-what-you-want"
+                                  ? "#fef0f2"
+                                  : "#ffffff",
+                              borderColor:
+                                selectedType === "pay-what-you-want"
+                                  ? "#C8102E"
+                                  : "#d9d9d9",
+                              borderWidth:
+                                selectedType === "pay-what-you-want" ? 2 : 1,
                               transition: "all 0.3s ease",
                             }}
-                            hoverable
+                            hoverable={!(mode === "edit" && hasSponsors)}
                           >
                             <div>
-                              <strong style={{ fontSize: "16px", color: "#262626" }}>
+                              <strong
+                                style={{ fontSize: "16px", color: "#262626" }}
+                              >
                                 Pay What You Want
                               </strong>
                               <p
@@ -498,7 +524,8 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                                   marginBottom: 0,
                                 }}
                               >
-                                Sponsors choose their amount, size based on contribution
+                                Sponsors choose their amount, size based on
+                                contribution
                               </p>
                             </div>
                           </Card>
@@ -521,19 +548,50 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
               const campaignType = getFieldValue("campaignType");
 
               // Define available layout styles for each campaign type
-              const layoutOptions: Record<string, Array<{ value: string; label: string; description: string }>> = {
-                'fixed': [
-                  { value: 'word-cloud', label: 'Word Cloud', description: 'Artistic arrangement' },
-                  { value: 'size-ordered', label: 'List', description: 'Ordered list display' },
+              const layoutOptions: Record<
+                string,
+                Array<{ value: string; label: string; description: string }>
+              > = {
+                fixed: [
+                  {
+                    value: "word-cloud",
+                    label: "Word Cloud",
+                    description: "Artistic arrangement",
+                  },
+                  {
+                    value: "size-ordered",
+                    label: "List",
+                    description: "Ordered list display",
+                  },
                 ],
-                'positional': [
-                  { value: 'size-ordered', label: 'Ordered', description: 'Ordered by position' },
-                  { value: 'amount-ordered', label: 'Sections', description: 'Grouped by price tier' },
-                  { value: 'word-cloud', label: 'Cloud', description: 'Artistic word cloud' },
+                positional: [
+                  {
+                    value: "size-ordered",
+                    label: "Ordered",
+                    description: "Ordered by position",
+                  },
+                  {
+                    value: "amount-ordered",
+                    label: "Sections",
+                    description: "Grouped by price tier",
+                  },
+                  {
+                    value: "word-cloud",
+                    label: "Cloud",
+                    description: "Artistic word cloud",
+                  },
                 ],
-                'pay-what-you-want': [
-                  { value: 'amount-ordered', label: 'Ordered List', description: 'Highest payers first' },
-                  { value: 'word-cloud', label: 'Word Cloud', description: 'Size based on contribution' },
+                "pay-what-you-want": [
+                  {
+                    value: "amount-ordered",
+                    label: "Ordered List",
+                    description: "Highest payers first",
+                  },
+                  {
+                    value: "word-cloud",
+                    label: "Word Cloud",
+                    description: "Size based on contribution",
+                  },
                 ],
               };
 
@@ -542,7 +600,7 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
               // Show layout style options for all campaign types
               if (options.length > 0) {
                 // Layout style is required for fixed and positional, optional for pay-what-you-want
-                const isRequired = campaignType !== 'pay-what-you-want';
+                const isRequired = campaignType !== "pay-what-you-want";
 
                 return (
                   <Form.Item
@@ -555,7 +613,7 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                       },
                     ]}
                     extra={
-                      campaignType === 'pay-what-you-want'
+                      campaignType === "pay-what-you-want"
                         ? "Optional: Choose how sponsors will be arranged on the shirt"
                         : "How sponsors will be arranged on the shirt"
                     }
@@ -567,12 +625,16 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                     >
                       <Form.Item noStyle shouldUpdate>
                         {({ getFieldValue }) => {
-                          const selectedLayoutStyle = getFieldValue("layoutStyle");
+                          const selectedLayoutStyle =
+                            getFieldValue("layoutStyle");
 
                           return (
                             <Row gutter={16}>
                               {options.map((option) => (
-                                <Col span={options.length === 2 ? 12 : 8} key={option.value}>
+                                <Col
+                                  span={options.length === 2 ? 12 : 8}
+                                  key={option.value}
+                                >
                                   <Radio
                                     value={option.value}
                                     disabled={mode === "edit"}
@@ -588,15 +650,29 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                                             ? "not-allowed"
                                             : "pointer",
                                         opacity: mode === "edit" ? 0.6 : 1,
-                                        backgroundColor: selectedLayoutStyle === option.value ? "#fef0f2" : "#ffffff",
-                                        borderColor: selectedLayoutStyle === option.value ? "#C8102E" : "#d9d9d9",
-                                        borderWidth: selectedLayoutStyle === option.value ? 2 : 1,
+                                        backgroundColor:
+                                          selectedLayoutStyle === option.value
+                                            ? "#fef0f2"
+                                            : "#ffffff",
+                                        borderColor:
+                                          selectedLayoutStyle === option.value
+                                            ? "#C8102E"
+                                            : "#d9d9d9",
+                                        borderWidth:
+                                          selectedLayoutStyle === option.value
+                                            ? 2
+                                            : 1,
                                         transition: "all 0.3s ease",
                                       }}
                                       hoverable={mode !== "edit"}
                                     >
                                       <div>
-                                        <strong style={{ fontSize: "16px", color: "#262626" }}>
+                                        <strong
+                                          style={{
+                                            fontSize: "16px",
+                                            color: "#262626",
+                                          }}
+                                        >
                                           {option.label}
                                         </strong>
                                         <p
@@ -639,29 +715,51 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
             ]}
             extra="Choose what type of sponsors you'll accept"
           >
-            <Radio.Group style={{ width: "100%" }} className="campaign-wizard-radio-group">
+            <Radio.Group
+              style={{ width: "100%" }}
+              className="campaign-wizard-radio-group"
+              disabled={mode === "edit" && hasSponsors}
+            >
               <Form.Item noStyle shouldUpdate>
                 {({ getFieldValue }) => {
-                  const selectedDisplayType = getFieldValue("sponsorDisplayType");
+                  const selectedDisplayType =
+                    getFieldValue("sponsorDisplayType");
 
                   return (
                     <Row gutter={16}>
                       <Col span={8}>
-                        <Radio value="text-only" style={{ width: "100%" }} className="campaign-wizard-radio">
+                        <Radio
+                          value="text-only"
+                          style={{ width: "100%" }}
+                          className="campaign-wizard-radio"
+                        >
                           <Card
                             className="campaign-wizard-card"
                             style={{
                               height: "100%",
-                              cursor: "pointer",
-                              backgroundColor: selectedDisplayType === "text-only" ? "#fef0f2" : "#ffffff",
-                              borderColor: selectedDisplayType === "text-only" ? "#C8102E" : "#d9d9d9",
-                              borderWidth: selectedDisplayType === "text-only" ? 2 : 1,
+                              cursor:
+                                mode === "edit" && hasSponsors
+                                  ? "not-allowed"
+                                  : "pointer",
+                              opacity: mode === "edit" && hasSponsors ? 0.6 : 1,
+                              backgroundColor:
+                                selectedDisplayType === "text-only"
+                                  ? "#fef0f2"
+                                  : "#ffffff",
+                              borderColor:
+                                selectedDisplayType === "text-only"
+                                  ? "#C8102E"
+                                  : "#d9d9d9",
+                              borderWidth:
+                                selectedDisplayType === "text-only" ? 2 : 1,
                               transition: "all 0.3s ease",
                             }}
-                            hoverable
+                            hoverable={!(mode === "edit" && hasSponsors)}
                           >
                             <div>
-                              <strong style={{ fontSize: "16px", color: "#262626" }}>
+                              <strong
+                                style={{ fontSize: "16px", color: "#262626" }}
+                              >
                                 Text Only
                               </strong>
                               <p
@@ -678,21 +776,38 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                         </Radio>
                       </Col>
                       <Col span={8}>
-                        <Radio value="logo-only" style={{ width: "100%" }} className="campaign-wizard-radio">
+                        <Radio
+                          value="logo-only"
+                          style={{ width: "100%" }}
+                          className="campaign-wizard-radio"
+                        >
                           <Card
                             className="campaign-wizard-card"
                             style={{
                               height: "100%",
-                              cursor: "pointer",
-                              backgroundColor: selectedDisplayType === "logo-only" ? "#fef0f2" : "#ffffff",
-                              borderColor: selectedDisplayType === "logo-only" ? "#C8102E" : "#d9d9d9",
-                              borderWidth: selectedDisplayType === "logo-only" ? 2 : 1,
+                              cursor:
+                                mode === "edit" && hasSponsors
+                                  ? "not-allowed"
+                                  : "pointer",
+                              opacity: mode === "edit" && hasSponsors ? 0.6 : 1,
+                              backgroundColor:
+                                selectedDisplayType === "logo-only"
+                                  ? "#fef0f2"
+                                  : "#ffffff",
+                              borderColor:
+                                selectedDisplayType === "logo-only"
+                                  ? "#C8102E"
+                                  : "#d9d9d9",
+                              borderWidth:
+                                selectedDisplayType === "logo-only" ? 2 : 1,
                               transition: "all 0.3s ease",
                             }}
-                            hoverable
+                            hoverable={!(mode === "edit" && hasSponsors)}
                           >
                             <div>
-                              <strong style={{ fontSize: "16px", color: "#262626" }}>
+                              <strong
+                                style={{ fontSize: "16px", color: "#262626" }}
+                              >
                                 Logo Only
                               </strong>
                               <p
@@ -709,21 +824,38 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                         </Radio>
                       </Col>
                       <Col span={8}>
-                        <Radio value="both" style={{ width: "100%" }} className="campaign-wizard-radio">
+                        <Radio
+                          value="both"
+                          style={{ width: "100%" }}
+                          className="campaign-wizard-radio"
+                        >
                           <Card
                             className="campaign-wizard-card"
                             style={{
                               height: "100%",
-                              cursor: "pointer",
-                              backgroundColor: selectedDisplayType === "both" ? "#fef0f2" : "#ffffff",
-                              borderColor: selectedDisplayType === "both" ? "#C8102E" : "#d9d9d9",
-                              borderWidth: selectedDisplayType === "both" ? 2 : 1,
+                              cursor:
+                                mode === "edit" && hasSponsors
+                                  ? "not-allowed"
+                                  : "pointer",
+                              opacity: mode === "edit" && hasSponsors ? 0.6 : 1,
+                              backgroundColor:
+                                selectedDisplayType === "both"
+                                  ? "#fef0f2"
+                                  : "#ffffff",
+                              borderColor:
+                                selectedDisplayType === "both"
+                                  ? "#C8102E"
+                                  : "#d9d9d9",
+                              borderWidth:
+                                selectedDisplayType === "both" ? 2 : 1,
                               transition: "all 0.3s ease",
                             }}
-                            hoverable
+                            hoverable={!(mode === "edit" && hasSponsors)}
                           >
                             <div>
-                              <strong style={{ fontSize: "16px", color: "#262626" }}>
+                              <strong
+                                style={{ fontSize: "16px", color: "#262626" }}
+                              >
                                 Both
                               </strong>
                               <p
@@ -801,7 +933,8 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
               {/* Grid configuration - only show for size-ordered layout */}
               <Form.Item noStyle shouldUpdate>
                 {({ getFieldValue }) => {
-                  const layoutStyle = getFieldValue("layoutStyle") || campaignData.layoutStyle;
+                  const layoutStyle =
+                    getFieldValue("layoutStyle") || campaignData.layoutStyle;
                   const isWordCloud = layoutStyle === "word-cloud";
 
                   // For word-cloud layout, we don't need grid configuration
@@ -826,7 +959,8 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                                 ? [
                                     {
                                       required: true,
-                                      message: "Please enter total number of positions",
+                                      message:
+                                        "Please enter total number of positions",
                                     },
                                   ]
                                 : []
@@ -913,7 +1047,9 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                                           } else {
                                             form.setFieldsValue({
                                               layoutConfig: {
-                                                ...getFieldValue("layoutConfig"),
+                                                ...getFieldValue(
+                                                  "layoutConfig",
+                                                ),
                                                 arrangement: "horizontal",
                                               },
                                             });
@@ -929,7 +1065,9 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                                           selectedArrangement === "horizontal"
                                             ? "#e6f7ff"
                                             : "white",
-                                        cursor: isDisabled ? "not-allowed" : "pointer",
+                                        cursor: isDisabled
+                                          ? "not-allowed"
+                                          : "pointer",
                                         opacity: isDisabled ? 0.6 : 1,
                                       }}
                                     >
@@ -995,7 +1133,9 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                                           } else {
                                             form.setFieldsValue({
                                               layoutConfig: {
-                                                ...getFieldValue("layoutConfig"),
+                                                ...getFieldValue(
+                                                  "layoutConfig",
+                                                ),
                                                 arrangement: "vertical",
                                               },
                                             });
@@ -1011,7 +1151,9 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                                           selectedArrangement === "vertical"
                                             ? "#e6f7ff"
                                             : "white",
-                                        cursor: isDisabled ? "not-allowed" : "pointer",
+                                        cursor: isDisabled
+                                          ? "not-allowed"
+                                          : "pointer",
                                         opacity: isDisabled ? 0.6 : 1,
                                       }}
                                     >
@@ -1082,7 +1224,8 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
             <>
               <Form.Item noStyle shouldUpdate>
                 {({ getFieldValue }) => {
-                  const layoutStyle = getFieldValue("layoutStyle") || campaignData.layoutStyle;
+                  const layoutStyle =
+                    getFieldValue("layoutStyle") || campaignData.layoutStyle;
                   const isSectionsLayout = layoutStyle === "amount-ordered";
 
                   return (
@@ -1109,14 +1252,20 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                           {/* Middle Section - Premium Tier */}
                           <Card
                             title={
-                              <span style={{ fontSize: '16px', fontWeight: 600 }}>
+                              <span
+                                style={{ fontSize: "16px", fontWeight: 600 }}
+                              >
                                 Middle Section (Premium Tier)
                               </span>
                             }
-                            style={{ marginBottom: 16, borderColor: '#ffd700', borderWidth: 2 }}
+                            style={{
+                              marginBottom: 16,
+                              borderColor: "#ffd700",
+                              borderWidth: 2,
+                            }}
                             styles={{
-                              header: { backgroundColor: '#fffbf0' },
-                              body: { backgroundColor: "#ffffff" }
+                              header: { backgroundColor: "#fffbf0" },
+                              body: { backgroundColor: "#ffffff" },
                             }}
                           >
                             <Row gutter={16}>
@@ -1125,13 +1274,24 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                                   label="Amount per Slot"
                                   name={
                                     mode === "create"
-                                      ? ["pricingConfig", "sections", "middle", "amount"]
-                                      : ["pricing", "sections", "middle", "amount"]
+                                      ? [
+                                          "pricingConfig",
+                                          "sections",
+                                          "middle",
+                                          "amount",
+                                        ]
+                                      : [
+                                          "pricing",
+                                          "sections",
+                                          "middle",
+                                          "amount",
+                                        ]
                                   }
                                   rules={[
                                     {
                                       required: true,
-                                      message: "Please enter amount for middle section",
+                                      message:
+                                        "Please enter amount for middle section",
                                     },
                                   ]}
                                   extra="Price for each slot in the premium middle section"
@@ -1150,8 +1310,18 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                                   label="Number of Slots"
                                   name={
                                     mode === "create"
-                                      ? ["pricingConfig", "sections", "middle", "slots"]
-                                      : ["pricing", "sections", "middle", "slots"]
+                                      ? [
+                                          "pricingConfig",
+                                          "sections",
+                                          "middle",
+                                          "slots",
+                                        ]
+                                      : [
+                                          "pricing",
+                                          "sections",
+                                          "middle",
+                                          "slots",
+                                        ]
                                   }
                                   rules={[
                                     {
@@ -1179,7 +1349,7 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                             style={{ marginBottom: 16 }}
                             styles={{
                               header: { backgroundColor: "#fafafa" },
-                              body: { backgroundColor: "#ffffff" }
+                              body: { backgroundColor: "#ffffff" },
                             }}
                           >
                             <Row gutter={16}>
@@ -1188,13 +1358,19 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                                   label="Amount per Slot"
                                   name={
                                     mode === "create"
-                                      ? ["pricingConfig", "sections", "top", "amount"]
+                                      ? [
+                                          "pricingConfig",
+                                          "sections",
+                                          "top",
+                                          "amount",
+                                        ]
                                       : ["pricing", "sections", "top", "amount"]
                                   }
                                   rules={[
                                     {
                                       required: true,
-                                      message: "Please enter amount for top section",
+                                      message:
+                                        "Please enter amount for top section",
                                     },
                                   ]}
                                   extra="Price for each slot in the top section"
@@ -1213,7 +1389,12 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                                   label="Number of Slots"
                                   name={
                                     mode === "create"
-                                      ? ["pricingConfig", "sections", "top", "slots"]
+                                      ? [
+                                          "pricingConfig",
+                                          "sections",
+                                          "top",
+                                          "slots",
+                                        ]
                                       : ["pricing", "sections", "top", "slots"]
                                   }
                                   rules={[
@@ -1242,7 +1423,7 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                             style={{ marginBottom: 16 }}
                             styles={{
                               header: { backgroundColor: "#fafafa" },
-                              body: { backgroundColor: "#ffffff" }
+                              body: { backgroundColor: "#ffffff" },
                             }}
                           >
                             <Row gutter={16}>
@@ -1251,13 +1432,24 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                                   label="Amount per Slot"
                                   name={
                                     mode === "create"
-                                      ? ["pricingConfig", "sections", "bottom", "amount"]
-                                      : ["pricing", "sections", "bottom", "amount"]
+                                      ? [
+                                          "pricingConfig",
+                                          "sections",
+                                          "bottom",
+                                          "amount",
+                                        ]
+                                      : [
+                                          "pricing",
+                                          "sections",
+                                          "bottom",
+                                          "amount",
+                                        ]
                                   }
                                   rules={[
                                     {
                                       required: true,
-                                      message: "Please enter amount for bottom section",
+                                      message:
+                                        "Please enter amount for bottom section",
                                     },
                                   ]}
                                   extra="Price for each slot in the bottom section"
@@ -1276,8 +1468,18 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                                   label="Number of Slots"
                                   name={
                                     mode === "create"
-                                      ? ["pricingConfig", "sections", "bottom", "slots"]
-                                      : ["pricing", "sections", "bottom", "slots"]
+                                      ? [
+                                          "pricingConfig",
+                                          "sections",
+                                          "bottom",
+                                          "slots",
+                                        ]
+                                      : [
+                                          "pricing",
+                                          "sections",
+                                          "bottom",
+                                          "slots",
+                                        ]
                                   }
                                   rules={[
                                     {
@@ -1374,7 +1576,9 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                           {/* Word Cloud Layout Explanation for Positional */}
                           <Form.Item noStyle shouldUpdate>
                             {({ getFieldValue }) => {
-                              const layoutStyle = getFieldValue("layoutStyle") || campaignData.layoutStyle;
+                              const layoutStyle =
+                                getFieldValue("layoutStyle") ||
+                                campaignData.layoutStyle;
                               const isWordCloud = layoutStyle === "word-cloud";
 
                               if (!isWordCloud) {
@@ -1401,7 +1605,8 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
 
               <Form.Item noStyle shouldUpdate>
                 {({ getFieldValue }) => {
-                  const layoutStyle = getFieldValue("layoutStyle") || campaignData.layoutStyle;
+                  const layoutStyle =
+                    getFieldValue("layoutStyle") || campaignData.layoutStyle;
                   const isSectionsLayout = layoutStyle === "amount-ordered";
                   const isWordCloud = layoutStyle === "word-cloud";
 
@@ -1427,7 +1632,8 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                                 ? [
                                     {
                                       required: true,
-                                      message: "Please enter total number of positions",
+                                      message:
+                                        "Please enter total number of positions",
                                     },
                                   ]
                                 : []
@@ -1514,7 +1720,9 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                                           } else {
                                             form.setFieldsValue({
                                               layoutConfig: {
-                                                ...getFieldValue("layoutConfig"),
+                                                ...getFieldValue(
+                                                  "layoutConfig",
+                                                ),
                                                 arrangement: "horizontal",
                                               },
                                             });
@@ -1530,7 +1738,9 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                                           selectedArrangement === "horizontal"
                                             ? "#e6f7ff"
                                             : "white",
-                                        cursor: isDisabled ? "not-allowed" : "pointer",
+                                        cursor: isDisabled
+                                          ? "not-allowed"
+                                          : "pointer",
                                         opacity: isDisabled ? 0.6 : 1,
                                       }}
                                     >
@@ -1596,7 +1806,9 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                                           } else {
                                             form.setFieldsValue({
                                               layoutConfig: {
-                                                ...getFieldValue("layoutConfig"),
+                                                ...getFieldValue(
+                                                  "layoutConfig",
+                                                ),
                                                 arrangement: "vertical",
                                               },
                                             });
@@ -1612,7 +1824,9 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                                           selectedArrangement === "vertical"
                                             ? "#e6f7ff"
                                             : "white",
-                                        cursor: isDisabled ? "not-allowed" : "pointer",
+                                        cursor: isDisabled
+                                          ? "not-allowed"
+                                          : "pointer",
                                         opacity: isDisabled ? 0.6 : 1,
                                       }}
                                     >

@@ -13,6 +13,7 @@ import {
   Statistic,
   Badge,
   Alert,
+  Image,
 } from "antd";
 import {
   CloseCircleOutlined,
@@ -39,12 +40,12 @@ import { Route } from "../routes/campaigns.$id.index";
 // Helper function to format campaign type labels
 const formatCampaignType = (type: CampaignType): string => {
   switch (type) {
-    case 'fixed':
-      return 'Fixed Pricing';
-    case 'positional':
-      return 'Tiered Pricing';
-    case 'pay-what-you-want':
-      return 'Pay What You Want';
+    case "fixed":
+      return "Fixed Pricing";
+    case "positional":
+      return "Tiered Pricing";
+    case "pay-what-you-want":
+      return "Pay What You Want";
     default:
       return type;
   }
@@ -53,14 +54,14 @@ const formatCampaignType = (type: CampaignType): string => {
 // Helper function to format layout style labels
 const formatLayoutStyle = (style: LayoutStyle): string => {
   switch (style) {
-    case 'grid':
-      return 'Grid Layout';
-    case 'size-ordered':
-      return 'Size Ordered';
-    case 'amount-ordered':
-      return 'Amount Ordered';
-    case 'word-cloud':
-      return 'Word Cloud';
+    case "grid":
+      return "Grid Layout";
+    case "size-ordered":
+      return "Size Ordered";
+    case "amount-ordered":
+      return "Amount Ordered";
+    case "word-cloud":
+      return "Word Cloud";
     default:
       return style;
   }
@@ -69,26 +70,30 @@ const formatLayoutStyle = (style: LayoutStyle): string => {
 // Helper function to format sponsor display type labels
 const formatSponsorDisplayType = (type: SponsorDisplayType): string => {
   switch (type) {
-    case 'text-only':
-      return 'Text Only';
-    case 'logo-only':
-      return 'Logo Only';
-    case 'both':
-      return 'Text & Logo';
+    case "text-only":
+      return "Text Only";
+    case "logo-only":
+      return "Logo Only";
+    case "both":
+      return "Text & Logo";
     default:
       return type;
   }
 };
 
 const CampaignDetail: React.FC = () => {
-  const { id } = useParams({ from: '/campaigns/$id/' });
+  const { id } = useParams({ from: "/campaigns/$id/" });
   const navigate = useNavigate();
   const loaderData = Route.useLoaderData();
 
   // Use TanStack Query with loader data as placeholder
   // Use placeholderData instead of initialData so it always refetches on mount
-  const { data: campaignData, isLoading, refetch } = useQuery({
-    queryKey: ['campaign', id],
+  const {
+    data: campaignData,
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ["campaign", id],
     queryFn: async () => {
       const [campaign, sponsors, layout] = await Promise.all([
         campaignService.getCampaignById(id!),
@@ -131,8 +136,6 @@ const CampaignDetail: React.FC = () => {
     }
   };
 
-
-
   const handleCloseCampaign = () => {
     Modal.confirm({
       title: "Close Campaign?",
@@ -148,7 +151,7 @@ const CampaignDetail: React.FC = () => {
           refetch();
         } catch (error: any) {
           message.error(
-            error.response?.data?.message || "Failed to close campaign"
+            error.response?.data?.message || "Failed to close campaign",
           );
         } finally {
           setClosingCampaign(false);
@@ -170,7 +173,7 @@ const CampaignDetail: React.FC = () => {
   const handleTogglePaymentStatus = async (
     sponsorshipId: string,
     currentStatus: string,
-    paymentMethod: string
+    paymentMethod: string,
   ) => {
     if (paymentMethod === "card") {
       message.error("Cannot manually change payment status for card payments");
@@ -186,7 +189,7 @@ const CampaignDetail: React.FC = () => {
       refetch();
     } catch (error: any) {
       message.error(
-        error.response?.data?.message || "Failed to update payment status"
+        error.response?.data?.message || "Failed to update payment status",
       );
     }
   };
@@ -229,8 +232,8 @@ const CampaignDetail: React.FC = () => {
             status === "paid"
               ? "green"
               : status === "pending"
-              ? "orange"
-              : "red"
+                ? "orange"
+                : "red"
           }
         >
           {status.toUpperCase()}
@@ -259,7 +262,7 @@ const CampaignDetail: React.FC = () => {
               handleTogglePaymentStatus(
                 record._id,
                 record.paymentStatus,
-                record.paymentMethod
+                record.paymentMethod,
               )
             }
           >
@@ -352,17 +355,23 @@ const CampaignDetail: React.FC = () => {
               padding: "0 clamp(8px, 2vw, 15px)",
             }}
           >
-            <span style={{ display: window.innerWidth < 768 ? "none" : "inline" }}>
+            <span
+              style={{ display: window.innerWidth < 768 ? "none" : "inline" }}
+            >
               View Public Page
             </span>
-            <span style={{ display: window.innerWidth >= 768 ? "none" : "inline" }}>
+            <span
+              style={{ display: window.innerWidth >= 768 ? "none" : "inline" }}
+            >
               View
             </span>
           </Button>
           {campaign.sponsorDisplayType !== "text-only" && (
             <Badge count={pendingLogos.length} offset={[-5, 5]}>
               <Button
-                onClick={() => navigate({ to: `/campaigns/${id}/logo-approval` })}
+                onClick={() =>
+                  navigate({ to: `/campaigns/${id}/logo-approval` })
+                }
                 icon={<BellOutlined />}
                 style={{
                   fontSize: "clamp(12px, 2.5vw, 14px)",
@@ -370,10 +379,18 @@ const CampaignDetail: React.FC = () => {
                   padding: "0 clamp(8px, 2vw, 15px)",
                 }}
               >
-                <span style={{ display: window.innerWidth < 768 ? "none" : "inline" }}>
+                <span
+                  style={{
+                    display: window.innerWidth < 768 ? "none" : "inline",
+                  }}
+                >
                   Logo Approvals
                 </span>
-                <span style={{ display: window.innerWidth >= 768 ? "none" : "inline" }}>
+                <span
+                  style={{
+                    display: window.innerWidth >= 768 ? "none" : "inline",
+                  }}
+                >
                   Logos
                 </span>
               </Button>
@@ -391,10 +408,18 @@ const CampaignDetail: React.FC = () => {
                   padding: "0 clamp(8px, 2vw, 15px)",
                 }}
               >
-                <span style={{ display: window.innerWidth < 768 ? "none" : "inline" }}>
+                <span
+                  style={{
+                    display: window.innerWidth < 768 ? "none" : "inline",
+                  }}
+                >
                   Edit Campaign
                 </span>
-                <span style={{ display: window.innerWidth >= 768 ? "none" : "inline" }}>
+                <span
+                  style={{
+                    display: window.innerWidth >= 768 ? "none" : "inline",
+                  }}
+                >
                   Edit
                 </span>
               </Button>
@@ -409,10 +434,18 @@ const CampaignDetail: React.FC = () => {
                   padding: "0 clamp(8px, 2vw, 15px)",
                 }}
               >
-                <span style={{ display: window.innerWidth < 768 ? "none" : "inline" }}>
+                <span
+                  style={{
+                    display: window.innerWidth < 768 ? "none" : "inline",
+                  }}
+                >
                   Close Campaign
                 </span>
-                <span style={{ display: window.innerWidth >= 768 ? "none" : "inline" }}>
+                <span
+                  style={{
+                    display: window.innerWidth >= 768 ? "none" : "inline",
+                  }}
+                >
                   Close
                 </span>
               </Button>
@@ -547,8 +580,11 @@ const CampaignDetail: React.FC = () => {
                 marginTop: 4,
               }}
             >
-              {sponsors.filter((s) => s.paymentStatus === "paid").length} paid sponsor
-              {sponsors.filter((s) => s.paymentStatus === "paid").length !== 1 ? "s" : ""}
+              {sponsors.filter((s) => s.paymentStatus === "paid").length} paid
+              sponsor
+              {sponsors.filter((s) => s.paymentStatus === "paid").length !== 1
+                ? "s"
+                : ""}
             </div>
           </div>
 
@@ -628,8 +664,12 @@ const CampaignDetail: React.FC = () => {
                   marginTop: 4,
                 }}
               >
-                {sponsors.filter((s) => s.paymentStatus === "pending").length} pending sponsor
-                {sponsors.filter((s) => s.paymentStatus === "pending").length !== 1 ? "s" : ""}
+                {sponsors.filter((s) => s.paymentStatus === "pending").length}{" "}
+                pending sponsor
+                {sponsors.filter((s) => s.paymentStatus === "pending")
+                  .length !== 1
+                  ? "s"
+                  : ""}
               </div>
             </div>
           )}
@@ -729,12 +769,14 @@ const CampaignDetail: React.FC = () => {
           message={
             <span style={{ fontSize: "clamp(14px, 3vw, 16px)" }}>
               <BellOutlined style={{ marginRight: 8 }} />
-              {pendingLogos.length} Logo{pendingLogos.length > 1 ? 's' : ''} Pending Approval
+              {pendingLogos.length} Logo{pendingLogos.length > 1 ? "s" : ""}{" "}
+              Pending Approval
             </span>
           }
           description={
             <span style={{ fontSize: "clamp(12px, 2.5vw, 14px)" }}>
-              You have {pendingLogos.length} sponsor logo{pendingLogos.length > 1 ? 's' : ''} waiting for your review.
+              You have {pendingLogos.length} sponsor logo
+              {pendingLogos.length > 1 ? "s" : ""} waiting for your review.
             </span>
           }
           type="warning"
@@ -798,6 +840,24 @@ const CampaignDetail: React.FC = () => {
           <Descriptions.Item label="Currency">
             {campaign.currency}
           </Descriptions.Item>
+
+          <Descriptions.Item label="Header Image">
+            {campaign.headerImageUrl ? (
+              <div style={{ maxWidth: "200px" }}>
+                <Image
+                  src={campaign.headerImageUrl}
+                  alt="Campaign Header"
+                  style={{
+                    borderRadius: 8,
+                    maxHeight: 100,
+                    objectFit: "cover",
+                  }}
+                />
+              </div>
+            ) : (
+              <span style={{ color: "#999" }}>None</span>
+            )}
+          </Descriptions.Item>
           <Descriptions.Item label="Public URL">
             <a
               href={`/campaign/${campaign.slug}`}
@@ -829,7 +889,8 @@ const CampaignDetail: React.FC = () => {
             boxSizing: "border-box",
           }}
         >
-          {layout.layoutType === "grid" && campaign.layoutStyle === "size-ordered" ? (
+          {layout.layoutType === "grid" &&
+          campaign.layoutStyle === "size-ordered" ? (
             /* Show grid layout with sponsors for Fixed/Positional + Size-ordered */
             <>
               <div
@@ -904,7 +965,13 @@ const CampaignDetail: React.FC = () => {
                   alignItems: "center",
                 }}
               >
-                <Tag color={campaign.campaignType === "pay-what-you-want" ? "purple" : "blue"}>
+                <Tag
+                  color={
+                    campaign.campaignType === "pay-what-you-want"
+                      ? "purple"
+                      : "blue"
+                  }
+                >
                   {formatCampaignType(campaign.campaignType)}
                 </Tag>
                 <span

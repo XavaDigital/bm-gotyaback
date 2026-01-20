@@ -13,7 +13,11 @@ const sponsorEntrySchema = new mongoose.Schema(
     phone: { type: String, required: false },
     message: { type: String },
     amount: { type: Number, required: true },
-    paymentMethod: { type: String, enum: ["card", "cash"], required: true },
+    paymentMethod: {
+      type: String,
+      enum: ["card", "cash", "afterpay"],
+      required: true,
+    },
     paymentStatus: {
       type: String,
       enum: ["pending", "paid", "failed"],
@@ -44,7 +48,7 @@ const sponsorEntrySchema = new mongoose.Schema(
     calculatedFontSize: { type: Number }, // for text sponsors
     calculatedLogoWidth: { type: Number }, // for logo sponsors
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export const SponsorEntry = mongoose.model("SponsorEntry", sponsorEntrySchema);
