@@ -1,5 +1,9 @@
 import React from "react";
-import type { ShirtLayout, SponsorEntry, SponsorDisplayType } from "~/types/campaign.types";
+import type {
+  ShirtLayout,
+  SponsorEntry,
+  SponsorDisplayType,
+} from "~/types/campaign.types";
 import LogoSponsor from "./LogoSponsor";
 import LogoWithNameSponsor from "./LogoWithNameSponsor";
 import TextSponsor from "./TextSponsor";
@@ -55,7 +59,10 @@ const GridLayoutRenderer: React.FC<GridLayoutRendererProps> = ({
               key={position.positionId}
               style={{
                 backgroundColor: "transparent",
-                border: sponsor ? "none" : "1px dashed rgba(255, 255, 255, 0.3)",
+                border:
+                  sponsor || position.isTaken
+                    ? "none"
+                    : "1px dashed rgba(255, 255, 255, 0.3)",
                 borderRadius: "4px",
                 padding: "clamp(8px, 2vw, 16px)",
                 display: "flex",
@@ -68,8 +75,8 @@ const GridLayoutRenderer: React.FC<GridLayoutRendererProps> = ({
                 overflow: "hidden",
               }}
             >
-              {/* Position number badge - only show for empty positions */}
-              {!sponsor && (
+              {/* Position number badge - only show for empty and available positions */}
+              {!sponsor && !position.isTaken && (
                 <div
                   style={{
                     position: "absolute",
@@ -87,67 +94,130 @@ const GridLayoutRenderer: React.FC<GridLayoutRendererProps> = ({
                 </div>
               )}
 
-            {sponsor ? (
-              <>
-                {/* Show logo with name if sponsor has logo, displayName, and display type is 'both' */}
-                {sponsor.sponsorType === "logo" &&
-                sponsor.logoUrl &&
-                sponsor.logoApprovalStatus === "approved" &&
-                sponsorDisplayType === "both" &&
-                sponsor.displayName ? (
-                  <LogoWithNameSponsor
-                    name={sponsor.name}
-                    displayName={sponsor.displayName}
-                    logoUrl={sponsor.logoUrl}
-                    logoWidth={sponsor.calculatedLogoWidth || 100}
-                    message={sponsor.message}
-                    isPending={sponsor.paymentStatus === "pending"}
-                  />
-                ) : /* Show logo only if sponsor has logo and display type is logo-only or both (without displayName) */
-                sponsor.sponsorType === "logo" &&
-                sponsor.logoUrl &&
-                sponsor.logoApprovalStatus === "approved" &&
-                (sponsorDisplayType === "logo-only" || sponsorDisplayType === "both") ? (
-                  <LogoSponsor
-                    name={sponsor.name}
-                    logoUrl={sponsor.logoUrl}
-                    logoWidth={sponsor.calculatedLogoWidth || 100}
-                    message={sponsorDisplayType === "logo-only" ? sponsor.message : undefined}
-                    isPending={sponsor.paymentStatus === "pending"}
-                  />
-                ) : null}
+              {sponsor ? (
+                <>
+                  {/* Show logo with name if sponsor has logo, displayName, and display type is 'both' */}
+                  {sponsor.sponsorType === "logo" &&
+                  sponsor.logoUrl &&
+                  sponsor.logoApprovalStatus === "approved" &&
+                  sponsorDisplayType === "both" &&
+                  sponsor.displayName ? (
+                    <LogoWithNameSponsor
+                      name={sponsor.name}
+                      displayName={sponsor.displayName}
+                      logoUrl={sponsor.logoUrl}
+                      message={sponsor.message}
+                      isPending={sponsor.paymentStatus === "pending"}
+                    />
+                  ) : /* Show logo only if sponsor has logo and display type is logo-only or both (without displayName) */
+                  sponsor.sponsorType === "logo" &&
+                    sponsor.logoUrl &&
+                    sponsor.logoApprovalStatus === "approved" &&
+                    (sponsorDisplayType === "logo-only" ||
+                      sponsorDisplayType === "both") ? (
+                    <LogoSponsor
+                      name={sponsor.name}
+                      logoUrl={sponsor.logoUrl}
+                      logoWidth={sponsor.calculatedLogoWidth || 100}
+                      message={
+                        sponsorDisplayType === "logo-only"
+                          ? sponsor.message
+                          : undefined
+                      }
+                      isPending={sponsor.paymentStatus === "pending"}
+                    />
+                  ) : null}
 
-                {/* Show text if display type allows it */}
-                {(sponsorDisplayType === "text-only" ||
-                  (sponsorDisplayType === "both" && sponsor.sponsorType === "text") ||
-                  (sponsorDisplayType === "logo-only" && sponsor.sponsorType === "text")) && (
-                  <TextSponsor
-                    name={sponsor.name}
-                    fontSize={sponsor.calculatedFontSize || 16}
-                    message={sponsor.message}
-                    isPending={sponsor.paymentStatus === "pending"}
-                  />
-                )}
-              </>
-            ) : (
-              <div
-                style={{
-                  color: "rgba(255, 255, 255, 0.4)",
-                  fontSize: "clamp(11px, 2.5vw, 13px)",
-                  textAlign: "center",
-                  fontStyle: "italic",
-                }}
-              >
-                Available
-              </div>
-            )}
-          </div>
-        );
-      })}
+                  {/* Show text if display type allows it */}
+                  {(sponsorDisplayType === "text-only" ||
+                    (sponsorDisplayType === "both" &&
+                      sponsor.sponsorType === "text") ||
+                    (sponsorDisplayType === "logo-only" &&
+                      sponsor.sponsorType === "text")) && (
+                    <TextSponsor
+                      name={sponsor.name}
+                      fontSize={sponsor.calculatedFontSize || 16}
+                      message={sponsor.message}
+                      isPending={sponsor.paymentStatus === "pending"}
+                    />
+                  )}
+
+                  {/* Pending Logo Placeholder */}
+                  {sponsor.sponsorType === "logo" &&
+                    sponsor.logoApprovalStatus !== "approved" && (
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          height: "100%",
+                          width: "100%",
+                          color: "rgba(255, 255, 255, 0.5)",
+                          textAlign: "center",
+                        }}
+                      >
+                        <div style={{ fontSize: "20px", marginBottom: "4px" }}>
+                          ⏳
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "clamp(10px, 2vw, 12px)",
+                            fontStyle: "italic",
+                            lineHeight: "1.2",
+                          }}
+                        >
+                          Pending
+                          <br />
+                          Approval
+                        </div>
+                      </div>
+                    )}
+                </>
+              ) : position.isTaken ? (
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: "100%",
+                    width: "100%",
+                    color: "rgba(255, 255, 255, 0.5)",
+                    textAlign: "center",
+                  }}
+                >
+                  <div style={{ fontSize: "16px", marginBottom: "4px" }}>
+                    🔒
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "clamp(10px, 2vw, 12px)",
+                      fontStyle: "italic",
+                      lineHeight: "1.2",
+                    }}
+                  >
+                    Reserved
+                  </div>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    color: "rgba(255, 255, 255, 0.4)",
+                    fontSize: "clamp(11px, 2.5vw, 13px)",
+                    textAlign: "center",
+                    fontStyle: "italic",
+                  }}
+                >
+                  Available
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 };
 
 export default GridLayoutRenderer;
-

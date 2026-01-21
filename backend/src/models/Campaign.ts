@@ -51,6 +51,13 @@ const campaignSchema = new mongoose.Schema(
         // For positional pricing (multiplicative: position * priceMultiplier)
         priceMultiplier: { type: Number },
 
+        // For positional pricing (order preference)
+        pricingOrder: {
+          type: String,
+          enum: ["ascending", "descending"],
+          default: "ascending",
+        },
+
         // For positional pricing with sections layout (amount-ordered)
         sections: {
           type: {
@@ -103,7 +110,7 @@ const campaignSchema = new mongoose.Schema(
     enableStripePayments: { type: Boolean, default: false },
     allowOfflinePayments: { type: Boolean, default: true },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export const Campaign = mongoose.model("Campaign", campaignSchema);

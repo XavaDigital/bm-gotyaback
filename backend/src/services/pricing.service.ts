@@ -10,7 +10,8 @@ import { PricingConfig, SizeTier, SponsorType } from "../types/campaign.types";
 export const calculatePositionPrice = (
   position: number,
   config: PricingConfig,
-  section?: "top" | "middle" | "bottom"
+  section?: "top" | "middle" | "bottom",
+  totalPositions?: number,
 ): number => {
   // Section-based pricing (for amount-ordered layout)
   if (config.sections && section) {
@@ -25,7 +26,7 @@ export const calculatePositionPrice = (
   if (config.priceMultiplier) {
     if (config.priceMultiplier <= 0) {
       throw new Error(
-        "Invalid pricing config: priceMultiplier must be positive"
+        "Invalid pricing config: priceMultiplier must be positive",
       );
     }
     return position * config.priceMultiplier;
@@ -35,14 +36,51 @@ export const calculatePositionPrice = (
   if (config.basePrice !== undefined && config.pricePerPosition !== undefined) {
     if (config.basePrice < 0 || config.pricePerPosition < 0) {
       throw new Error(
-        "Invalid pricing config: basePrice and pricePerPosition must be non-negative"
+        "Invalid pricing config: basePrice and pricePerPosition must be non-negative",
       );
     }
-    return config.basePrice + position * config.pricePerPosition;
+
+    // Check for pricing order preference (default is ascending)
+    if (config.pricingOrder === "descending") {
+      // Descending logic: Base Price is the LAST spot.
+      // Price increases as we go backwards from the last spot to the first.
+      // E.g. Total 100. Pos 100 = Base. Pos 99 = Base + 1*Diff. Pos 1 = Base + 99*Diff.
+
+      if (!totalPositions) {
+        // Fallback if totalPositions is not provided (though it should be)
+        // We'll treat Base Price as the starting max price in this edge case, or just error?
+        // Let's stick to the previous simple logic as fallback but log/warn?
+        // Actually, let's just assume position 1 is base + 0 for now to avoid breaking existing calls without totalPositions
+        // WAIT, the user wants Base Price to be the MINIMUM.
+        // If we don't know totalPositions, we can't calculate "Total - Position".
+        // Let's assume a standard grid size if missing? No, that's risky.
+        // Let's rely on the caller providing it.
+      }
+
+      if (totalPositions) {
+        const inversePosition = totalPositions - position;
+        return config.basePrice + inversePosition * config.pricePerPosition;
+      }
+
+      // Fallback: If we don't know the total, we can't anchor to the end.
+      // But we can interpret "Base Price" as the "Max Price" (Price at Pos 1) if we wanted?
+      // No, let's keep consistency. If totalPositions is missing, we simply can't do "Base is Last".
+      // But since we control the caller (shirtLayout), we will provide it.
+      // For safety, if totalPositions is missing, we default to standard ascending to avoid negative prices or weirdness,
+      // OR we just use the previous reversed logic?
+      // User said "Base Price as $10... should be at the last spot".
+      // Without totalPositions, we can't know which is the last spot.
+      // So if no totalPositions, we just return standard additive (ascending) as a safe default?
+      // Or maybe throw an error?
+      // Let's default to standard additive and maybe log.
+      return config.basePrice + position * config.pricePerPosition;
+    }
+
+    return config.basePrice + (position - 1) * config.pricePerPosition;
   }
 
   throw new Error(
-    "Invalid pricing config for positional pricing: must provide either sections, priceMultiplier, or (basePrice + pricePerPosition)"
+    "Invalid pricing config for positional pricing: must provide either sections, priceMultiplier, or (basePrice + pricePerPosition)",
   );
 };
 
@@ -52,7 +90,7 @@ export const calculatePositionPrice = (
  */
 export const calculateSizeTier = (
   amount: number,
-  tiers: SizeTier[] | undefined
+  tiers: SizeTier[] | undefined,
 ): SizeTier | null => {
   if (!tiers || tiers.length === 0) {
     return null; // No tiers defined - use default sizing
@@ -82,7 +120,7 @@ export const calculateSizeTier = (
 export const calculateDisplaySizes = (
   amount: number,
   tier: SizeTier,
-  sponsorType: SponsorType
+  sponsorType: SponsorType,
 ): { fontSize?: number; logoWidth?: number } => {
   if (sponsorType === "text") {
     return {
@@ -102,7 +140,7 @@ export const calculateDisplaySizes = (
  */
 export const validatePricingConfig = (
   campaignType: string,
-  config: PricingConfig
+  config: PricingConfig,
 ): boolean => {
   if (campaignType === "fixed") {
     if (!config.fixedPrice || config.fixedPrice <= 0) {
@@ -117,13 +155,13 @@ export const validatePricingConfig = (
       config.basePrice >= 0 &&
       config.pricePerPosition !== undefined &&
       config.pricePerPosition >= 0;
-    const hasSections = config.sections && (
-      config.sections.top || config.sections.middle || config.sections.bottom
-    );
+    const hasSections =
+      config.sections &&
+      (config.sections.top || config.sections.middle || config.sections.bottom);
 
     if (!hasMultiplicative && !hasAdditive && !hasSections) {
       throw new Error(
-        "Positional pricing requires either priceMultiplier, (basePrice + pricePerPosition), or sections configuration"
+        "Positional pricing requires either priceMultiplier, (basePrice + pricePerPosition), or sections configuration",
       );
     }
 
@@ -132,10 +170,14 @@ export const validatePricingConfig = (
       const validateSection = (section: any, name: string) => {
         if (section) {
           if (!section.amount || section.amount <= 0) {
-            throw new Error(`Section '${name}' requires a valid amount greater than 0`);
+            throw new Error(
+              `Section '${name}' requires a valid amount greater than 0`,
+            );
           }
           if (!section.slots || section.slots <= 0) {
-            throw new Error(`Section '${name}' requires a valid number of slots greater than 0`);
+            throw new Error(
+              `Section '${name}' requires a valid number of slots greater than 0`,
+            );
           }
         }
       };

@@ -24,6 +24,9 @@ export interface PricingConfig {
   // For positional pricing (multiplicative: position * priceMultiplier)
   priceMultiplier?: number;
 
+  // For positional pricing (order preference)
+  pricingOrder?: "ascending" | "descending";
+
   // For positional pricing with sections layout (amount-ordered)
   sections?: {
     top?: SectionConfig;

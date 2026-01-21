@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "@tanstack/react-router";
+// import { useParams } from "@tanstack/react-router"; // Unused now
 import { useQuery } from "@tanstack/react-query";
 import { Card, Spin, message, Statistic, Empty, Button, Alert } from "antd";
 import { ClockCircleOutlined } from "@ant-design/icons";
@@ -17,11 +17,13 @@ import GridLayoutRenderer from "../components/GridLayoutRenderer";
 import SectionBasedLayout from "../components/SectionBasedLayout";
 import PublicHeader from "../components/PublicHeader";
 import PublicFooter from "../components/PublicFooter";
-import { Route } from "../routes/campaign.$slug";
+import { getRouteApi } from "@tanstack/react-router";
+
+const routeApi = getRouteApi("/campaign/$slug/");
 
 const PublicCampaign: React.FC = () => {
-  const { slug } = useParams({ from: "/campaign/$slug" });
-  const loaderData = Route.useLoaderData();
+  const { slug } = routeApi.useParams();
+  const loaderData = routeApi.useLoaderData();
 
   // Use TanStack Query with loader data as placeholder
   // Use placeholderData instead of initialData so it always refetches on mount
@@ -29,7 +31,11 @@ const PublicCampaign: React.FC = () => {
     data: campaignData,
     isLoading,
     refetch,
-  } = useQuery({
+  } = useQuery<{
+    campaign: Campaign | null;
+    sponsors: SponsorEntry[];
+    layout: ShirtLayoutType | null;
+  }>({
     queryKey: ["public-campaign", slug],
     queryFn: async () => {
       const campaign = await campaignService.getPublicCampaign(slug!);
@@ -39,11 +45,12 @@ const PublicCampaign: React.FC = () => {
       ]);
       return { campaign, sponsors, layout };
     },
-    placeholderData: loaderData as {
-      campaign: Campaign;
+    placeholderData: loaderData as unknown as {
+      campaign: Campaign | null;
       sponsors: SponsorEntry[];
-      layout: ShirtLayoutType;
+      layout: ShirtLayoutType | null;
     },
+
     staleTime: 0, // Always refetch on mount
   });
 
@@ -74,20 +81,6 @@ const PublicCampaign: React.FC = () => {
       throw error;
     }
   };
-
-  // Handle payment success redirect from Stripe (Afterpay/redirect-based methods)
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get("payment_success") === "true") {
-      message.success(
-        "Payment successful! Your sponsorship is being processed and will update shortly.",
-      );
-      // Clean up the URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-      // Trigger a refetch to show the new sponsor
-      refetch();
-    }
-  }, [refetch]);
 
   // Auto-reload campaign data periodically after modal closes to catch webhook updates
   useEffect(() => {
@@ -949,6 +942,7 @@ const PublicCampaign: React.FC = () => {
           amount={selectedAmount}
           currency={campaign.currency}
           campaignId={campaign._id}
+          campaignSlug={slug}
           campaign={campaign}
         />
 

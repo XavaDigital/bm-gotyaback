@@ -1505,7 +1505,7 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                         <>
                           <Alert
                             message="Positional Pricing Configuration"
-                            description="Price increases based on position number"
+                            description="Price changes based on position number (increases or decreases)"
                             type="info"
                             showIcon
                             style={{ marginBottom: 16 }}
@@ -1560,7 +1560,7 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                                     message: "Please enter price per position",
                                   },
                                 ]}
-                                extra="Amount to add for each position number"
+                                extra="Amount to add/subtract for each position number"
                               >
                                 <InputNumber
                                   min={0}
@@ -1572,6 +1572,37 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                               </Form.Item>
                             </Col>
                           </Row>
+
+                          {layoutStyle !== "word-cloud" && (
+                            <Form.Item
+                              label="Pricing Order"
+                              name={
+                                mode === "create"
+                                  ? ["pricingConfig", "pricingOrder"]
+                                  : ["pricing", "pricingOrder"]
+                              }
+                              initialValue="ascending"
+                              rules={[
+                                {
+                                  required: true,
+                                  message: "Please select pricing order",
+                                },
+                              ]}
+                              extra="How prices change with position number"
+                            >
+                              <Select
+                                disabled={mode === "edit" && hasSponsors}
+                                placeholder="Select pricing order"
+                              >
+                                <Select.Option value="ascending">
+                                  Ascending (Low to High)
+                                </Select.Option>
+                                <Select.Option value="descending">
+                                  Descending (High to Low)
+                                </Select.Option>
+                              </Select>
+                            </Form.Item>
+                          )}
 
                           {/* Word Cloud Layout Explanation for Positional */}
                           <Form.Item noStyle shouldUpdate>

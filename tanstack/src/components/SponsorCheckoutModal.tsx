@@ -35,17 +35,20 @@ interface SponsorCheckoutModalProps {
   amount: number;
   currency: string;
   campaignId: string;
+  campaignSlug: string;
   campaign: Campaign;
 }
 
 // Separate component for Stripe payment form using the modern PaymentElement
 const StripePaymentForm: React.FC<{
+  clientSecret: string;
   sponsorData: {
     name: string;
     email: string;
     phone?: string;
     message?: string;
     campaignId: string;
+    campaignSlug: string;
     positionId?: string;
     amount: number;
     sponsorType?: string;
@@ -72,7 +75,7 @@ const StripePaymentForm: React.FC<{
       const { error } = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: `${window.location.origin}/campaign/${sponsorData.campaignId}?payment_success=true`,
+          return_url: `${window.location.origin}/campaign/${sponsorData.campaignSlug}/thank-you`,
           receipt_email: sponsorData.email,
           payment_method_data: {
             billing_details: {
@@ -87,7 +90,9 @@ const StripePaymentForm: React.FC<{
         throw new Error(error.message);
       }
 
-      // confirmPayment usually redirects. If it doesn't error, it might be a sync payment.
+      // If we reach here, payment succeeded without redirecting (e.g., regular card payment)
+      // Manually redirect to thank you page
+      window.location.href = `/campaign/${sponsorData.campaignSlug}/thank-you`;
     } catch (error: any) {
       message.error(error.message || "Payment failed");
     } finally {
@@ -132,6 +137,7 @@ const CheckoutForm: React.FC<{
     phone?: string;
     message?: string;
     campaignId: string;
+    campaignSlug: string;
     positionId?: string;
     amount: number;
     sponsorType?: string;
@@ -262,6 +268,7 @@ const CheckoutForm: React.FC<{
           ) : clientSecret && stripePromise ? (
             <Elements stripe={stripePromise} options={{ clientSecret }}>
               <StripePaymentForm
+                clientSecret={clientSecret}
                 sponsorData={{ ...sponsorData }}
                 amount={amount}
                 currency={currency}
@@ -311,6 +318,7 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
   amount,
   currency,
   campaignId,
+  campaignSlug,
   campaign,
 }) => {
   const [form] = Form.useForm();
@@ -388,6 +396,7 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
       setSponsorData({
         ...values,
         campaignId,
+        campaignSlug,
         positionId,
         amount: finalAmount,
         logoFile: logoFile,
@@ -668,7 +677,12 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
 
             <CheckoutForm
               onSubmit={handlePaymentSubmit}
-              sponsorData={{ ...sponsorData, campaignId, positionId }}
+              sponsorData={{
+                ...sponsorData,
+                campaignId,
+                campaignSlug,
+                positionId,
+              }}
               amount={sponsorData.amount}
               currency={currency}
               loading={loading}

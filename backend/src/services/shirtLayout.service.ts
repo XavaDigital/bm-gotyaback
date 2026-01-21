@@ -6,17 +6,23 @@ import { calculatePositionPrice } from "./pricing.service";
 // Generate positions for section-based layout (top, middle, bottom)
 export const generateSectionPositions = (
   pricing: PricingConfig,
-  campaignType: string
+  campaignType: string,
 ) => {
   if (!pricing.sections) {
-    throw new Error("Section configuration is required for section-based layout");
+    throw new Error(
+      "Section configuration is required for section-based layout",
+    );
   }
 
   const positions = [];
   let positionNumber = 1;
 
   // Generate positions for each section
-  const sections: Array<"top" | "middle" | "bottom"> = ["top", "middle", "bottom"];
+  const sections: Array<"top" | "middle" | "bottom"> = [
+    "top",
+    "middle",
+    "bottom",
+  ];
 
   for (const section of sections) {
     const sectionConfig = pricing.sections[section];
@@ -44,7 +50,7 @@ export const generatePositions = (
   columns: number,
   campaignType: string,
   pricing: PricingConfig,
-  arrangement: "horizontal" | "vertical" = "horizontal"
+  arrangement: "horizontal" | "vertical" = "horizontal",
 ) => {
   const positions = [];
   const rows = Math.ceil(totalPositions / columns);
@@ -64,7 +70,12 @@ export const generatePositions = (
           price = pricing.fixedPrice;
         } else if (campaignType === "positional") {
           // Use the new pricing service for positional pricing
-          price = calculatePositionPrice(positionNumber, pricing);
+          price = calculatePositionPrice(
+            positionNumber,
+            pricing,
+            undefined,
+            totalPositions,
+          );
         }
 
         positions.push({
@@ -92,7 +103,12 @@ export const generatePositions = (
           price = pricing.fixedPrice;
         } else if (campaignType === "positional") {
           // Use the new pricing service for positional pricing
-          price = calculatePositionPrice(positionNumber, pricing);
+          price = calculatePositionPrice(
+            positionNumber,
+            pricing,
+            undefined,
+            totalPositions,
+          );
         }
 
         positions.push({
@@ -115,7 +131,7 @@ export const generatePositions = (
 export const createSectionLayout = async (
   campaignId: string,
   campaignType: string,
-  pricing: PricingConfig
+  pricing: PricingConfig,
 ) => {
   // Check if layout already exists for this campaign
   const existingLayout = await ShirtLayout.findOne({ campaignId });
@@ -142,7 +158,7 @@ export const createLayout = async (
   columns: number,
   campaignType: string,
   pricing: PricingConfig,
-  arrangement: "horizontal" | "vertical" = "horizontal"
+  arrangement: "horizontal" | "vertical" = "horizontal",
 ) => {
   // Check if layout already exists for this campaign
   const existingLayout = await ShirtLayout.findOne({ campaignId });
@@ -156,7 +172,7 @@ export const createLayout = async (
     columns,
     campaignType,
     pricing,
-    arrangement
+    arrangement,
   );
 
   const layout = await ShirtLayout.create({
@@ -175,7 +191,7 @@ export const createLayout = async (
 // Create flexible layout for pay-what-you-want campaigns
 export const createFlexibleLayout = async (
   campaignId: string,
-  maxSponsors?: number
+  maxSponsors?: number,
 ) => {
   // Check if layout already exists for this campaign
   const existingLayout = await ShirtLayout.findOne({ campaignId });
@@ -218,7 +234,7 @@ export const reservePosition = async (layoutId: string, positionId: string) => {
     {
       $set: { "placements.$.isTaken": true },
     },
-    { new: true }
+    { new: true },
   );
 
   if (!layout) {
@@ -238,7 +254,7 @@ export const releasePosition = async (layoutId: string, positionId: string) => {
     {
       $set: { "placements.$.isTaken": false },
     },
-    { new: true }
+    { new: true },
   );
 
   if (!layout) {
@@ -251,7 +267,7 @@ export const releasePosition = async (layoutId: string, positionId: string) => {
 // Get position details
 export const getPositionDetails = async (
   layoutId: string,
-  positionId: string
+  positionId: string,
 ) => {
   const layout = await ShirtLayout.findById(layoutId);
 
@@ -260,7 +276,7 @@ export const getPositionDetails = async (
   }
 
   const position = layout.placements.find(
-    (p: any) => p.positionId === positionId
+    (p: any) => p.positionId === positionId,
   );
 
   if (!position) {
