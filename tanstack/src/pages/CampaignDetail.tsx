@@ -20,6 +20,7 @@ import {
   ExportOutlined,
   EditOutlined,
   BellOutlined,
+  DownloadOutlined,
 } from "@ant-design/icons";
 import type {
   Campaign,
@@ -197,6 +198,64 @@ const CampaignDetail: React.FC = () => {
   const handleEditSuccess = () => {
     setIsEditModalVisible(false);
     refetch(); // Reload campaign data after edit
+  };
+
+  const exportSponsorsToCSV = () => {
+    if (!sponsors || sponsors.length === 0) {
+      message.warning("No sponsors to export");
+      return;
+    }
+
+    // Define CSV headers
+    const headers = [
+      "Name",
+      "Email",
+      "Phone",
+      "Position",
+      "Amount",
+      "Payment Method",
+      "Payment Status",
+      "Message",
+      "Display Name",
+      "Date Joined",
+    ];
+
+    // Convert sponsors data to CSV rows
+    const rows = sponsors.map((sponsor) => [
+      sponsor.name || "",
+      sponsor.email || "",
+      sponsor.phone || "",
+      sponsor.positionId || "N/A",
+      `${campaign?.currency || "NZD"} $${sponsor.amount}`,
+      sponsor.paymentMethod || "",
+      sponsor.paymentStatus || "",
+      sponsor.message ? `"${sponsor.message.replace(/"/g, '""')}"` : "",
+      sponsor.displayName || "",
+      new Date(sponsor.createdAt).toLocaleDateString(),
+    ]);
+
+    // Combine headers and rows
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) => row.join(",")),
+    ].join("\n");
+
+    // Create and download the CSV file
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `${campaign?.title || "campaign"}_sponsors_${new Date().toISOString().split("T")[0]}.csv`,
+    );
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    message.success("Sponsors list exported successfully");
   };
 
   const sponsorColumns = [
@@ -921,7 +980,8 @@ const CampaignDetail: React.FC = () => {
                 sponsorDisplayType={campaign.sponsorDisplayType}
               />
             </>
-          ) : layout.layoutType === "grid" ? (
+          ) : layout.layoutType === "grid" &&
+            campaign.layoutStyle !== "word-cloud" ? (
             /* Show traditional grid for other grid layouts (empty positions) */
             <>
               <div
@@ -1019,7 +1079,43 @@ const CampaignDetail: React.FC = () => {
 
       <Card
         title={
-          <span style={{ fontSize: "clamp(16px, 3.5vw, 20px)" }}>Sponsors</span>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "clamp(8px, 2vw, 12px)",
+            }}
+          >
+            <span style={{ fontSize: "clamp(16px, 3.5vw, 20px)" }}>
+              Sponsors
+            </span>
+            <Button
+              type="primary"
+              icon={<DownloadOutlined />}
+              onClick={exportSponsorsToCSV}
+              disabled={!sponsors || sponsors.length === 0}
+              style={{
+                fontSize: "clamp(12px, 2.5vw, 14px)",
+                height: "clamp(28px, 5vw, 32px)",
+                padding: "0 clamp(8px, 2vw, 15px)",
+              }}
+            >
+              <span
+                style={{ display: window.innerWidth < 768 ? "none" : "inline" }}
+              >
+                Export CSV
+              </span>
+              <span
+                style={{
+                  display: window.innerWidth >= 768 ? "none" : "inline",
+                }}
+              >
+                Export
+              </span>
+            </Button>
+          </div>
         }
         style={{
           width: "100%",

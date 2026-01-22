@@ -3,6 +3,7 @@ import { SponsorEntry } from "../models/SponsorEntry";
 import { Transaction } from "../models/Transaction";
 import * as sponsorshipService from "./sponsorship.service";
 import * as campaignService from "./campaign.service";
+import * as shirtLayoutService from "./shirtLayout.service";
 
 // Lazy initialization to ensure env vars are loaded
 let stripeInstance: Stripe | null = null;
@@ -44,6 +45,31 @@ export const createPaymentIntent = async (
   // Validate Stripe is enabled for this campaign
   if (!campaign.enableStripePayments) {
     throw new Error("Online payments are not enabled for this campaign");
+  }
+
+  // Optimistic Concurrency Check: Verify spot is still available before starting payment
+  if (positionId && positionId !== "none") {
+    try {
+      const layout = await shirtLayoutService.getLayoutByCampaignId(campaignId);
+      const position = await shirtLayoutService.getPositionDetails(
+        layout._id.toString(),
+        positionId,
+      );
+
+      if (position.isTaken) {
+        throw new Error(
+          "This position has just been taken by another sponsor. Please select a different spot.",
+        );
+      }
+    } catch (error) {
+      if ((error as Error).message.includes("just been taken")) {
+        throw error;
+      }
+      // Ignore other errors here (e.g. layout not found checks are handled later/elsewhere,
+      // or we let the main flow proceed and fail if critical)
+      // But for "position taken", we block immediately.
+      console.log("Optimistic check warning:", error);
+    }
   }
 
   // Get Stripe instance (will throw if not configured)
@@ -157,7 +183,35 @@ const handlePaymentSuccess = async (paymentIntent: Stripe.PaymentIntent) => {
     console.log(`Payment successful for sponsorship ${sponsorship._id}`);
   } catch (error) {
     console.error("Error handling payment success:", error);
-    // Note: Position may have been reserved. Manual cleanup may be needed.
+
+    // AUTOMATIC REFUND: If the sponsorship failed (likely due to race condition on spot reservation),
+    // we must refund the user immediately to avoid taking money for a spot they didn't get.
+    if (paymentIntent.id) {
+      try {
+        const stripe = getStripe();
+        console.log(
+          `Initiating automatic refund for ${paymentIntent.id} due to fulfillment failure.`,
+        );
+
+        await stripe.refunds.create({
+          payment_intent: paymentIntent.id,
+          reason: "duplicate", // closest fit for "logic error / race condition"
+          metadata: {
+            reason: "System Error: Spot taken or fulfillment failed",
+            originalError: (error as Error).message,
+          },
+        });
+
+        console.log(`Successfully refunded ${paymentIntent.id}`);
+      } catch (refundError) {
+        // CRITICAL: If refund fails, we have a charged customer with no spot and no refund.
+        // This requires manual intervention.
+        console.error(
+          "CRITICAL: Failed to process automatic refund!",
+          refundError,
+        );
+      }
+    }
   }
 };
 

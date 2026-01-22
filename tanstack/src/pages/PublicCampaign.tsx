@@ -913,7 +913,8 @@ const PublicCampaign: React.FC = () => {
               description="No sponsors yet. Be the first!"
               image={Empty.PRESENTED_IMAGE_SIMPLE}
             />
-          ) : layout?.layoutType === "grid" ? (
+          ) : layout?.layoutType === "grid" &&
+            campaign.layoutStyle !== "word-cloud" ? (
             /* Use GridLayoutRenderer for grid layouts - same as campaign detail page */
             <GridLayoutRenderer
               layout={layout}

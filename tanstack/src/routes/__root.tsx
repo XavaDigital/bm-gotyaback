@@ -1,14 +1,20 @@
-import { createRootRoute, Outlet, useRouterState, HeadContent, Scripts } from '@tanstack/react-router'
-import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ConfigProvider, App } from 'antd'
-import * as React from 'react'
-import type { ReactNode } from 'react'
-import 'antd/dist/reset.css'
-import '~/index.css'
-import '~/App.css'
-import { AppLayout } from '~/components/AppLayout'
-import authService from '~/services/auth.service'
+import {
+  createRootRoute,
+  Outlet,
+  useRouterState,
+  HeadContent,
+  Scripts,
+} from "@tanstack/react-router";
+import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ConfigProvider, App } from "antd";
+import * as React from "react";
+import type { ReactNode } from "react";
+import "antd/dist/reset.css";
+import "~/index.css";
+import "~/App.css";
+import { AppLayout } from "~/components/AppLayout";
+import authService from "~/services/auth.service";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -18,7 +24,7 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
     },
   },
-})
+});
 
 // Light theme for admin portal
 const lightTheme = {
@@ -35,7 +41,7 @@ const lightTheme = {
       primaryShadow: "0 0 0 0 rgba(0,0,0,0)",
     },
   },
-}
+};
 
 // Dark theme for public pages
 const darkTheme = {
@@ -57,44 +63,48 @@ const darkTheme = {
       primaryShadow: "0 0 0 0 rgba(0,0,0,0)",
     },
   },
-}
+};
 
 export const Route = createRootRoute({
   head: () => ({
     meta: [
       {
-        charSet: 'utf-8',
+        charSet: "utf-8",
       },
       {
-        name: 'viewport',
-        content: 'width=device-width, initial-scale=1',
+        name: "viewport",
+        content: "width=device-width, initial-scale=1",
       },
       {
-        title: 'GotYaBack - Crowdfunding Platform',
+        title: "GotYaBack - Crowdfunding Platform",
       },
     ],
   }),
   component: RootComponent,
-})
+});
 
 function RootComponent() {
-  const [user, setUser] = React.useState<any>(null)
-  const routerState = useRouterState()
-  const pathname = routerState.location.pathname
+  const [user, setUser] = React.useState<any>(null);
+  const routerState = useRouterState();
+  const pathname = routerState.location.pathname;
 
   // Only access localStorage on the client side
   React.useEffect(() => {
-    setUser(authService.getCurrentUser())
-  }, [pathname])
+    setUser(authService.getCurrentUser());
+  }, [pathname]);
 
-  const isAuthPage = pathname === '/login' || pathname === '/register'
-  const isPublicPage = pathname === '/' || pathname.startsWith('/campaign/') || pathname.startsWith('/u/')
+  const isAuthPage = pathname === "/login" || pathname === "/register";
+  const isPublicPage =
+    pathname === "/" ||
+    pathname.startsWith("/campaign/") ||
+    pathname.startsWith("/u/");
 
   // Protected pages: dashboard, campaigns, profile, admin
-  const isProtectedPage = pathname.startsWith('/dashboard') ||
-                          pathname.startsWith('/campaigns') ||
-                          pathname.includes('/profile') ||
-                          pathname.startsWith('/admin')
+  const isProtectedPage =
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/campaigns") ||
+    pathname.includes("/profile") ||
+    pathname.startsWith("/admin");
 
   // Public pages (including home) and auth pages use dark theme
   if (isAuthPage || isPublicPage) {
@@ -109,7 +119,7 @@ function RootComponent() {
           </ConfigProvider>
         </QueryClientProvider>
       </RootDocument>
-    )
+    );
   }
 
   // Protected pages use light theme and AppLayout
@@ -127,7 +137,7 @@ function RootComponent() {
           </ConfigProvider>
         </QueryClientProvider>
       </RootDocument>
-    )
+    );
   }
 
   // Default fallback (should rarely be used)
@@ -142,7 +152,7 @@ function RootComponent() {
         </ConfigProvider>
       </QueryClientProvider>
     </RootDocument>
-  )
+  );
 }
 
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
@@ -156,6 +166,5 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
         <Scripts />
       </body>
     </html>
-  )
+  );
 }
-
