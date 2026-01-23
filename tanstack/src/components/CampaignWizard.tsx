@@ -162,6 +162,7 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
         // Edit mode - set pricing values, pricing mode, and layout config
         const editModeValues: any = {};
 
+        console.log("Step 2 - Full campaignData:", campaignData);
         console.log("Step 2 - campaignData.pricing:", campaignData.pricing);
         console.log(
           "Step 2 - campaignData.layoutConfig:",
@@ -181,11 +182,17 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
           "Current form values before setFieldsValue:",
           form.getFieldsValue(),
         );
+
+        // Set the values
         form.setFieldsValue(editModeValues);
+
         console.log(
           "Current form values after setFieldsValue:",
           form.getFieldsValue(),
         );
+
+        // Force validate to check if fields are properly set
+        console.log("Form field value for pricing.fixedPrice:", form.getFieldValue(['pricing', 'fixedPrice']));
       }
     } else if (current === 3) {
       // Step 3: Settings
@@ -1930,7 +1937,7 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                 message="Pay What You Want Configuration"
                 description={
                   mode === "create"
-                    ? "Sponsors can contribute any amount they choose (above the minimum). All sponsors will be displayed at a standard size."
+                    ? "Sponsors can contribute any amount they choose (above the minimum). Sponsor display size will vary based on contribution amount - higher contributions appear larger."
                     : "Pricing cannot be changed for pay-what-you-want campaigns after creation."
                 }
                 type="info"

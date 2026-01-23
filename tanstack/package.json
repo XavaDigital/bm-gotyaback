@@ -30,7 +30,8 @@
     "quill": "^2.0.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "vinxi": "^0.5.10"
+    "vinxi": "^0.5.10",
+    "wordcloud": "^1.2.3"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

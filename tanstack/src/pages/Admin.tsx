@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Card, Form, Input, Button, App, Typography, Space, InputNumber, Divider, Table, Popconfirm, Tag, Tooltip } from 'antd';
-import { ThunderboltOutlined, DeleteOutlined, EyeOutlined, CheckCircleOutlined, DollarOutlined, ClearOutlined, CopyOutlined } from '@ant-design/icons';
+import { Card, Form, Input, Button, App, Typography, Space, InputNumber, Divider, Table, Popconfirm, Tag, Tooltip, Tabs } from 'antd';
+import { ThunderboltOutlined, DeleteOutlined, EyeOutlined, CheckCircleOutlined, DollarOutlined, ClearOutlined, CopyOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import apiClient from '~/services/apiClient';
@@ -12,12 +12,13 @@ const { Title, Text } = Typography;
 const Admin: React.FC = () => {
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const { message } = App.useApp();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
 
     // Fetch all campaigns
-    const { data: campaigns = [], isLoading: campaignsLoading } = useQuery({
+    const { data: campaigns = [], isLoading: campaignsLoading, refetch: refetchCampaigns } = useQuery({
         queryKey: ['admin-campaigns'],
         queryFn: campaignService.getAllCampaigns,
     });
@@ -108,6 +109,18 @@ const Admin: React.FC = () => {
     const handleCopyId = (campaignId: string) => {
         navigator.clipboard.writeText(campaignId);
         message.success('Campaign ID copied to clipboard!');
+    };
+
+    const handleRefreshCampaigns = async () => {
+        setIsRefreshing(true);
+        try {
+            await refetchCampaigns();
+            message.success('Campaign list refreshed!');
+        } catch (error) {
+            message.error('Failed to refresh campaigns');
+        } finally {
+            setIsRefreshing(false);
+        }
     };
 
     const columns = [
@@ -262,91 +275,107 @@ const Admin: React.FC = () => {
 
                 <Divider />
 
-                <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                    {/* Campaigns List Section */}
-                    <Card
-                        type="inner"
-                        title="All Campaigns"
-                    >
-                        <Table
-                            columns={columns}
-                            dataSource={campaigns}
-                            rowKey="_id"
-                            loading={campaignsLoading}
-                            pagination={{
-                                pageSize: 10,
-                                showSizeChanger: true,
-                                showTotal: (total) => `Total ${total} campaigns`,
-                            }}
-                            scroll={{ x: 800 }}
-                        />
-                    </Card>
+                <Tabs
+                    defaultActiveKey="campaigns"
+                    items={[
+                        {
+                            key: 'campaigns',
+                            label: 'All Campaigns',
+                            children: (
+                                <div>
+                                    <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
+                                        <Button
+                                            icon={<ReloadOutlined spin={isRefreshing} />}
+                                            onClick={handleRefreshCampaigns}
+                                            loading={isRefreshing}
+                                            disabled={isRefreshing}
+                                        >
+                                            Refresh
+                                        </Button>
+                                    </div>
+                                    <Table
+                                        columns={columns}
+                                        dataSource={campaigns}
+                                        rowKey="_id"
+                                        loading={campaignsLoading}
+                                        pagination={{
+                                            pageSize: 10,
+                                            showSizeChanger: true,
+                                            showTotal: (total) => `Total ${total} campaigns`,
+                                        }}
+                                        scroll={{ x: 800 }}
+                                    />
+                                </div>
+                            ),
+                        },
+                        {
+                            key: 'seed-sponsors',
+                            label: (
+                                <span>
+                                    <ThunderboltOutlined style={{ marginRight: 8 }} />
+                                    Seed Sponsors
+                                </span>
+                            ),
+                            children: (
+                                <div>
+                                    <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
+                                        Generate test sponsor data for a campaign. This will create random sponsors with paid status.
+                                        For logo-only campaigns, placeholder logos will be generated and require approval.
+                                    </Text>
 
-                    {/* Seed Sponsors Section */}
-                    <Card
-                        type="inner"
-                        title={
-                            <Space>
-                                <ThunderboltOutlined />
-                                <span>Seed Sponsors</span>
-                            </Space>
-                        }
-                    >
-                        <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
-                            Generate test sponsor data for a campaign. This will create random sponsors with paid status.
-                            For logo-only campaigns, placeholder logos will be generated and require approval.
-                        </Text>
+                                    <Form
+                                        form={form}
+                                        layout="vertical"
+                                        onFinish={handleSeedSponsors}
+                                        initialValues={{ numberOfSponsors: 10 }}
+                                    >
+                                        <Form.Item
+                                            label="Campaign ID"
+                                            name="campaignId"
+                                            rules={[
+                                                { required: true, message: 'Please enter a campaign ID' },
+                                                { len: 24, message: 'Campaign ID must be 24 characters' },
+                                            ]}
+                                        >
+                                            <Input
+                                                placeholder="Enter campaign ID (e.g., 507f1f77bcf86cd799439011)"
+                                                maxLength={24}
+                                            />
+                                        </Form.Item>
 
-                        <Form
-                            form={form}
-                            layout="vertical"
-                            onFinish={handleSeedSponsors}
-                            initialValues={{ numberOfSponsors: 10 }}
-                        >
-                            <Form.Item
-                                label="Campaign ID"
-                                name="campaignId"
-                                rules={[
-                                    { required: true, message: 'Please enter a campaign ID' },
-                                    { len: 24, message: 'Campaign ID must be 24 characters' },
-                                ]}
-                            >
-                                <Input
-                                    placeholder="Enter campaign ID (e.g., 507f1f77bcf86cd799439011)"
-                                    maxLength={24}
-                                />
-                            </Form.Item>
+                                        <Form.Item
+                                            label="Number of Sponsors"
+                                            name="numberOfSponsors"
+                                            rules={[
+                                                { required: true, message: 'Please enter number of sponsors' },
+                                                { type: 'number', min: 1, max: 100, message: 'Must be between 1 and 100' },
+                                            ]}
+                                        >
+                                            <InputNumber
+                                                min={1}
+                                                max={100}
+                                                style={{ width: '100%' }}
+                                                placeholder="Enter number of sponsors to generate"
+                                            />
+                                        </Form.Item>
 
-                            <Form.Item
-                                label="Number of Sponsors"
-                                name="numberOfSponsors"
-                                rules={[
-                                    { required: true, message: 'Please enter number of sponsors' },
-                                    { type: 'number', min: 1, max: 100, message: 'Must be between 1 and 100' },
-                                ]}
-                            >
-                                <InputNumber
-                                    min={1}
-                                    max={100}
-                                    style={{ width: '100%' }}
-                                    placeholder="Enter number of sponsors to generate"
-                                />
-                            </Form.Item>
-
-                            <Form.Item>
-                                <Button
-                                    type="primary"
-                                    htmlType="submit"
-                                    loading={loading}
-                                    icon={<ThunderboltOutlined />}
-                                    block
-                                >
-                                    Generate Sponsors
-                                </Button>
-                            </Form.Item>
-                        </Form>
-                    </Card>
-                </Space>
+                                        <Form.Item>
+                                            <Button
+                                                type="primary"
+                                                htmlType="submit"
+                                                loading={loading}
+                                                icon={<ThunderboltOutlined />}
+                                                block
+                                            >
+                                                Generate Sponsors
+                                            </Button>
+                                        </Form.Item>
+                                    </Form>
+                                </div>
+                            ),
+                        },
+                    ]}
+                />
             </Card>
         </div>
     );

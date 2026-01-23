@@ -3,17 +3,11 @@ import type { SponsorEntry, SponsorDisplayType } from "~/types/campaign.types";
 import TextSponsor from "./TextSponsor";
 import LogoSponsor from "./LogoSponsor";
 import LogoWithNameSponsor from "./LogoWithNameSponsor";
-// @ts-ignore - wordcloud doesn't have types
-import WordCloud from "wordcloud";
 
 /**
- * WordCloudRenderer - Hybrid implementation
- *
- * - Text-only mode: Uses wordcloud2.js library for professional word cloud rendering
- * - Logo-only & both modes: Uses custom spiral placement algorithm with improved tight packing
- *
- * NOTE: The original custom implementation for all modes is preserved in
- * WordCloudRenderer.legacy.tsx in case we want to revert to custom text rendering
+ * LEGACY WordCloudRenderer - Tightened custom spiral placement implementation
+ * This uses the improved tight packing algorithm for ALL modes (text-only, logo-only, both)
+ * Kept as backup in case we want to revert from wordcloud2.js to custom text rendering
  */
 
 interface WordCloudRendererProps {
@@ -28,12 +22,11 @@ interface PositionedSponsor extends SponsorEntry {
   height: number;
 }
 
-const WordCloudRenderer: React.FC<WordCloudRendererProps> = ({
+const WordCloudRendererLegacy: React.FC<WordCloudRendererProps> = ({
   sponsors,
   sponsorDisplayType,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [positionedSponsors, setPositionedSponsors] = useState<
     PositionedSponsor[]
   >([]);
@@ -47,66 +40,8 @@ const WordCloudRenderer: React.FC<WordCloudRendererProps> = ({
     });
   }, [sponsors]);
 
-  // Use wordcloud2.js for text-only mode
-  const isTextOnlyMode = sponsorDisplayType === "text-only";
-
-  // Effect for wordcloud2.js (text-only mode)
   useEffect(() => {
-    if (!isTextOnlyMode || approvedSponsors.length === 0 || !canvasRef.current) return;
-
-    const canvas = canvasRef.current;
-    const container = containerRef.current;
-    if (!container) return;
-
-    // Set canvas size
-    const width = 600;
-    const height = Math.max(800, approvedSponsors.length * 60);
-    canvas.width = width;
-    canvas.height = height;
-
-    // Prepare word list for wordcloud2.js
-    const wordList = approvedSponsors.map((sponsor) => {
-      const fontSize = sponsor.calculatedFontSize || 16;
-      return [sponsor.name, fontSize];
-    });
-
-    // Generate word cloud
-    WordCloud(canvas, {
-      list: wordList,
-      gridSize: 8, // Smaller grid for tighter packing
-      weightFactor: 1,
-      fontFamily: "Arial, sans-serif",
-      fontWeight: "600",
-      color: () => {
-        // Random colors for variety
-        const colors = ["#ffffff", "#e0e0e0", "#c0c0c0", "#a0a0a0"];
-        return colors[Math.floor(Math.random() * colors.length)];
-      },
-      rotateRatio: 0.3, // 30% chance of rotation
-      rotationSteps: 2, // Only 0 or 90 degrees
-      backgroundColor: "transparent",
-      drawOutOfBound: false,
-      shrinkToFit: true,
-      minSize: 12,
-      // Add click handler for interactivity
-      click: (item: any) => {
-        // Find the sponsor by name
-        const sponsor = approvedSponsors.find((s) => s.name === item[0]);
-        if (sponsor?.message) {
-          alert(sponsor.message); // Simple alert for now, can be improved
-        }
-      },
-    });
-
-    // Cleanup
-    return () => {
-      WordCloud.stop();
-    };
-  }, [isTextOnlyMode, approvedSponsors]);
-
-  // Effect for custom implementation (logo-only and both modes)
-  useEffect(() => {
-    if (isTextOnlyMode || approvedSponsors.length === 0 || !containerRef.current) return;
+    if (approvedSponsors.length === 0 || !containerRef.current) return;
 
     const containerWidth = containerRef.current.offsetWidth || 600;
     const containerHeight = Math.max(800, approvedSponsors.length * 60); // Portrait: taller
@@ -287,7 +222,7 @@ const WordCloudRenderer: React.FC<WordCloudRendererProps> = ({
     });
 
     setPositionedSponsors(positioned);
-  }, [isTextOnlyMode, approvedSponsors, sponsorDisplayType]);
+  }, [approvedSponsors]);
 
   if (approvedSponsors.length === 0) {
     return (
@@ -297,39 +232,6 @@ const WordCloudRenderer: React.FC<WordCloudRendererProps> = ({
     );
   }
 
-  // Render wordcloud2.js canvas for text-only mode
-  if (isTextOnlyMode) {
-    return (
-      <div
-        ref={containerRef}
-        style={{
-          position: "relative",
-          width: "100%",
-          maxWidth: "600px",
-          minHeight: "800px",
-          margin: "0 auto",
-          backgroundColor: "#1a1a1a",
-          borderRadius: "8px",
-          overflow: "hidden",
-          padding: "40px 20px",
-          boxSizing: "border-box",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <canvas
-          ref={canvasRef}
-          style={{
-            maxWidth: "100%",
-            height: "auto",
-          }}
-        />
-      </div>
-    );
-  }
-
-  // Render custom implementation for logo-only and both modes
   return (
     <div
       ref={containerRef}
@@ -425,5 +327,5 @@ const WordCloudRenderer: React.FC<WordCloudRendererProps> = ({
   );
 };
 
-export default WordCloudRenderer;
+export default WordCloudRendererLegacy;
 

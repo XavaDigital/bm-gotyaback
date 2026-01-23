@@ -66,44 +66,48 @@ const EditCampaignModal: React.FC<EditCampaignModalProps> = ({
         ],
       };
 
-      // Load pricing if applicable
+      // Load pricing from campaign.pricingConfig (the source of truth)
       if (campaign.campaignType !== "pay-what-you-want") {
+        const pricingValues: any = {};
+
+        if (campaign.campaignType === "fixed") {
+          pricingValues.fixedPrice = campaign.pricingConfig?.fixedPrice;
+          console.log("Loaded fixed price from pricingConfig:", pricingValues.fixedPrice);
+        } else if (campaign.campaignType === "positional") {
+          pricingValues.basePrice = campaign.pricingConfig?.basePrice;
+          pricingValues.pricePerPosition = campaign.pricingConfig?.pricePerPosition;
+          console.log("Loaded positional pricing from pricingConfig:", pricingValues);
+        }
+
+        formValues.pricing = pricingValues;
+
+        // Load layout configuration for display
         try {
           const layout = await campaignService.getLayout(campaign._id);
           console.log("Loaded layout:", layout);
 
-          if (layout && layout.placements && layout.placements.length > 0) {
-            const pricingValues: any = {};
-            if (campaign.campaignType === "fixed") {
-              pricingValues.fixedPrice = layout.placements[0]?.price;
-              console.log("Loaded fixed price:", pricingValues.fixedPrice);
-            } else if (campaign.campaignType === "positional") {
-              const firstPrice = layout.placements[0]?.price || 0;
-              const secondPrice = layout.placements[1]?.price || 0;
-
-              // Calculate base price and price per position from the first two placements
-              pricingValues.basePrice = firstPrice;
-              pricingValues.pricePerPosition = secondPrice - firstPrice;
-              console.log("Loaded positional pricing:", pricingValues);
-            }
-            formValues.pricing = pricingValues;
-
-            // Store layout configuration for display
+          if (layout) {
             formValues.layoutConfig = {
               totalPositions: layout.totalPositions,
               columns: layout.columns,
               arrangement: layout.arrangement || "horizontal",
             };
+          } else {
+            // No layout exists yet
+            formValues.layoutConfig = {};
           }
         } catch (error) {
-          console.error("Failed to load layout pricing", error);
+          console.error("Failed to load layout", error);
+          formValues.layoutConfig = {};
         }
       }
 
       console.log("Setting form values:", formValues);
+      console.log("formValues.pricing:", formValues.pricing);
+      console.log("formValues.layoutConfig:", formValues.layoutConfig);
 
       // Set campaignData for wizard
-      setCampaignData({
+      const newCampaignData = {
         title: campaign.title,
         shortDescription: campaign.shortDescription,
         description: campaign.description,
@@ -120,7 +124,10 @@ const EditCampaignModal: React.FC<EditCampaignModalProps> = ({
         ],
         pricing: formValues.pricing,
         layoutConfig: formValues.layoutConfig,
-      });
+      };
+
+      console.log("Setting campaignData to:", newCampaignData);
+      setCampaignData(newCampaignData);
     } catch (error) {
       console.error("Failed to initialize form", error);
       message.error("Failed to load campaign details");
@@ -159,7 +166,7 @@ const EditCampaignModal: React.FC<EditCampaignModalProps> = ({
       if (campaign) {
         await campaignService.updateCampaign(campaign._id, updateData);
 
-        // 2. Update pricing ONLY if:
+        // 2. Update/create layout and pricing ONLY if:
         // - Campaign is grid-based (fixed or positional)
         // - No sponsors exist yet
         // - Pricing values are actually provided
@@ -172,48 +179,115 @@ const EditCampaignModal: React.FC<EditCampaignModalProps> = ({
             "Attempting to update pricing:",
             submittedCampaignData.pricing,
           );
+          console.log("Layout config:", submittedCampaignData.layoutConfig);
 
-          // Backend expects pricing values directly in the body, NOT nested under pricingConfig
-          const pricingData: any = {};
+          // Check if we need to create/recreate the layout
+          const layout = await campaignService.getLayout(campaign._id);
+          const needsLayoutCreation = !layout ||
+                                      layout.layoutType !== 'grid' ||
+                                      !layout.placements ||
+                                      layout.placements.length === 0;
 
-          if (campaign.campaignType === "fixed") {
-            const fixedPrice = Number(submittedCampaignData.pricing.fixedPrice);
-            console.log("Fixed price value:", fixedPrice);
+          if (needsLayoutCreation) {
+            console.log("Layout needs to be created/recreated with placements");
 
-            if (isNaN(fixedPrice) || fixedPrice <= 0) {
-              message.error("Please enter a valid fixed price");
+            // Validate that we have the necessary layout configuration
+            if (!submittedCampaignData.layoutConfig?.totalPositions ||
+                !submittedCampaignData.layoutConfig?.columns) {
+              message.error("Please provide Total Positions and Columns to create the layout");
               setLoading(false);
               return;
             }
-            pricingData.fixedPrice = fixedPrice;
-          } else if (campaign.campaignType === "positional") {
-            const basePrice = Number(submittedCampaignData.pricing.basePrice);
-            const pricePerPosition = Number(
-              submittedCampaignData.pricing.pricePerPosition,
-            );
 
-            console.log("Positional pricing values:", {
-              basePrice,
-              pricePerPosition,
+            // Build pricing config
+            const pricingConfig: any = {};
+            if (campaign.campaignType === "fixed") {
+              const fixedPrice = Number(submittedCampaignData.pricing.fixedPrice);
+              if (isNaN(fixedPrice) || fixedPrice <= 0) {
+                message.error("Please enter a valid fixed price");
+                setLoading(false);
+                return;
+              }
+              pricingConfig.fixedPrice = fixedPrice;
+            } else if (campaign.campaignType === "positional") {
+              const basePrice = Number(submittedCampaignData.pricing.basePrice);
+              const pricePerPosition = Number(submittedCampaignData.pricing.pricePerPosition);
+
+              if (isNaN(basePrice) || basePrice < 0) {
+                message.error("Please enter a valid base price");
+                setLoading(false);
+                return;
+              }
+              if (isNaN(pricePerPosition) || pricePerPosition < 0) {
+                message.error("Please enter a valid price per position");
+                setLoading(false);
+                return;
+              }
+
+              pricingConfig.basePrice = basePrice;
+              pricingConfig.pricePerPosition = pricePerPosition;
+            }
+
+            // Create the layout with placements
+            console.log("Creating layout with config:", {
+              totalPositions: submittedCampaignData.layoutConfig.totalPositions,
+              columns: submittedCampaignData.layoutConfig.columns,
+              arrangement: submittedCampaignData.layoutConfig.arrangement || 'horizontal',
+              campaignType: campaign.campaignType,
+              pricingConfig,
             });
 
-            if (isNaN(basePrice) || basePrice < 0) {
-              message.error("Please enter a valid base price");
-              setLoading(false);
-              return;
-            }
-            if (isNaN(pricePerPosition) || pricePerPosition < 0) {
-              message.error("Please enter a valid price per position");
-              setLoading(false);
-              return;
+            await campaignService.createLayout(campaign._id, {
+              totalPositions: submittedCampaignData.layoutConfig.totalPositions,
+              columns: submittedCampaignData.layoutConfig.columns,
+              arrangement: submittedCampaignData.layoutConfig.arrangement || 'horizontal',
+              campaignType: campaign.campaignType,
+              pricingConfig,
+              layoutStyle: campaign.layoutStyle,
+            });
+          } else {
+            // Layout exists with placements, just update pricing
+            const pricingData: any = {};
+
+            if (campaign.campaignType === "fixed") {
+              const fixedPrice = Number(submittedCampaignData.pricing.fixedPrice);
+              console.log("Fixed price value:", fixedPrice);
+
+              if (isNaN(fixedPrice) || fixedPrice <= 0) {
+                message.error("Please enter a valid fixed price");
+                setLoading(false);
+                return;
+              }
+              pricingData.fixedPrice = fixedPrice;
+            } else if (campaign.campaignType === "positional") {
+              const basePrice = Number(submittedCampaignData.pricing.basePrice);
+              const pricePerPosition = Number(
+                submittedCampaignData.pricing.pricePerPosition,
+              );
+
+              console.log("Positional pricing values:", {
+                basePrice,
+                pricePerPosition,
+              });
+
+              if (isNaN(basePrice) || basePrice < 0) {
+                message.error("Please enter a valid base price");
+                setLoading(false);
+                return;
+              }
+              if (isNaN(pricePerPosition) || pricePerPosition < 0) {
+                message.error("Please enter a valid price per position");
+                setLoading(false);
+                return;
+              }
+
+              pricingData.basePrice = basePrice;
+              pricingData.pricePerPosition = pricePerPosition;
             }
 
-            pricingData.basePrice = basePrice;
-            pricingData.pricePerPosition = pricePerPosition;
+            console.log("Sending pricing update:", pricingData);
+            await campaignService.updatePricing(campaign._id, pricingData);
           }
-
-          console.log("Sending pricing update:", pricingData);
-          await campaignService.updatePricing(campaign._id, pricingData);
         } else {
           console.log("Skipping pricing update - conditions not met");
         }

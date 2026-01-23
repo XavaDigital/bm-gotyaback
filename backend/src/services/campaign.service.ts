@@ -1,6 +1,6 @@
 import { Campaign } from "../models/Campaign";
 import mongoose from "mongoose";
-import { validatePricingConfig } from "./pricing.service";
+import { validatePricingConfig, getDefaultSizeTiers } from "./pricing.service";
 import { PricingConfig } from "../types/campaign.types";
 
 // Helper function to generate URL-friendly slug
@@ -46,6 +46,16 @@ export const createCampaign = async (userId: string, campaignData: any) => {
       campaignData.campaignType,
       campaignData.pricingConfig,
     );
+  }
+
+  // For PWYW campaigns, add default size tiers if not provided
+  if (
+    campaignData.campaignType === "pay-what-you-want" &&
+    campaignData.pricingConfig &&
+    (!campaignData.pricingConfig.sizeTiers ||
+      campaignData.pricingConfig.sizeTiers.length === 0)
+  ) {
+    campaignData.pricingConfig.sizeTiers = getDefaultSizeTiers();
   }
 
   // Generate unique slug from title

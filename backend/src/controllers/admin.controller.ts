@@ -4,6 +4,7 @@ import { Campaign } from "../models/Campaign";
 import { ShirtLayout } from "../models/ShirtLayout";
 import mongoose from "mongoose";
 import * as campaignService from "../services/campaign.service";
+import { calculatePositionPrice } from "../services/pricing.service";
 
 // Sample logo URLs for seeding (using real sponsor logos)
 const sampleLogoUrls = [
@@ -129,7 +130,7 @@ const generateRandomSponsor = (
   let calculatedFontSize: number | undefined;
   let calculatedLogoWidth: number | undefined;
 
-  // Determine amount and position based on campaign type
+  // Determine amount and position based on campaign type and layout type
   if (layout.layoutType === "grid" && availablePositions.length > 0) {
     // For grid layouts (fixed or positional), pick a random available position
     const randomIndex = Math.floor(Math.random() * availablePositions.length);
@@ -140,8 +141,24 @@ const generateRandomSponsor = (
     // Remove this position from available positions
     availablePositions.splice(randomIndex, 1);
   } else {
-    // For flexible layouts (pay-what-you-want), generate random amount
-    amount = Math.floor(Math.random() * 180) + 20;
+    // For flexible layouts, amount depends on campaign type
+    if (campaign.campaignType === "fixed") {
+      // Fixed pricing: use the fixed price from pricing config
+      amount = campaign.pricingConfig?.fixedPrice || 50;
+    } else if (campaign.campaignType === "positional") {
+      // Positional pricing with flexible layout: calculate price based on simulated position
+      // Use index + 1 as the position number to generate varying prices
+      const simulatedPosition = index + 1;
+      try {
+        amount = calculatePositionPrice(simulatedPosition, campaign.pricingConfig);
+      } catch (error) {
+        // Fallback if pricing config is invalid
+        amount = campaign.pricingConfig?.basePrice || 50;
+      }
+    } else {
+      // Pay-what-you-want: generate random amount
+      amount = Math.floor(Math.random() * 180) + 20;
+    }
   }
 
   // Determine sponsor type based on campaign settings
@@ -183,8 +200,28 @@ const generateRandomSponsor = (
         calculatedLogoWidth = 80;
       }
     }
+  } else if (campaign.campaignType === "fixed") {
+    // For fixed pricing, all sponsors have the same amount and should have the same size
+    // Use a consistent size based on the fixed price
+    if (amount < 50) {
+      displaySize = "small";
+      calculatedFontSize = 14;
+      calculatedLogoWidth = 60;
+    } else if (amount < 100) {
+      displaySize = "medium";
+      calculatedFontSize = 18;
+      calculatedLogoWidth = 80;
+    } else if (amount < 150) {
+      displaySize = "large";
+      calculatedFontSize = 24;
+      calculatedLogoWidth = 120;
+    } else {
+      displaySize = "xlarge";
+      calculatedFontSize = 32;
+      calculatedLogoWidth = 160;
+    }
   } else {
-    // For fixed/positional, use simple amount-based sizing
+    // For positional pricing, use amount-based sizing (amounts vary by position)
     if (amount < 50) {
       displaySize = "small";
       calculatedFontSize = 14;

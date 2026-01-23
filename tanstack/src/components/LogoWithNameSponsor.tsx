@@ -5,6 +5,7 @@ interface LogoWithNameSponsorProps {
   name: string;
   displayName: string;
   logoUrl: string;
+  logoWidth: number;
   message?: string;
   isPending?: boolean;
 }
@@ -13,50 +14,41 @@ const LogoWithNameSponsor: React.FC<LogoWithNameSponsorProps> = ({
   name,
   displayName,
   logoUrl,
+  logoWidth,
   message,
   isPending = false,
 }) => {
   const content = (
     <div
       style={{
-        display: "flex",
+        display: "inline-flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "center",
-        gap: "4px",
-        height: "100%",
-        width: "100%",
+        gap: "6px",
         opacity: isPending ? 0.6 : 1,
         transition: "opacity 0.2s",
-        overflow: "hidden",
       }}
     >
       <img
         src={logoUrl}
         alt={name}
         style={{
-          maxWidth: "100%",
-          maxHeight: "100%",
-          width: "auto",
+          width: `${logoWidth}px`,
           height: "auto",
+          maxHeight: `${logoWidth}px`,
           objectFit: "contain",
-          flex: "1 1 auto",
-          minHeight: 0, // Critical for flex shrinking
         }}
       />
       <div
         style={{
-          fontSize: "13px",
-          fontWeight: 600,
+          fontSize: "12px",
+          fontWeight: 500,
           textAlign: "center",
-          maxWidth: "100%",
+          maxWidth: `${logoWidth + 20}px`,
           wordWrap: "break-word",
           color: "white",
-          flex: "0 0 auto", // Prevent text from shrinking
           lineHeight: "1.2",
-          marginTop: "auto",
-          zIndex: 1,
-          textShadow: "0 1px 2px rgba(0,0,0,0.8)", // Ensure legibility over any background
+          textShadow: "0 1px 2px rgba(0,0,0,0.8)",
         }}
       >
         {displayName}
