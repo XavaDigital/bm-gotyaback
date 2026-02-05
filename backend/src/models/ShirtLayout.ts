@@ -39,4 +39,7 @@ const shirtLayoutSchema = new mongoose.Schema({
   maxSponsors: { type: Number }, // Optional limit on number of sponsors
 });
 
+// Indexes for performance optimization
+shirtLayoutSchema.index({ campaignId: 1 }); // For layout lookups by campaign
+
 export const ShirtLayout = mongoose.model("ShirtLayout", shirtLayoutSchema);

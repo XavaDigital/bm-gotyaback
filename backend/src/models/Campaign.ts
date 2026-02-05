@@ -113,4 +113,10 @@ const campaignSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+// Indexes for performance optimization
+campaignSchema.index({ ownerId: 1, createdAt: -1 }); // For filtering user's campaigns
+campaignSchema.index({ slug: 1 }); // Already unique, but explicit for lookups
+campaignSchema.index({ isClosed: 1, endDate: 1 }); // For filtering active campaigns
+campaignSchema.index({ createdAt: -1 }); // For sorting by creation date
+
 export const Campaign = mongoose.model("Campaign", campaignSchema);

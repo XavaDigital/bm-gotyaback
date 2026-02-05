@@ -51,4 +51,9 @@ const sponsorEntrySchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+// Indexes for performance optimization
+sponsorEntrySchema.index({ campaignId: 1, paymentStatus: 1 }); // For filtering sponsors by payment status
+sponsorEntrySchema.index({ campaignId: 1, logoApprovalStatus: 1 }); // For filtering pending logos
+sponsorEntrySchema.index({ campaignId: 1, createdAt: -1 }); // For sorting sponsors by creation date
+
 export const SponsorEntry = mongoose.model("SponsorEntry", sponsorEntrySchema);

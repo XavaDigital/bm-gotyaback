@@ -235,7 +235,8 @@ export const getPublicSponsors = async (campaignId: string) => {
       { sponsorType: "logo", logoApprovalStatus: "approved" }, // Only approved logo sponsors
     ],
   }).select(
-    "name message positionId createdAt sponsorType logoUrl displayName logoApprovalStatus displaySize calculatedFontSize calculatedLogoWidth paymentStatus amount",
+    // Explicitly exclude sensitive fields: email, phone, paymentMethod
+    "name message positionId createdAt sponsorType logoUrl displayName logoApprovalStatus displaySize calculatedFontSize calculatedLogoWidth amount",
   );
 
   return sponsors;

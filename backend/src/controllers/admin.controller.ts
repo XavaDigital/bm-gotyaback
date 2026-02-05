@@ -5,6 +5,8 @@ import { ShirtLayout } from "../models/ShirtLayout";
 import mongoose from "mongoose";
 import * as campaignService from "../services/campaign.service";
 import { calculatePositionPrice } from "../services/pricing.service";
+import { getPaginationParams, getSkipValue, createPaginatedResponse } from "../utils/pagination";
+import { logAdminAction, getClientIp, AuditAction } from "../utils/auditLogger";
 
 // Sample logo URLs for seeding (using real sponsor logos)
 const sampleLogoUrls = [
@@ -289,6 +291,17 @@ export const seedSponsors = async (req: Request, res: Response) => {
   try {
     const { campaignId, numberOfSponsors } = req.body;
 
+    // Log admin action
+    logAdminAction(
+      AuditAction.ADMIN_SEED_DATA,
+      req.user?._id.toString() || 'unknown',
+      req.user?.email || 'unknown',
+      getClientIp(req),
+      'Campaign',
+      campaignId,
+      { numberOfSponsors }
+    );
+
     // Validation
     if (!campaignId || !numberOfSponsors) {
       return res.status(400).json({ message: "Missing required fields" });
@@ -377,8 +390,29 @@ export const seedSponsors = async (req: Request, res: Response) => {
 
 export const getAllCampaigns = async (req: Request, res: Response) => {
   try {
-    const campaigns = await campaignService.getAllCampaigns();
-    res.json(campaigns);
+    // Log admin action
+    logAdminAction(
+      AuditAction.ADMIN_VIEW_ALL_CAMPAIGNS,
+      req.user?._id.toString() || 'unknown',
+      req.user?.email || 'unknown',
+      getClientIp(req)
+    );
+
+    const { page, limit } = getPaginationParams(req.query, 20, 100);
+    const skip = getSkipValue(page, limit);
+
+    const [campaigns, total] = await Promise.all([
+      Campaign.find()
+        .populate('ownerId', 'name email organizerProfile')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Campaign.countDocuments(),
+    ]);
+
+    const response = createPaginatedResponse(campaigns, total, page, limit);
+    res.json(response);
   } catch (error) {
     res.status(500).json({ message: (error as Error).message });
   }
@@ -386,6 +420,16 @@ export const getAllCampaigns = async (req: Request, res: Response) => {
 
 export const deleteCampaign = async (req: Request, res: Response) => {
   try {
+    // Log admin action
+    logAdminAction(
+      AuditAction.ADMIN_DELETE_CAMPAIGN,
+      req.user?._id.toString() || 'unknown',
+      req.user?.email || 'unknown',
+      getClientIp(req),
+      'Campaign',
+      req.params.id
+    );
+
     const result = await campaignService.deleteCampaign(req.params.id);
     res.json(result);
   } catch (error) {

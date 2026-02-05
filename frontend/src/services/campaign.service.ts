@@ -1,0 +1,144 @@
+import apiClient from "./apiClient";
+import type {
+  Campaign,
+  CreateCampaignRequest,
+  UpdateCampaignRequest,
+  ShirtLayout,
+  CreateLayoutRequest,
+} from "~/types/campaign.types";
+
+const campaignService = {
+  // Create a new campaign
+  createCampaign: async (data: CreateCampaignRequest): Promise<Campaign> => {
+    // Check if we need to send as FormData (for file uploads)
+    if (data.headerImageFile) {
+      const formData = new FormData();
+
+      // Append all fields to FormData
+      Object.entries(data).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (key === "pricingConfig") {
+            formData.append(key, JSON.stringify(value));
+          } else {
+            formData.append(key, value as any);
+          }
+        }
+      });
+
+      const response = await apiClient.post<Campaign>("/campaigns", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response.data;
+    }
+
+    const response = await apiClient.post<Campaign>("/campaigns", data);
+    return response.data;
+  },
+
+  // Get user's campaigns
+  getMyCampaigns: async (): Promise<Campaign[]> => {
+    const response = await apiClient.get<Campaign[]>("/campaigns/my-campaigns");
+    return response.data;
+  },
+
+  // Get campaign by ID (owner only)
+  getCampaignById: async (id: string): Promise<Campaign> => {
+    const response = await apiClient.get<Campaign>(`/campaigns/${id}`);
+    return response.data;
+  },
+
+  // Get public campaign by slug
+  getPublicCampaign: async (slug: string): Promise<Campaign> => {
+    const response = await apiClient.get<Campaign>(`/campaigns/public/${slug}`);
+    return response.data;
+  },
+
+  // Update campaign
+  updateCampaign: async (
+    id: string,
+    data: UpdateCampaignRequest,
+  ): Promise<Campaign> => {
+    // Check if we need to send as FormData (for file uploads)
+    if (data.headerImageFile) {
+      const formData = new FormData();
+
+      // Append all fields to FormData
+      Object.entries(data).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          formData.append(key, value as any);
+        }
+      });
+
+      const response = await apiClient.put<Campaign>(
+        `/campaigns/${id}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+      return response.data;
+    }
+
+    const response = await apiClient.put<Campaign>(`/campaigns/${id}`, data);
+    return response.data;
+  },
+
+  // Close campaign
+  closeCampaign: async (id: string): Promise<Campaign> => {
+    const response = await apiClient.post<Campaign>(`/campaigns/${id}/close`);
+    return response.data;
+  },
+
+  // Create shirt layout for campaign
+  createLayout: async (
+    campaignId: string,
+    layout: CreateLayoutRequest,
+  ): Promise<ShirtLayout> => {
+    const response = await apiClient.post<ShirtLayout>(
+      `/campaigns/${campaignId}/layout`,
+      layout,
+    );
+    return response.data;
+  },
+
+  // Update campaign pricing
+  updatePricing: async (id: string, data: any): Promise<void> => {
+    await apiClient.put(`/campaigns/${id}/pricing`, data);
+  },
+
+  // Get layout for campaign
+  getLayout: async (campaignId: string): Promise<ShirtLayout> => {
+    const response = await apiClient.get<ShirtLayout>(
+      `/campaigns/${campaignId}/layout`,
+    );
+    // The interceptor converts 404s to resolved promises with null data
+    return response.data;
+  },
+
+  // Admin: Get all campaigns (paginated)
+  getAllCampaigns: async (page: number = 1, limit: number = 20): Promise<{
+    data: Campaign[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      pages: number;
+      hasNext: boolean;
+      hasPrev: boolean;
+    };
+  }> => {
+    const response = await apiClient.get(`/admin/campaigns?page=${page}&limit=${limit}`);
+    return response.data;
+  },
+
+  // Admin: Delete campaign
+  deleteCampaign: async (id: string): Promise<void> => {
+    await apiClient.delete(`/admin/campaigns/${id}`);
+  },
+};
+
+export default campaignService;

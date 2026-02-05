@@ -3,6 +3,11 @@ import dotenv from "dotenv";
 // Load environment variables FIRST before importing anything else
 dotenv.config();
 
+// Validate environment variables before starting the server
+// NOTE: Commented out for development - uncomment for production
+// import { validateEnvironment } from "./utils/validateEnv";
+// validateEnvironment();
+
 import app from "./app";
 import connectDB from "./config/db";
 

@@ -25,4 +25,8 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Indexes for performance optimization
+userSchema.index({ email: 1 }); // Already unique, but explicit for lookups
+userSchema.index({ 'organizerProfile.slug': 1 }); // For organizer profile lookups
+
 export const User = mongoose.model("User", userSchema);

@@ -90,7 +90,7 @@ export const getCampaignById = async (campaignId: string) => {
 export const getCampaignBySlug = async (slug: string) => {
   const campaign = await Campaign.findOne({ slug }).populate(
     "ownerId",
-    "name email",
+    "name organizerProfile", // Only populate public fields, exclude email
   );
 
   if (!campaign) {
