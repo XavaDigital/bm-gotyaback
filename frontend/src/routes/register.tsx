@@ -27,6 +27,18 @@ function RegisterPage() {
   const navigate = useNavigate()
 
   useEffect(() => {
+    // Add placeholder styling
+    const style = document.createElement('style')
+    style.id = 'register-placeholder-styles'
+    style.textContent = `
+      .register-page-input input::placeholder,
+      .register-page-input .ant-input::placeholder {
+        color: #999999 !important;
+        opacity: 1 !important;
+      }
+    `
+    document.head.appendChild(style)
+
     // Override body styles for full-width dark page
     const body = document.body
     const html = document.documentElement
@@ -46,6 +58,12 @@ function RegisterPage() {
     html.style.width = '100%'
 
     return () => {
+      // Remove placeholder styles
+      const styleEl = document.getElementById('register-placeholder-styles')
+      if (styleEl) {
+        styleEl.remove()
+      }
+
       body.style.display = originalStyles.display
       ;(body.style as any).placeItems = originalStyles.placeItems
       body.style.margin = originalStyles.margin
@@ -163,6 +181,7 @@ function RegisterPage() {
               <Input
                 prefix={<UserOutlined style={{ color: '#999999' }} />}
                 placeholder="Full Name"
+                className="register-page-input"
                 style={{
                   background: '#1f1f1f',
                   border: '1px solid #3a3a3a',
@@ -182,6 +201,7 @@ function RegisterPage() {
               <Input
                 prefix={<MailOutlined style={{ color: '#999999' }} />}
                 placeholder="Email Address"
+                className="register-page-input"
                 style={{
                   background: '#1f1f1f',
                   border: '1px solid #3a3a3a',
@@ -201,6 +221,7 @@ function RegisterPage() {
               <Input.Password
                 prefix={<LockOutlined style={{ color: '#999999' }} />}
                 placeholder="Password (min 6 characters)"
+                className="register-page-input"
                 style={{
                   background: '#1f1f1f',
                   border: '1px solid #3a3a3a',

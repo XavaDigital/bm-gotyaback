@@ -10,11 +10,28 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ConfigProvider, App } from "antd";
 import * as React from "react";
 import type { ReactNode } from "react";
+import * as Sentry from "@sentry/react";
 import "antd/dist/reset.css";
 import "~/index.css";
 import "~/App.css";
 import { AppLayout } from "~/components/AppLayout";
 import authService from "~/services/auth.service";
+
+// Initialize Sentry for production error tracking
+if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
+  Sentry.init({
+    dsn: import.meta.env.VITE_SENTRY_DSN,
+    environment: import.meta.env.MODE,
+    tracesSampleRate: 0.1, // 10% of transactions for performance monitoring
+    replaysSessionSampleRate: 0.1, // 10% of sessions
+    replaysOnErrorSampleRate: 1.0, // 100% of sessions with errors
+    integrations: [
+      Sentry.browserTracingIntegration(),
+      Sentry.replayIntegration(),
+    ],
+  });
+  console.log('✅ Sentry initialized for production monitoring');
+}
 
 // Create a client
 const queryClient = new QueryClient({

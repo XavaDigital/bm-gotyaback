@@ -3,10 +3,20 @@ import * as userService from "../services/user.service";
 import { logAuthEvent, getClientIp, AuditAction } from "../utils/auditLogger";
 
 export const register = async (req: Request, res: Response) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, rememberMe } = req.body;
 
   try {
-    const user = await userService.registerUser(name, email, password);
+    const userAgent = req.get("user-agent");
+    const ipAddress = getClientIp(req);
+
+    const user = await userService.registerUser(
+      name,
+      email,
+      password,
+      rememberMe || false,
+      userAgent,
+      ipAddress
+    );
 
     // Log successful registration
     logAuthEvent(
@@ -14,7 +24,7 @@ export const register = async (req: Request, res: Response) => {
       true,
       user._id?.toString(),
       email,
-      getClientIp(req)
+      ipAddress
     );
 
     res.status(201).json(user);
@@ -34,10 +44,19 @@ export const register = async (req: Request, res: Response) => {
 };
 
 export const login = async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  const { email, password, rememberMe } = req.body;
 
   try {
-    const user = await userService.loginUser(email, password);
+    const userAgent = req.get("user-agent");
+    const ipAddress = getClientIp(req);
+
+    const user = await userService.loginUser(
+      email,
+      password,
+      rememberMe || false,
+      userAgent,
+      ipAddress
+    );
 
     // Log successful login
     logAuthEvent(
@@ -45,7 +64,7 @@ export const login = async (req: Request, res: Response) => {
       true,
       user._id?.toString(),
       email,
-      getClientIp(req)
+      ipAddress
     );
 
     res.json(user);
@@ -126,6 +145,93 @@ export const resetPassword = async (req: Request, res: Response) => {
       (error as Error).message
     );
 
+    res.status(400).json({ message: (error as Error).message });
+  }
+};
+
+/**
+ * Refresh access token using refresh token
+ * POST /api/auth/refresh
+ */
+export const refreshToken = async (req: Request, res: Response) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return res.status(400).json({ message: "Refresh token is required" });
+  }
+
+  try {
+    const userAgent = req.get("user-agent");
+    const ipAddress = getClientIp(req);
+
+    const result = await userService.refreshAccessToken(
+      refreshToken,
+      userAgent,
+      ipAddress
+    );
+
+    res.json(result);
+  } catch (error) {
+    res.status(401).json({ message: (error as Error).message });
+  }
+};
+
+/**
+ * Logout user by revoking refresh token
+ * POST /api/auth/logout
+ */
+export const logout = async (req: Request, res: Response) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return res.status(400).json({ message: "Refresh token is required" });
+  }
+
+  try {
+    const result = await userService.logoutUser(refreshToken);
+
+    // Log logout
+    logAuthEvent(
+      AuditAction.USER_LOGOUT,
+      true,
+      req.user?._id?.toString(),
+      req.user?.email,
+      getClientIp(req)
+    );
+
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: (error as Error).message });
+  }
+};
+
+/**
+ * Logout from all devices
+ * POST /api/auth/logout-all
+ * Requires authentication
+ */
+export const logoutAll = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?._id;
+
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+
+    const result = await userService.logoutAllDevices(userId.toString());
+
+    // Log logout from all devices
+    logAuthEvent(
+      AuditAction.USER_LOGOUT,
+      true,
+      userId.toString(),
+      req.user?.email,
+      getClientIp(req),
+      "Logged out from all devices"
+    );
+
+    res.json(result);
+  } catch (error) {
     res.status(400).json({ message: (error as Error).message });
   }
 };

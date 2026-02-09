@@ -26,6 +26,18 @@ function LoginPage() {
   const navigate = useNavigate()
 
   useEffect(() => {
+    // Add placeholder styling
+    const style = document.createElement('style')
+    style.id = 'login-placeholder-styles'
+    style.textContent = `
+      .login-page-input input::placeholder,
+      .login-page-input .ant-input::placeholder {
+        color: #999999 !important;
+        opacity: 1 !important;
+      }
+    `
+    document.head.appendChild(style)
+
     // Override body styles for full-width dark page
     const body = document.body
     const html = document.documentElement
@@ -45,6 +57,12 @@ function LoginPage() {
     html.style.width = '100%'
 
     return () => {
+      // Remove placeholder styles
+      const styleEl = document.getElementById('login-placeholder-styles')
+      if (styleEl) {
+        styleEl.remove()
+      }
+
       body.style.display = originalStyles.display
       ;(body.style as any).placeItems = originalStyles.placeItems
       body.style.margin = originalStyles.margin
@@ -217,6 +235,7 @@ function LoginPage() {
               <Input
                 prefix={<MailOutlined style={{ color: '#999999' }} />}
                 placeholder="Email Address"
+                className="login-page-input"
                 style={{
                   background: '#1f1f1f',
                   border: '1px solid #3a3a3a',
@@ -235,6 +254,7 @@ function LoginPage() {
               <Input.Password
                 prefix={<LockOutlined style={{ color: '#999999' }} />}
                 placeholder="Password"
+                className="login-page-input"
                 style={{
                   background: '#1f1f1f',
                   border: '1px solid #3a3a3a',

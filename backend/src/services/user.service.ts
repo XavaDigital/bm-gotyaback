@@ -4,11 +4,15 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { sendPasswordResetEmail } from "./email.service";
+import * as tokenService from "./token.service";
 
 export const registerUser = async (
   name: string,
   email: string,
-  password: string
+  password: string,
+  rememberMe: boolean = false,
+  userAgent?: string,
+  ipAddress?: string
 ) => {
   const existingUser = await User.findOne({ email });
   if (existingUser) {
@@ -24,27 +28,55 @@ export const registerUser = async (
     passwordHash,
   });
 
+  // Generate both access and refresh tokens
+  const accessToken = tokenService.generateAccessToken(user._id.toString());
+  const refreshToken = await tokenService.generateRefreshToken(
+    user._id.toString(),
+    rememberMe,
+    userAgent,
+    ipAddress
+  );
+
   return {
     _id: user._id,
     name: user.name,
     email: user.email,
     role: user.role,
     organizerProfile: user.organizerProfile,
-    token: generateToken(user._id.toString()),
+    token: accessToken, // Keep for backward compatibility
+    accessToken,
+    refreshToken,
   };
 };
 
-export const loginUser = async (email: string, password: string) => {
+export const loginUser = async (
+  email: string,
+  password: string,
+  rememberMe: boolean = false,
+  userAgent?: string,
+  ipAddress?: string
+) => {
   const user = await User.findOne({ email });
 
   if (user && (await bcrypt.compare(password, user.passwordHash))) {
+    // Generate both access and refresh tokens
+    const accessToken = tokenService.generateAccessToken(user._id.toString());
+    const refreshToken = await tokenService.generateRefreshToken(
+      user._id.toString(),
+      rememberMe,
+      userAgent,
+      ipAddress
+    );
+
     return {
       _id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
       organizerProfile: user.organizerProfile,
-      token: generateToken(user._id.toString()),
+      token: accessToken, // Keep for backward compatibility
+      accessToken,
+      refreshToken,
     };
   } else {
     throw new Error("Invalid credentials");
@@ -57,19 +89,27 @@ export const updateProfile = async (userId: string, profileData: any) => {
     throw new Error("User not found");
   }
 
+  // Extract organizerProfile if it's wrapped
+  const profileFields = profileData.organizerProfile || profileData;
+
   // Check if slug is being changed and if it's already taken
-  if (profileData.slug && profileData.slug !== user.organizerProfile?.slug) {
+  if (profileFields.slug && profileFields.slug !== user.organizerProfile?.slug) {
     const existingSlug = await User.findOne({
-      "organizerProfile.slug": profileData.slug,
+      "organizerProfile.slug": profileFields.slug,
     });
     if (existingSlug) {
       throw new Error("Slug already taken");
     }
   }
 
+  // Merge the profile fields, ensuring socialLinks is properly handled
   user.organizerProfile = {
     ...user.organizerProfile,
-    ...profileData,
+    ...profileFields,
+    socialLinks: {
+      ...user.organizerProfile?.socialLinks,
+      ...profileFields.socialLinks,
+    },
   };
 
   await user.save();
@@ -141,10 +181,70 @@ export const getPublicProfile = async (slug: string) => {
   };
 };
 
+// Legacy function - kept for backward compatibility
+// New code should use tokenService.generateAccessToken instead
 const generateToken = (id: string) => {
   return jwt.sign({ id }, process.env.JWT_SECRET as string, {
     expiresIn: "30d",
   });
+};
+
+/**
+ * Refresh access token using refresh token
+ */
+export const refreshAccessToken = async (
+  refreshToken: string,
+  userAgent?: string,
+  ipAddress?: string
+) => {
+  // Verify refresh token and get user ID
+  const { userId } = await tokenService.verifyRefreshToken(refreshToken);
+
+  // Get user details
+  const user = await User.findById(userId).select(
+    "_id name email role organizerProfile"
+  );
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Generate new access token
+  const accessToken = tokenService.generateAccessToken(userId);
+
+  // Rotate refresh token for added security
+  const newRefreshToken = await tokenService.rotateRefreshToken(
+    refreshToken,
+    userAgent,
+    ipAddress
+  );
+
+  return {
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    organizerProfile: user.organizerProfile,
+    accessToken,
+    refreshToken: newRefreshToken,
+    token: accessToken, // Keep for backward compatibility
+  };
+};
+
+/**
+ * Logout user by revoking refresh token
+ */
+export const logoutUser = async (refreshToken: string) => {
+  await tokenService.revokeRefreshToken(refreshToken);
+  return { message: "Logged out successfully" };
+};
+
+/**
+ * Logout from all devices by revoking all user's refresh tokens
+ */
+export const logoutAllDevices = async (userId: string) => {
+  await tokenService.revokeAllUserTokens(userId);
+  return { message: "Logged out from all devices successfully" };
 };
 
 export const requestPasswordReset = async (email: string) => {

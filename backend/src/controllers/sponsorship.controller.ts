@@ -71,8 +71,26 @@ export const getSponsors = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "User not authenticated" });
     }
 
-    const sponsors = await sponsorshipService.getSponsorsByCampaign(campaignId);
-    res.json(sponsors);
+    // Parse pagination parameters
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+
+    // Parse filter parameters
+    const filters: any = {};
+    if (req.query.paymentStatus) {
+      filters.paymentStatus = req.query.paymentStatus;
+    }
+    if (req.query.logoApprovalStatus) {
+      filters.logoApprovalStatus = req.query.logoApprovalStatus;
+    }
+
+    const result = await sponsorshipService.getSponsorsByCampaign(
+      campaignId,
+      page,
+      limit,
+      filters
+    );
+    res.json(result);
   } catch (error) {
     res.status(400).json({ message: (error as Error).message });
   }
@@ -184,12 +202,18 @@ export const getPendingLogos = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "User not authenticated" });
     }
 
-    const pendingLogos = await sponsorshipService.getPendingLogoApprovals(
+    // Parse pagination parameters
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+
+    const result = await sponsorshipService.getPendingLogoApprovals(
       campaignId,
       userId.toString(),
+      page,
+      limit,
     );
 
-    res.json(pendingLogos);
+    res.json(result);
   } catch (error) {
     const message = (error as Error).message;
     const status = message.includes("Not authorized") ? 403 : 400;

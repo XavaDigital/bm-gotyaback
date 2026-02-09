@@ -144,15 +144,41 @@ export const createSponsorship = async (
   }
 };
 
-export const getSponsorsByCampaign = async (campaignId: string) => {
+export const getSponsorsByCampaign = async (
+  campaignId: string,
+  page: number = 1,
+  limit: number = 50,
+  filters?: { paymentStatus?: string; logoApprovalStatus?: string }
+) => {
   if (!mongoose.Types.ObjectId.isValid(campaignId)) {
     throw new Error("Invalid campaign ID");
   }
 
-  const sponsors = await SponsorEntry.find({ campaignId }).sort({
-    createdAt: -1,
-  });
-  return sponsors;
+  const query: any = { campaignId };
+  if (filters?.paymentStatus) query.paymentStatus = filters.paymentStatus;
+  if (filters?.logoApprovalStatus) query.logoApprovalStatus = filters.logoApprovalStatus;
+
+  const skip = (page - 1) * limit;
+
+  const [sponsors, total] = await Promise.all([
+    SponsorEntry.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    SponsorEntry.countDocuments(query),
+  ]);
+
+  return {
+    sponsors,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit),
+      hasNext: page * limit < total,
+      hasPrev: page > 1,
+    },
+  };
 };
 
 export const markAsPaid = async (sponsorshipId: string, userId: string) => {
@@ -301,6 +327,8 @@ export const approveLogoSponsorship = async (
 export const getPendingLogoApprovals = async (
   campaignId: string,
   userId: string,
+  page: number = 1,
+  limit: number = 50,
 ) => {
   if (!mongoose.Types.ObjectId.isValid(campaignId)) {
     throw new Error("Invalid campaign ID");
@@ -316,13 +344,33 @@ export const getPendingLogoApprovals = async (
     throw new Error("Not authorized to view logo approvals for this campaign");
   }
 
-  const pendingLogos = await SponsorEntry.find({
+  const query = {
     campaignId,
     sponsorType: "logo",
     logoApprovalStatus: "pending",
-  }).sort({ createdAt: -1 });
+  };
 
-  return pendingLogos;
+  const skip = (page - 1) * limit;
+
+  const [pendingLogos, total] = await Promise.all([
+    SponsorEntry.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    SponsorEntry.countDocuments(query),
+  ]);
+
+  return {
+    pendingLogos,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit),
+      hasNext: page * limit < total,
+      hasPrev: page > 1,
+    },
+  };
 };
 
 // Approve all pending logos for a campaign

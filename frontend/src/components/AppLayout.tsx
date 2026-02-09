@@ -110,11 +110,16 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onLogout }) => {
       icon: <SettingOutlined />,
       label: "Profile Settings",
     },
-    {
-      key: "/admin",
-      icon: <ToolOutlined />,
-      label: "Admin Settings",
-    },
+    // Only show Admin Settings to admin users
+    ...(currentUser?.role === "admin"
+      ? [
+          {
+            key: "/admin",
+            icon: <ToolOutlined />,
+            label: "Admin Settings",
+          },
+        ]
+      : []),
   ];
 
   const handleMenuClick = (e: any) => {

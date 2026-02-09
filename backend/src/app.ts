@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import * as Sentry from "@sentry/node";
 // import mongoSanitize from "express-mongo-sanitize"; // Removed due to compatibility issues
 import authRoutes from "./routes/auth.routes";
 import campaignRoutes from "./routes/campaign.routes";
@@ -46,9 +47,17 @@ app.use(helmet({
 
 // CORS configuration
 const isProduction = process.env.NODE_ENV === 'production';
-const allowedOrigins = process.env.FRONTEND_URL
-  ? [process.env.FRONTEND_URL, "http://localhost:5173", "http://localhost:5174","http://localhost:3000"]
-  : ["http://localhost:5173","http://localhost:5174", "http://localhost:3000"];
+
+// In production, only allow the configured frontend URL
+// In development, also allow localhost origins for local testing
+const allowedOrigins: string[] = isProduction
+  ? [process.env.FRONTEND_URL].filter((url): url is string => Boolean(url)) // Only production frontend URL
+  : [
+      process.env.FRONTEND_URL,
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "http://localhost:3000"
+    ].filter((url): url is string => Boolean(url)); // Development: allow localhost + configured URL
 
 app.use(
   cors({
@@ -102,6 +111,15 @@ app.get("/api", (req, res) => {
 
 // 404 handler - must be after all routes
 app.use(notFoundHandler);
+
+// Sentry error handler - must be before custom error handler
+// This captures errors and sends them to Sentry in production
+if (process.env.NODE_ENV === 'production' && process.env.SENTRY_DSN) {
+  app.use((err: any, req: any, res: any, next: any) => {
+    Sentry.captureException(err);
+    next(err);
+  });
+}
 
 // Error handling middleware - must be last
 app.use(errorHandler);
