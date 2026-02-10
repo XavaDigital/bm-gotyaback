@@ -64,28 +64,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onLogout }) => {
 
   // Scroll content to top on route change
   useEffect(() => {
-    console.log("🔄 Route changed to:", location.pathname);
-    console.log("📦 contentRef.current:", contentRef.current);
-
     if (contentRef.current) {
-      console.log("📏 Current scroll position:", {
-        scrollTop: contentRef.current.scrollTop,
-        scrollHeight: contentRef.current.scrollHeight,
-        clientHeight: contentRef.current.clientHeight,
-        overflow: window.getComputedStyle(contentRef.current).overflow,
-        overflowY: window.getComputedStyle(contentRef.current).overflowY,
-      });
-
       contentRef.current.scrollTo(0, 0);
-
-      console.log("✅ Scroll to top executed");
-
-      // Check if scroll actually happened
-      setTimeout(() => {
-        console.log("📏 New scroll position:", contentRef.current?.scrollTop);
-      }, 100);
-    } else {
-      console.log("❌ contentRef.current is null!");
     }
   }, [location.pathname]);
 

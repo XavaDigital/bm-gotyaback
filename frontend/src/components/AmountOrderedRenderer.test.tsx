@@ -15,7 +15,7 @@ describe('AmountOrderedRenderer', () => {
     expect(screen.getByText(/No sponsors yet/i)).toBeInTheDocument();
   });
 
-  it('should filter out unapproved logo sponsors', () => {
+  it('should filter out unapproved logo sponsors when displaying logos', () => {
     const sponsors = [
       createMockSponsor({ _id: '1', name: 'Approved', sponsorType: 'logo', logoUrl: 'logo.png', logoApprovalStatus: 'approved' }),
       createMockSponsor({ _id: '2', name: 'Pending', sponsorType: 'logo', logoUrl: 'logo.png', logoApprovalStatus: 'pending' }),
@@ -30,6 +30,24 @@ describe('AmountOrderedRenderer', () => {
 
     expect(screen.getByAltText('Approved')).toBeInTheDocument();
     expect(screen.queryByAltText('Pending')).not.toBeInTheDocument();
+  });
+
+  it('should NOT filter out unapproved logo sponsors when display type is text-only', () => {
+    const sponsors = [
+      createMockSponsor({ _id: '1', name: 'Approved Logo', sponsorType: 'logo', logoUrl: 'logo.png', logoApprovalStatus: 'approved' }),
+      createMockSponsor({ _id: '2', name: 'Pending Logo', sponsorType: 'logo', logoUrl: 'logo.png', logoApprovalStatus: 'pending' }),
+    ];
+
+    renderWithProviders(
+      <AmountOrderedRenderer
+        sponsors={sponsors}
+        sponsorDisplayType="text-only"
+      />
+    );
+
+    // Both should be shown as text, regardless of logo approval status
+    expect(screen.getByText('Approved Logo')).toBeInTheDocument();
+    expect(screen.getByText('Pending Logo')).toBeInTheDocument();
   });
 
   it('should group sponsors into single tier when only one price point', () => {

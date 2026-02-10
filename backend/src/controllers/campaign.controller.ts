@@ -14,6 +14,16 @@ export const createCampaign = async (req: Request, res: Response) => {
     const data =
       typeof req.body.data === "string" ? JSON.parse(req.body.data) : req.body;
 
+    // Parse pricingConfig if it's a string (from FormData)
+    if (data.pricingConfig && typeof data.pricingConfig === "string") {
+      data.pricingConfig = JSON.parse(data.pricingConfig);
+    }
+
+    console.log("=== createCampaign Controller ===");
+    console.log("Request body:", req.body);
+    console.log("Parsed data:", data);
+    console.log("File present:", !!req.file);
+
     // Handle header image upload if present
     let headerImageUrl: string | undefined;
     const file = req.file;
@@ -49,6 +59,9 @@ export const createCampaign = async (req: Request, res: Response) => {
       res.status(201).json(campaign);
     }
   } catch (error) {
+    console.error("=== createCampaign Error ===");
+    console.error("Error message:", (error as Error).message);
+    console.error("Error stack:", (error as Error).stack);
     res.status(400).json({ message: (error as Error).message });
   }
 };
@@ -82,6 +95,11 @@ export const updateCampaign = async (req: Request, res: Response) => {
     // Parse data from body (could be JSON or multipart form data)
     const data =
       typeof req.body.data === "string" ? JSON.parse(req.body.data) : req.body;
+
+    // Parse pricingConfig if it's a string (from FormData)
+    if (data.pricingConfig && typeof data.pricingConfig === "string") {
+      data.pricingConfig = JSON.parse(data.pricingConfig);
+    }
 
     // Handle header image upload if present
     const file = req.file;

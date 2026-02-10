@@ -385,7 +385,19 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
   const handleFormSubmit = async () => {
     try {
       const values = await form.validateFields();
-      const finalAmount = positionId ? amount : parseFloat(values.amount);
+
+      // Determine final amount based on campaign type and position
+      let finalAmount: number;
+      if (positionId) {
+        // Position-based sponsorship - use the amount prop
+        finalAmount = amount;
+      } else if (campaign.campaignType === "fixed") {
+        // Fixed pricing without position - use the fixed price amount prop
+        finalAmount = amount;
+      } else {
+        // Pay-what-you-want or general donation - use user-entered amount
+        finalAmount = parseFloat(values.amount);
+      }
 
       // Validate logo upload if required
       if (values.sponsorType === "logo" && !logoFile) {
@@ -493,7 +505,20 @@ const SponsorCheckoutModal: React.FC<SponsorCheckoutModalProps> = ({
               </div>
             )}
 
-            {!positionId && (
+            {!positionId && campaign.campaignType === "fixed" && (
+              <div
+                style={{
+                  marginBottom: 16,
+                  padding: 12,
+                  backgroundColor: "#f0f0f0",
+                  borderRadius: 4,
+                }}
+              >
+                <strong>Sponsorship Amount:</strong> {currency} ${amount}
+              </div>
+            )}
+
+            {!positionId && campaign.campaignType !== "fixed" && (
               <Form.Item
                 label={`Donation Amount (${currency})`}
                 name="amount"

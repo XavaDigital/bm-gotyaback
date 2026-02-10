@@ -64,7 +64,7 @@ describe('GridLayoutRenderer', () => {
     expect(screen.getByText('#3')).toBeInTheDocument();
   });
 
-  it('should render reserved positions', () => {
+  it('should render reserved positions when isTaken but no sponsor data', () => {
     const layout = createMockLayout({
       placements: [
         { positionId: '1', price: 100, isTaken: true },
@@ -160,11 +160,11 @@ describe('GridLayoutRenderer', () => {
     expect(logo).toBeInTheDocument();
   });
 
-  it('should show pending approval for unapproved logos', () => {
+  it('should show reserved for unapproved logos in logo-only campaigns', () => {
     const layout = createMockLayout();
     const sponsors = [
-      createMockSponsor({ 
-        _id: '1', 
+      createMockSponsor({
+        _id: '1',
         name: 'Logo Sponsor',
         positionId: '1',
         paymentStatus: 'paid',
@@ -182,8 +182,56 @@ describe('GridLayoutRenderer', () => {
       />
     );
 
-    expect(screen.getByText(/Pending/)).toBeInTheDocument();
-    expect(screen.getByText(/Approval/)).toBeInTheDocument();
+    expect(screen.getByText('Reserved')).toBeInTheDocument();
+  });
+
+  it('should show reserved for unapproved logos in both campaigns', () => {
+    const layout = createMockLayout();
+    const sponsors = [
+      createMockSponsor({
+        _id: '1',
+        name: 'Logo Sponsor',
+        positionId: '1',
+        paymentStatus: 'paid',
+        sponsorType: 'logo',
+        logoUrl: 'https://example.com/logo.png',
+        logoApprovalStatus: 'pending'
+      }),
+    ];
+
+    renderWithProviders(
+      <GridLayoutRenderer
+        layout={layout}
+        sponsors={sponsors}
+        sponsorDisplayType="both"
+      />
+    );
+
+    expect(screen.getByText('Reserved')).toBeInTheDocument();
+  });
+
+  it('should show text sponsor name immediately in text-only campaigns', () => {
+    const layout = createMockLayout();
+    const sponsors = [
+      createMockSponsor({
+        _id: '1',
+        name: 'Text Sponsor',
+        positionId: '1',
+        paymentStatus: 'paid',
+        sponsorType: 'text'
+      }),
+    ];
+
+    renderWithProviders(
+      <GridLayoutRenderer
+        layout={layout}
+        sponsors={sponsors}
+        sponsorDisplayType="text-only"
+      />
+    );
+
+    expect(screen.getByText('Text Sponsor')).toBeInTheDocument();
+    expect(screen.queryByText('Reserved')).not.toBeInTheDocument();
   });
 
   it('should render logo with name when display type is both', () => {

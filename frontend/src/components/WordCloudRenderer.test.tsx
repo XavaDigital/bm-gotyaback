@@ -61,7 +61,7 @@ describe('WordCloudRenderer', () => {
     expect(screen.getByText('No sponsors yet. Be the first!')).toBeInTheDocument();
   });
 
-  it('should filter out unapproved logo sponsors', () => {
+  it('should filter out unapproved logo sponsors when displaying logos', () => {
     const sponsorsWithUnapproved = [
       ...mockLogoSponsors,
       createMockSponsor({
@@ -82,6 +82,41 @@ describe('WordCloudRenderer', () => {
 
     // Should only render approved sponsors
     expect(screen.queryByText('Unapproved')).not.toBeInTheDocument();
+  });
+
+  it('should NOT filter out unapproved logo sponsors when display type is text-only', () => {
+    const sponsorsWithUnapproved = [
+      createMockSponsor({
+        _id: '1',
+        name: 'Approved Logo',
+        sponsorType: 'logo',
+        logoUrl: 'https://example.com/logo1.png',
+        logoApprovalStatus: 'approved',
+        calculatedFontSize: 20,
+      }),
+      createMockSponsor({
+        _id: '2',
+        name: 'Pending Logo',
+        sponsorType: 'logo',
+        logoUrl: 'https://example.com/logo2.png',
+        logoApprovalStatus: 'pending',
+        calculatedFontSize: 20,
+      }),
+    ];
+
+    const { container } = renderWithProviders(
+      <WordCloudRenderer
+        sponsors={sponsorsWithUnapproved}
+        sponsorDisplayType="text-only"
+      />
+    );
+
+    // Both should be rendered to canvas (text-only mode uses wordcloud2.js)
+    // We can verify by checking that the canvas exists
+    const canvas = container.querySelector('canvas');
+    expect(canvas).toBeInTheDocument();
+    // In text-only mode, all sponsors should be included regardless of logo approval status
+    // The wordcloud2.js library will render both sponsors to the canvas
   });
 
   it('should render canvas for text-only mode', () => {

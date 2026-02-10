@@ -3,8 +3,6 @@ import type { SponsorEntry, SponsorDisplayType } from "~/types/campaign.types";
 import TextSponsor from "./TextSponsor";
 import LogoSponsor from "./LogoSponsor";
 import LogoWithNameSponsor from "./LogoWithNameSponsor";
-// @ts-ignore - wordcloud doesn't have types
-import WordCloud from "wordcloud";
 
 /**
  * WordCloudRenderer - Hybrid implementation
@@ -39,13 +37,17 @@ const WordCloudRenderer: React.FC<WordCloudRendererProps> = ({
   >([]);
 
   // Filter sponsors with approved logos (if logo type) - memoized to prevent infinite loops
+  // Only filter out unapproved logos when we're actually displaying logos
   const approvedSponsors = useMemo(() => {
     return sponsors.filter((s) => {
-      if (s.sponsorType === "logo" && s.logoApprovalStatus !== "approved")
-        return false;
+      // If we're displaying logos (logo-only or both), filter out unapproved logos
+      if (sponsorDisplayType !== "text-only") {
+        if (s.sponsorType === "logo" && s.logoApprovalStatus !== "approved")
+          return false;
+      }
       return true;
     });
-  }, [sponsors]);
+  }, [sponsors, sponsorDisplayType]);
 
   // Use wordcloud2.js for text-only mode
   const isTextOnlyMode = sponsorDisplayType === "text-only";
@@ -58,49 +60,66 @@ const WordCloudRenderer: React.FC<WordCloudRendererProps> = ({
     const container = containerRef.current;
     if (!container) return;
 
-    // Set canvas size
-    const width = 600;
-    const height = Math.max(800, approvedSponsors.length * 60);
-    canvas.width = width;
-    canvas.height = height;
+    // Dynamically import wordcloud only in the browser
+    let isMounted = true;
 
-    // Prepare word list for wordcloud2.js
-    const wordList = approvedSponsors.map((sponsor) => {
-      const fontSize = sponsor.calculatedFontSize || 16;
-      return [sponsor.name, fontSize];
-    });
+    const loadWordCloud = async () => {
+      try {
+        // @ts-ignore - wordcloud doesn't have types
+        const WordCloud = (await import("wordcloud")).default;
 
-    // Generate word cloud
-    WordCloud(canvas, {
-      list: wordList,
-      gridSize: 8, // Smaller grid for tighter packing
-      weightFactor: 1,
-      fontFamily: "Arial, sans-serif",
-      fontWeight: "600",
-      color: () => {
-        // Random colors for variety
-        const colors = ["#ffffff", "#e0e0e0", "#c0c0c0", "#a0a0a0"];
-        return colors[Math.floor(Math.random() * colors.length)];
-      },
-      rotateRatio: 0.3, // 30% chance of rotation
-      rotationSteps: 2, // Only 0 or 90 degrees
-      backgroundColor: "transparent",
-      drawOutOfBound: false,
-      shrinkToFit: true,
-      minSize: 12,
-      // Add click handler for interactivity
-      click: (item: any) => {
-        // Find the sponsor by name
-        const sponsor = approvedSponsors.find((s) => s.name === item[0]);
-        if (sponsor?.message) {
-          alert(sponsor.message); // Simple alert for now, can be improved
-        }
-      },
-    });
+        if (!isMounted || !canvasRef.current) return;
+
+        // Set canvas size
+        const width = 600;
+        const height = Math.max(800, approvedSponsors.length * 60);
+        canvas.width = width;
+        canvas.height = height;
+
+        // Prepare word list for wordcloud2.js
+        const wordList = approvedSponsors.map((sponsor) => {
+          const fontSize = sponsor.calculatedFontSize || 16;
+          return [sponsor.name, fontSize];
+        });
+
+        // Generate word cloud
+        WordCloud(canvas, {
+          list: wordList,
+          gridSize: 8, // Smaller grid for tighter packing
+          weightFactor: 1,
+          fontFamily: "Arial, sans-serif",
+          fontWeight: "600",
+          color: () => {
+            // Random colors for variety
+            const colors = ["#ffffff", "#e0e0e0", "#c0c0c0", "#a0a0a0"];
+            return colors[Math.floor(Math.random() * colors.length)];
+          },
+          rotateRatio: 0.3, // 30% chance of rotation
+          rotationSteps: 2, // Only 0 or 90 degrees
+          backgroundColor: "transparent",
+          drawOutOfBound: false,
+          shrinkToFit: true,
+          minSize: 12,
+          // Add click handler for interactivity
+          click: (item: any) => {
+            // Find the sponsor by name
+            const sponsor = approvedSponsors.find((s) => s.name === item[0]);
+            if (sponsor?.message) {
+              alert(sponsor.message); // Simple alert for now, can be improved
+            }
+          },
+        });
+      } catch (error) {
+        console.error("Failed to load wordcloud library:", error);
+      }
+    };
+
+    loadWordCloud();
 
     // Cleanup
     return () => {
-      WordCloud.stop();
+      isMounted = false;
+      // Note: WordCloud.stop() is not available in cleanup since it's dynamically imported
     };
   }, [isTextOnlyMode, approvedSponsors]);
 

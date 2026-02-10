@@ -194,5 +194,126 @@ describe('SponsorCheckoutModal', () => {
       expect(screen.getByText('Become a Sponsor')).toBeInTheDocument();
     });
   });
+
+  it('should NOT show amount input field for fixed pricing campaign without position', async () => {
+    const fixedCampaign = createMockCampaign({
+      _id: 'campaign-1',
+      slug: 'test-campaign',
+      campaignType: 'fixed',
+      pricingConfig: { fixedPrice: 50 },
+    });
+
+    renderWithProviders(
+      <SponsorCheckoutModal
+        visible={true}
+        onCancel={mockOnCancel}
+        onSubmit={mockOnSubmit}
+        positionId={undefined}
+        amount={50}
+        currency="NZD"
+        campaignId="campaign-1"
+        campaignSlug="test-campaign"
+        campaign={fixedCampaign}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Become a Sponsor')).toBeInTheDocument();
+    });
+
+    // Should NOT show the amount input field
+    expect(screen.queryByLabelText(/Donation Amount/i)).not.toBeInTheDocument();
+  });
+
+  it('should display fixed amount for fixed pricing campaign without position', async () => {
+    const fixedCampaign = createMockCampaign({
+      _id: 'campaign-1',
+      slug: 'test-campaign',
+      campaignType: 'fixed',
+      pricingConfig: { fixedPrice: 50 },
+    });
+
+    renderWithProviders(
+      <SponsorCheckoutModal
+        visible={true}
+        onCancel={mockOnCancel}
+        onSubmit={mockOnSubmit}
+        positionId={undefined}
+        amount={50}
+        currency="NZD"
+        campaignId="campaign-1"
+        campaignSlug="test-campaign"
+        campaign={fixedCampaign}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Become a Sponsor')).toBeInTheDocument();
+    });
+
+    // Should display the fixed sponsorship amount
+    expect(screen.getByText(/Sponsorship Amount:/i)).toBeInTheDocument();
+    expect(screen.getByText(/NZD \$50/i)).toBeInTheDocument();
+  });
+
+  it('should show amount input field for pay-what-you-want campaign without position', async () => {
+    const pwywCampaign = createMockCampaign({
+      _id: 'campaign-1',
+      slug: 'test-campaign',
+      campaignType: 'pay-what-you-want',
+      pricingConfig: { minimumAmount: 10 },
+    });
+
+    renderWithProviders(
+      <SponsorCheckoutModal
+        visible={true}
+        onCancel={mockOnCancel}
+        onSubmit={mockOnSubmit}
+        positionId={undefined}
+        amount={10}
+        currency="NZD"
+        campaignId="campaign-1"
+        campaignSlug="test-campaign"
+        campaign={pwywCampaign}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Become a Sponsor')).toBeInTheDocument();
+    });
+
+    // Should show the amount input field for pay-what-you-want
+    expect(screen.getByLabelText(/Donation Amount/i)).toBeInTheDocument();
+  });
+
+  it('should show amount input field for positional campaign without position (general donation)', async () => {
+    const positionalCampaign = createMockCampaign({
+      _id: 'campaign-1',
+      slug: 'test-campaign',
+      campaignType: 'positional',
+      pricingConfig: { basePrice: 20, pricePerPosition: 5 },
+    });
+
+    renderWithProviders(
+      <SponsorCheckoutModal
+        visible={true}
+        onCancel={mockOnCancel}
+        onSubmit={mockOnSubmit}
+        positionId={undefined}
+        amount={0}
+        currency="NZD"
+        campaignId="campaign-1"
+        campaignSlug="test-campaign"
+        campaign={positionalCampaign}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Become a Sponsor')).toBeInTheDocument();
+    });
+
+    // Should show the amount input field for general donation
+    expect(screen.getByLabelText(/Donation Amount/i)).toBeInTheDocument();
+  });
 });
 

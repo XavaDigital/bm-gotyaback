@@ -29,6 +29,24 @@ const GridLayoutRenderer: React.FC<GridLayoutRendererProps> = ({
     }
   });
 
+  // Helper function to determine if a position should show "Reserved"
+  // Reserved should only show when:
+  // 1. The sponsor display type is "logo-only" or "both" (requires logo approval)
+  // 2. AND there's a sponsor with a logo pending approval
+  const shouldShowReserved = (sponsor: SponsorEntry | undefined): boolean => {
+    if (!sponsor) return false;
+
+    // For text-only campaigns, never show reserved (text sponsors don't need approval)
+    if (sponsorDisplayType === "text-only") return false;
+
+    // For logo-only or both, show reserved if sponsor has logo pending approval
+    if (sponsorDisplayType === "logo-only" || sponsorDisplayType === "both") {
+      return sponsor.sponsorType === "logo" && sponsor.logoApprovalStatus !== "approved";
+    }
+
+    return false;
+  };
+
   return (
     <div
       style={{
@@ -96,83 +114,82 @@ const GridLayoutRenderer: React.FC<GridLayoutRendererProps> = ({
 
               {sponsor ? (
                 <>
-                  {/* Show logo with name if sponsor has logo, displayName, and display type is 'both' */}
-                  {sponsor.sponsorType === "logo" &&
-                  sponsor.logoUrl &&
-                  sponsor.logoApprovalStatus === "approved" &&
-                  sponsorDisplayType === "both" &&
-                  sponsor.displayName ? (
-                    <LogoWithNameSponsor
-                      name={sponsor.name}
-                      displayName={sponsor.displayName}
-                      logoUrl={sponsor.logoUrl}
-                      message={sponsor.message}
-                      isPending={sponsor.paymentStatus === "pending"}
-                    />
-                  ) : /* Show logo only if sponsor has logo and display type is logo-only or both (without displayName) */
-                  sponsor.sponsorType === "logo" &&
-                    sponsor.logoUrl &&
-                    sponsor.logoApprovalStatus === "approved" &&
-                    (sponsorDisplayType === "logo-only" ||
-                      sponsorDisplayType === "both") ? (
-                    <LogoSponsor
-                      name={sponsor.name}
-                      logoUrl={sponsor.logoUrl}
-                      logoWidth={sponsor.calculatedLogoWidth || 100}
-                      message={
-                        sponsorDisplayType === "logo-only"
-                          ? sponsor.message
-                          : undefined
-                      }
-                      isPending={sponsor.paymentStatus === "pending"}
-                    />
-                  ) : null}
-
-                  {/* Show text if display type allows it */}
-                  {(sponsorDisplayType === "text-only" ||
-                    (sponsorDisplayType === "both" &&
-                      sponsor.sponsorType === "text") ||
-                    (sponsorDisplayType === "logo-only" &&
-                      sponsor.sponsorType === "text")) && (
-                    <TextSponsor
-                      name={sponsor.name}
-                      fontSize={sponsor.calculatedFontSize || 16}
-                      message={sponsor.message}
-                      isPending={sponsor.paymentStatus === "pending"}
-                    />
-                  )}
-
-                  {/* Pending Logo Placeholder */}
-                  {sponsor.sponsorType === "logo" &&
-                    sponsor.logoApprovalStatus !== "approved" && (
+                  {/* Check if we should show "Reserved" for logo approval pending */}
+                  {shouldShowReserved(sponsor) ? (
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        height: "100%",
+                        width: "100%",
+                        color: "rgba(255, 255, 255, 0.5)",
+                        textAlign: "center",
+                      }}
+                    >
+                      <div style={{ fontSize: "16px", marginBottom: "4px" }}>
+                        🔒
+                      </div>
                       <div
                         style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          height: "100%",
-                          width: "100%",
-                          color: "rgba(255, 255, 255, 0.5)",
-                          textAlign: "center",
+                          fontSize: "clamp(10px, 2vw, 12px)",
+                          fontStyle: "italic",
+                          lineHeight: "1.2",
                         }}
                       >
-                        <div style={{ fontSize: "20px", marginBottom: "4px" }}>
-                          ⏳
-                        </div>
-                        <div
-                          style={{
-                            fontSize: "clamp(10px, 2vw, 12px)",
-                            fontStyle: "italic",
-                            lineHeight: "1.2",
-                          }}
-                        >
-                          Pending
-                          <br />
-                          Approval
-                        </div>
+                        Reserved
                       </div>
-                    )}
+                    </div>
+                  ) : (
+                    <>
+                      {/* Show logo with name if sponsor has logo, displayName, and display type is 'both' */}
+                      {sponsor.sponsorType === "logo" &&
+                      sponsor.logoUrl &&
+                      sponsor.logoApprovalStatus === "approved" &&
+                      sponsorDisplayType === "both" &&
+                      sponsor.displayName ? (
+                        <LogoWithNameSponsor
+                          name={sponsor.name}
+                          displayName={sponsor.displayName}
+                          logoUrl={sponsor.logoUrl}
+                          message={sponsor.message}
+                          isPending={sponsor.paymentStatus === "pending"}
+                        />
+                      ) : /* Show logo only if sponsor has logo and display type is logo-only or both (without displayName) */
+                      sponsor.sponsorType === "logo" &&
+                        sponsor.logoUrl &&
+                        sponsor.logoApprovalStatus === "approved" &&
+                        (sponsorDisplayType === "logo-only" ||
+                          sponsorDisplayType === "both") ? (
+                        <LogoSponsor
+                          name={sponsor.name}
+                          logoUrl={sponsor.logoUrl}
+                          logoWidth={sponsor.calculatedLogoWidth || 100}
+                          message={
+                            sponsorDisplayType === "logo-only"
+                              ? sponsor.message
+                              : undefined
+                          }
+                          isPending={sponsor.paymentStatus === "pending"}
+                        />
+                      ) : null}
+
+                      {/* Show text if display type allows it */}
+                      {(sponsorDisplayType === "text-only" ||
+                        (sponsorDisplayType === "both" &&
+                          sponsor.sponsorType === "text") ||
+                        (sponsorDisplayType === "logo-only" &&
+                          sponsor.sponsorType === "text")) && (
+                        <TextSponsor
+                          name={sponsor.name}
+                          fontSize={sponsor.calculatedFontSize || 16}
+                          message={sponsor.message}
+                          isPending={sponsor.paymentStatus === "pending"}
+                        />
+                      )}
+                    </>
+                  )}
                 </>
               ) : position.isTaken ? (
                 <div

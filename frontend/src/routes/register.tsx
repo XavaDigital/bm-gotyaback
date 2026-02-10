@@ -77,7 +77,7 @@ function RegisterPage() {
     try {
       await authService.register(values)
       message.success('Registration successful!')
-      navigate({ to: '/' })
+      navigate({ to: '/dashboard' })
     } catch (error: any) {
       const msg = error.response?.data?.message || 'Registration failed'
       message.error(msg)

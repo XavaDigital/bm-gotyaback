@@ -76,7 +76,7 @@ function LoginPage() {
     try {
       await authService.login(values)
       message.success('Login successful!')
-      navigate({ to: '/' })
+      navigate({ to: '/dashboard' })
     } catch (error: any) {
       const msg = error.response?.data?.message || 'Login failed'
       message.error(msg)

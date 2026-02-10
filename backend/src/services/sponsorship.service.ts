@@ -262,7 +262,7 @@ export const getPublicSponsors = async (campaignId: string) => {
     ],
   }).select(
     // Explicitly exclude sensitive fields: email, phone, paymentMethod
-    "name message positionId createdAt sponsorType logoUrl displayName logoApprovalStatus displaySize calculatedFontSize calculatedLogoWidth amount",
+    "name message positionId createdAt sponsorType logoUrl displayName logoApprovalStatus displaySize calculatedFontSize calculatedLogoWidth amount paymentStatus",
   );
 
   return sponsors;

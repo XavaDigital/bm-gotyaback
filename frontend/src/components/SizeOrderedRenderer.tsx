@@ -22,9 +22,13 @@ const SizeOrderedRenderer: React.FC<SizeOrderedRendererProps> = ({
   // Filter and sort sponsors - memoized to prevent unnecessary re-renders
   const sortedSponsors = useMemo(() => {
     // Filter sponsors with approved logos (if logo type)
+    // Only filter out unapproved logos when we're actually displaying logos
     const approvedSponsors = sponsors.filter((s) => {
-      if (s.sponsorType === "logo" && s.logoApprovalStatus !== "approved")
-        return false;
+      // If we're displaying logos (logo-only or both), filter out unapproved logos
+      if (sponsorDisplayType !== "text-only") {
+        if (s.sponsorType === "logo" && s.logoApprovalStatus !== "approved")
+          return false;
+      }
       return true;
     });
 
@@ -49,7 +53,7 @@ const SizeOrderedRenderer: React.FC<SizeOrderedRendererProps> = ({
         (a, b) => sizeOrder[b.displaySize] - sizeOrder[a.displaySize]
       );
     }
-  }, [sponsors, campaignType]);
+  }, [sponsors, campaignType, sponsorDisplayType]);
 
   if (sortedSponsors.length === 0) {
     return (

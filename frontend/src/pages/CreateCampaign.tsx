@@ -11,6 +11,9 @@ const CreateCampaign: React.FC = () => {
     const handleSubmit = async (campaignData: any, layoutData: any) => {
         try {
             setLoading(true);
+            console.log("=== CreateCampaign handleSubmit ===");
+            console.log("campaignData:", campaignData);
+            console.log("layoutData:", layoutData);
             const campaign = await campaignService.createCampaign(campaignData as any);
 
             // Create layout based on campaign type and layout style
@@ -61,6 +64,10 @@ const CreateCampaign: React.FC = () => {
             message.success('Campaign created successfully!');
             navigate({ to: '/campaigns/$id', params: { id: campaign._id } });
         } catch (error: any) {
+            console.error("=== CreateCampaign Error ===");
+            console.error("Full error:", error);
+            console.error("Error response:", error.response);
+            console.error("Error response data:", error.response?.data);
             message.error(error.response?.data?.message || 'Failed to create campaign');
         } finally {
             setLoading(false);

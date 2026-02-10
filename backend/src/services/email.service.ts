@@ -1,12 +1,11 @@
 /**
- * Email Service with Mailgun Integration
+ * Email Service with SMTP Integration
  *
- * For development: Logs emails to console (unless MAILGUN_API_KEY is set)
- * For production: Uses Mailgun to send actual emails
+ * For development: Logs emails to console (unless SMTP is configured)
+ * For production: Uses SMTP to send actual emails
  */
 
-import Mailgun from "mailgun.js";
-import formData from "form-data";
+import nodemailer from "nodemailer";
 
 interface EmailOptions {
   to: string;
@@ -15,33 +14,33 @@ interface EmailOptions {
   html?: string;
 }
 
-// Initialize Mailgun client
-let mailgunClient: any = null;
+// Initialize SMTP transporter
+let transporter: nodemailer.Transporter | null = null;
 
-const getMailgunClient = () => {
-  if (
-    !mailgunClient &&
-    process.env.MAILGUN_API_KEY &&
-    process.env.MAILGUN_DOMAIN
-  ) {
-    const mailgun = new Mailgun(formData);
-    mailgunClient = mailgun.client({
-      username: "api",
-      key: process.env.MAILGUN_API_KEY,
+const getTransporter = () => {
+  if (!transporter && process.env.SMTP_HOST && process.env.SMTP_PORT) {
+    transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT),
+      secure: process.env.SMTP_SECURE === "true", // true for 465, false for other ports
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
     });
   }
-  return mailgunClient;
+  return transporter;
 };
 
 export const sendEmail = async (options: EmailOptions): Promise<void> => {
   const { to, subject, text, html } = options;
 
-  const client = getMailgunClient();
+  const transport = getTransporter();
 
-  // If Mailgun is not configured, log to console (development mode)
-  if (!client) {
+  // If SMTP is not configured, log to console (development mode)
+  if (!transport) {
     console.log(
-      "\n========== EMAIL (Console Mode - Mailgun Not Configured) =========="
+      "\n========== EMAIL (Console Mode - SMTP Not Configured) =========="
     );
     console.log(`To: ${to}`);
     console.log(`Subject: ${subject}`);
@@ -53,16 +52,19 @@ export const sendEmail = async (options: EmailOptions): Promise<void> => {
       "===================================================================\n"
     );
     console.log(
-      "💡 To send real emails, configure MAILGUN_API_KEY and MAILGUN_DOMAIN in .env"
+      "💡 To send real emails, configure SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASS in .env"
     );
     return;
   }
 
-  // Send email via Mailgun
+  // Send email via SMTP
   try {
-    const emailFrom = process.env.EMAIL_FROM || "noreply@sandbox.mailgun.org";
+    const emailFrom =
+      process.env.SMTP_FROM_NAME && process.env.SMTP_USER
+        ? `${process.env.SMTP_FROM_NAME} <${process.env.SMTP_USER}>`
+        : process.env.SMTP_USER || "noreply@example.com";
 
-    const messageData: any = {
+    const mailOptions: nodemailer.SendMailOptions = {
       from: emailFrom,
       to,
       subject,
@@ -70,22 +72,19 @@ export const sendEmail = async (options: EmailOptions): Promise<void> => {
     };
 
     if (html) {
-      messageData.html = html;
+      mailOptions.html = html;
     }
 
-    const result = await client.messages.create(
-      process.env.MAILGUN_DOMAIN!,
-      messageData
-    );
+    const result = await transport.sendMail(mailOptions);
 
     console.log(`✅ Email sent successfully to ${to}`);
-    console.log(`   Message ID: ${result.id}`);
+    console.log(`   Message ID: ${result.messageId}`);
   } catch (error: any) {
-    console.error("❌ Failed to send email via Mailgun:", error.message);
+    console.error("❌ Failed to send email via SMTP:", error.message);
 
     // In development, log the email content as fallback
     if (process.env.NODE_ENV !== "production") {
-      console.log("\n========== EMAIL (Fallback - Mailgun Failed) ==========");
+      console.log("\n========== EMAIL (Fallback - SMTP Failed) ==========");
       console.log(`To: ${to}`);
       console.log(`Subject: ${subject}`);
       console.log(`Text: ${text}`);

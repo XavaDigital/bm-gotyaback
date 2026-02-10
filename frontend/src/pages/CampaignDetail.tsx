@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -104,11 +104,17 @@ const CampaignDetail: React.FC = () => {
       return { campaign, sponsors, layout };
     },
     placeholderData: loaderData,
-    staleTime: 0, // Always refetch on mount
+    staleTime: 30000, // Consider data fresh for 30 seconds to avoid rate limiting
+    refetchOnWindowFocus: false, // Prevent refetch on window focus to reduce API calls
   });
 
   const campaign = campaignData?.campaign || null;
-  const sponsors = campaignData?.sponsors || [];
+  // Fix: sponsors data is nested in { sponsors: [...], pagination: {...} }
+  const sponsors = Array.isArray(campaignData?.sponsors?.sponsors)
+    ? campaignData.sponsors.sponsors
+    : Array.isArray(campaignData?.sponsors)
+    ? campaignData.sponsors
+    : [];
   const layout = campaignData?.layout || null;
 
   const [closingCampaign, setClosingCampaign] = useState(false);
@@ -257,6 +263,15 @@ const CampaignDetail: React.FC = () => {
 
     message.success("Sponsors list exported successfully");
   };
+
+  // Filter sponsors to only show paid ones in the shirt layout
+  // (The full sponsor list is still shown in the table for organizer management)
+  // Use useMemo to prevent unnecessary recalculations
+  // IMPORTANT: This must be before any early returns to comply with Rules of Hooks
+  const paidSponsors = useMemo(
+    () => sponsors.filter((s) => s.paymentStatus === "paid"),
+    [sponsors]
+  );
 
   const sponsorColumns = [
     {
@@ -976,7 +991,7 @@ const CampaignDetail: React.FC = () => {
               </div>
               <GridLayoutRenderer
                 layout={layout}
-                sponsors={sponsors}
+                sponsors={paidSponsors}
                 sponsorDisplayType={campaign.sponsorDisplayType}
               />
             </>
@@ -1045,9 +1060,9 @@ const CampaignDetail: React.FC = () => {
                     : `${formatLayoutStyle(campaign.layoutStyle)} layout`}
                 </span>
               </div>
-              {sponsors.length > 0 ? (
+              {paidSponsors.length > 0 ? (
                 <FlexibleLayoutRenderer
-                  sponsors={sponsors}
+                  sponsors={paidSponsors}
                   layoutStyle={campaign.layoutStyle}
                   sponsorDisplayType={campaign.sponsorDisplayType}
                   campaignType={campaign.campaignType}

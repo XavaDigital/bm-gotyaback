@@ -24,9 +24,13 @@ const AmountOrderedRenderer: React.FC<AmountOrderedRendererProps> = ({
   // Group sponsors into price tiers - memoized to prevent unnecessary re-renders
   const priceTiers = useMemo(() => {
     // Filter sponsors with approved logos (if logo type)
+    // Only filter out unapproved logos when we're actually displaying logos
     const approvedSponsors = sponsors.filter((s) => {
-      if (s.sponsorType === "logo" && s.logoApprovalStatus !== "approved")
-        return false;
+      // If we're displaying logos (logo-only or both), filter out unapproved logos
+      if (sponsorDisplayType !== "text-only") {
+        if (s.sponsorType === "logo" && s.logoApprovalStatus !== "approved")
+          return false;
+      }
       return true;
     });
 
@@ -107,7 +111,7 @@ const AmountOrderedRenderer: React.FC<AmountOrderedRendererProps> = ({
       const order = { top: 0, center: 1, bottom: 2 };
       return order[a.position] - order[b.position];
     });
-  }, [sponsors]);
+  }, [sponsors, sponsorDisplayType]);
 
   if (priceTiers.length === 0) {
     return (

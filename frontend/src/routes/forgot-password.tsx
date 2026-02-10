@@ -18,6 +18,18 @@ function ForgotPasswordPage() {
   const navigate = useNavigate()
 
   useEffect(() => {
+    // Add placeholder styling
+    const style = document.createElement('style')
+    style.id = 'forgot-password-placeholder-styles'
+    style.textContent = `
+      .forgot-password-input input::placeholder,
+      .forgot-password-input .ant-input::placeholder {
+        color: #999999 !important;
+        opacity: 1 !important;
+      }
+    `
+    document.head.appendChild(style)
+
     // Override body styles for full-width dark page
     const body = document.body
     const html = document.documentElement
@@ -37,6 +49,12 @@ function ForgotPasswordPage() {
     html.style.width = '100%'
 
     return () => {
+      // Remove placeholder styles
+      const styleElement = document.getElementById('forgot-password-placeholder-styles')
+      if (styleElement) {
+        styleElement.remove()
+      }
+
       body.style.display = originalStyles.display
       ;(body.style as any).placeItems = originalStyles.placeItems
       body.style.margin = originalStyles.margin
@@ -157,8 +175,12 @@ function ForgotPasswordPage() {
           {emailSent ? (
             <div>
               <Alert
-                message="Email Sent!"
-                description="If an account exists with that email, you will receive password reset instructions shortly. Please check your inbox and spam folder."
+                message={<span style={{ color: '#ffffff' }}>Email Sent!</span>}
+                description={
+                  <span style={{ color: '#cccccc' }}>
+                    If an account exists with that email, you will receive password reset instructions shortly. Please check your inbox and spam folder.
+                  </span>
+                }
                 type="success"
                 showIcon
                 style={{
@@ -198,6 +220,7 @@ function ForgotPasswordPage() {
                 <Input
                   prefix={<MailOutlined style={{ color: '#999999' }} />}
                   placeholder="Email Address"
+                  className="forgot-password-input"
                   style={{
                     background: '#1f1f1f',
                     border: '1px solid #3a3a3a',

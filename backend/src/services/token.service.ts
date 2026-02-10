@@ -7,7 +7,7 @@ import { RefreshToken } from "../models/RefreshToken";
  * Access tokens are short-lived for security
  * Refresh tokens are longer-lived for user convenience
  */
-const ACCESS_TOKEN_EXPIRY = "15m"; // 15 minutes
+const ACCESS_TOKEN_EXPIRY = "1d"; // 1 day (24 hours)
 const REFRESH_TOKEN_EXPIRY_DAYS = 7; // 7 days (standard)
 const REFRESH_TOKEN_EXPIRY_DAYS_REMEMBER = 30; // 30 days (remember me)
 

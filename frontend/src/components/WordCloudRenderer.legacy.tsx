@@ -32,13 +32,17 @@ const WordCloudRendererLegacy: React.FC<WordCloudRendererProps> = ({
   >([]);
 
   // Filter sponsors with approved logos (if logo type) - memoized to prevent infinite loops
+  // Only filter out unapproved logos when we're actually displaying logos
   const approvedSponsors = useMemo(() => {
     return sponsors.filter((s) => {
-      if (s.sponsorType === "logo" && s.logoApprovalStatus !== "approved")
-        return false;
+      // If we're displaying logos (logo-only or both), filter out unapproved logos
+      if (sponsorDisplayType !== "text-only") {
+        if (s.sponsorType === "logo" && s.logoApprovalStatus !== "approved")
+          return false;
+      }
       return true;
     });
-  }, [sponsors]);
+  }, [sponsors, sponsorDisplayType]);
 
   useEffect(() => {
     if (approvedSponsors.length === 0 || !containerRef.current) return;

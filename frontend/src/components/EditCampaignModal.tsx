@@ -45,7 +45,6 @@ const EditCampaignModal: React.FC<EditCampaignModalProps> = ({
       try {
         const sponsors = await sponsorshipService.getSponsors(campaign._id);
         setHasSponsors(sponsors.length > 0);
-        console.log(`Campaign has ${sponsors.length} sponsors`);
       } catch (error) {
         console.error("Failed to check sponsors", error);
         setHasSponsors(false); // Default to false if check fails
@@ -72,11 +71,9 @@ const EditCampaignModal: React.FC<EditCampaignModalProps> = ({
 
         if (campaign.campaignType === "fixed") {
           pricingValues.fixedPrice = campaign.pricingConfig?.fixedPrice;
-          console.log("Loaded fixed price from pricingConfig:", pricingValues.fixedPrice);
         } else if (campaign.campaignType === "positional") {
           pricingValues.basePrice = campaign.pricingConfig?.basePrice;
           pricingValues.pricePerPosition = campaign.pricingConfig?.pricePerPosition;
-          console.log("Loaded positional pricing from pricingConfig:", pricingValues);
         }
 
         formValues.pricing = pricingValues;
@@ -84,7 +81,6 @@ const EditCampaignModal: React.FC<EditCampaignModalProps> = ({
         // Load layout configuration for display
         try {
           const layout = await campaignService.getLayout(campaign._id);
-          console.log("Loaded layout:", layout);
 
           if (layout) {
             formValues.layoutConfig = {
@@ -101,10 +97,6 @@ const EditCampaignModal: React.FC<EditCampaignModalProps> = ({
           formValues.layoutConfig = {};
         }
       }
-
-      console.log("Setting form values:", formValues);
-      console.log("formValues.pricing:", formValues.pricing);
-      console.log("formValues.layoutConfig:", formValues.layoutConfig);
 
       // Set campaignData for wizard
       const newCampaignData = {
@@ -126,7 +118,6 @@ const EditCampaignModal: React.FC<EditCampaignModalProps> = ({
         layoutConfig: formValues.layoutConfig,
       };
 
-      console.log("Setting campaignData to:", newCampaignData);
       setCampaignData(newCampaignData);
     } catch (error) {
       console.error("Failed to initialize form", error);
@@ -139,10 +130,6 @@ const EditCampaignModal: React.FC<EditCampaignModalProps> = ({
   const handleSubmit = async (submittedCampaignData: any, layoutData: any) => {
     try {
       setLoading(true);
-
-      console.log("Submitted campaign data:", submittedCampaignData);
-      console.log("Has sponsors:", hasSponsors);
-      console.log("Campaign type:", campaign?.campaignType);
 
       // 1. Update basic fields
       const updateData: UpdateCampaignRequest = {
@@ -175,25 +162,22 @@ const EditCampaignModal: React.FC<EditCampaignModalProps> = ({
           !hasSponsors &&
           submittedCampaignData.pricing
         ) {
-          console.log(
-            "Attempting to update pricing:",
-            submittedCampaignData.pricing,
-          );
-          console.log("Layout config:", submittedCampaignData.layoutConfig);
-
           // Check if we need to create/recreate the layout
           const layout = await campaignService.getLayout(campaign._id);
+
+          // Check if this is a word-cloud layout (uses flexible layout, no grid needed)
+          const isWordCloudLayout = campaign.layoutStyle === "word-cloud";
+
+          // Determine if layout needs to be created based on layout style
           const needsLayoutCreation = !layout ||
-                                      layout.layoutType !== 'grid' ||
-                                      !layout.placements ||
-                                      layout.placements.length === 0;
+                                      (isWordCloudLayout && layout.layoutType !== 'flexible') ||
+                                      (!isWordCloudLayout && (layout.layoutType !== 'grid' || !layout.placements || layout.placements.length === 0));
 
           if (needsLayoutCreation) {
-            console.log("Layout needs to be created/recreated with placements");
-
-            // Validate that we have the necessary layout configuration
-            if (!submittedCampaignData.layoutConfig?.totalPositions ||
-                !submittedCampaignData.layoutConfig?.columns) {
+            // Validate that we have the necessary layout configuration for grid layouts
+            if (!isWordCloudLayout &&
+                (!submittedCampaignData.layoutConfig?.totalPositions ||
+                !submittedCampaignData.layoutConfig?.columns)) {
               message.error("Please provide Total Positions and Columns to create the layout");
               setLoading(false);
               return;
@@ -229,29 +213,31 @@ const EditCampaignModal: React.FC<EditCampaignModalProps> = ({
             }
 
             // Create the layout with placements
-            console.log("Creating layout with config:", {
-              totalPositions: submittedCampaignData.layoutConfig.totalPositions,
-              columns: submittedCampaignData.layoutConfig.columns,
-              arrangement: submittedCampaignData.layoutConfig.arrangement || 'horizontal',
-              campaignType: campaign.campaignType,
-              pricingConfig,
-            });
-
-            await campaignService.createLayout(campaign._id, {
-              totalPositions: submittedCampaignData.layoutConfig.totalPositions,
-              columns: submittedCampaignData.layoutConfig.columns,
-              arrangement: submittedCampaignData.layoutConfig.arrangement || 'horizontal',
-              campaignType: campaign.campaignType,
-              pricingConfig,
-              layoutStyle: campaign.layoutStyle,
-            });
+            if (isWordCloudLayout) {
+              // For word-cloud layouts, create a flexible layout
+              await campaignService.createLayout(campaign._id, {
+                maxSponsors: submittedCampaignData.layoutConfig?.totalPositions || 0, // 0 = unlimited
+                campaignType: campaign.campaignType,
+                pricingConfig,
+                layoutStyle: campaign.layoutStyle,
+              });
+            } else {
+              // For grid layouts (size-ordered, etc.)
+              await campaignService.createLayout(campaign._id, {
+                totalPositions: submittedCampaignData.layoutConfig.totalPositions,
+                columns: submittedCampaignData.layoutConfig.columns,
+                arrangement: submittedCampaignData.layoutConfig.arrangement || 'horizontal',
+                campaignType: campaign.campaignType,
+                pricingConfig,
+                layoutStyle: campaign.layoutStyle,
+              });
+            }
           } else {
             // Layout exists with placements, just update pricing
             const pricingData: any = {};
 
             if (campaign.campaignType === "fixed") {
               const fixedPrice = Number(submittedCampaignData.pricing.fixedPrice);
-              console.log("Fixed price value:", fixedPrice);
 
               if (isNaN(fixedPrice) || fixedPrice <= 0) {
                 message.error("Please enter a valid fixed price");
@@ -264,11 +250,6 @@ const EditCampaignModal: React.FC<EditCampaignModalProps> = ({
               const pricePerPosition = Number(
                 submittedCampaignData.pricing.pricePerPosition,
               );
-
-              console.log("Positional pricing values:", {
-                basePrice,
-                pricePerPosition,
-              });
 
               if (isNaN(basePrice) || basePrice < 0) {
                 message.error("Please enter a valid base price");
@@ -285,11 +266,8 @@ const EditCampaignModal: React.FC<EditCampaignModalProps> = ({
               pricingData.pricePerPosition = pricePerPosition;
             }
 
-            console.log("Sending pricing update:", pricingData);
             await campaignService.updatePricing(campaign._id, pricingData);
           }
-        } else {
-          console.log("Skipping pricing update - conditions not met");
         }
 
         message.success("Campaign updated successfully");
