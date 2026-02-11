@@ -100,10 +100,10 @@ const getPricingConfig = (campaignType, layoutStyle) => {
                 minimumAmount: 10,
                 suggestedAmounts: [20, 50, 100],
                 sizeTiers: [
-                    { size: 'small', minAmount: 10, maxAmount: 49, textFontSize: 12, logoWidth: 50 },
-                    { size: 'medium', minAmount: 50, maxAmount: 99, textFontSize: 16, logoWidth: 75 },
-                    { size: 'large', minAmount: 100, maxAmount: 199, textFontSize: 20, logoWidth: 100 },
-                    { size: 'xlarge', minAmount: 200, maxAmount: null, textFontSize: 24, logoWidth: 150 }
+                    { size: 'small', minAmount: 10, maxAmount: 49, textFontSize: 12, logoWidth: 80 },
+                    { size: 'medium', minAmount: 50, maxAmount: 99, textFontSize: 16, logoWidth: 110 },
+                    { size: 'large', minAmount: 100, maxAmount: 199, textFontSize: 20, logoWidth: 140 },
+                    { size: 'xlarge', minAmount: 200, maxAmount: null, textFontSize: 24, logoWidth: 180 }
                 ]
             };
         default:
@@ -202,8 +202,29 @@ const createCampaign = async (userId, combination, sponsorDisplayType) => {
 const createLayout = async (campaign) => {
     const { campaignType, layoutStyle, _id: campaignId, pricingConfig } = campaign;
 
-    if (campaignType === 'pay-what-you-want') {
-        // Create flexible layout for pay-what-you-want
+    // Check if this is PWYW + amount-ordered (grid layout)
+    if (campaignType === 'pay-what-you-want' && layoutStyle === 'amount-ordered') {
+        // Create grid layout for PWYW + amount-ordered (portrait orientation)
+        // Positions are assigned dynamically based on amount during rendering
+        const maxSponsors = 20; // Maximum number of sponsors
+        const columns = 3; // Portrait orientation for garments
+        const rows = Math.ceil(maxSponsors / columns);
+
+        const layout = await ShirtLayout.create({
+            campaignId,
+            layoutType: 'grid',
+            rows,
+            columns,
+            maxSponsors,
+            totalPositions: maxSponsors,
+            arrangement: 'horizontal',
+            placements: [] // No fixed placements - positions assigned dynamically by amount
+        });
+
+        console.log(`  ✓ Created grid layout (${maxSponsors} max sponsors, ${columns} columns) for PWYW + amount-ordered`);
+        return layout;
+    } else if (campaignType === 'pay-what-you-want') {
+        // Create flexible layout for other PWYW layouts (word-cloud)
         const layout = await ShirtLayout.create({
             campaignId,
             layoutType: 'flexible',

@@ -65,6 +65,12 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         listitem: "editor-listitem",
       },
       link: "editor-link",
+      text: {
+        bold: "editor-text-bold",
+        italic: "editor-text-italic",
+        underline: "editor-text-underline",
+        strikethrough: "editor-text-strikethrough",
+      },
     },
     onError: (error: Error) => {
       console.error(error);

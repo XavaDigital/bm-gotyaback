@@ -19,11 +19,6 @@ export const createCampaign = async (req: Request, res: Response) => {
       data.pricingConfig = JSON.parse(data.pricingConfig);
     }
 
-    console.log("=== createCampaign Controller ===");
-    console.log("Request body:", req.body);
-    console.log("Parsed data:", data);
-    console.log("File present:", !!req.file);
-
     // Handle header image upload if present
     let headerImageUrl: string | undefined;
     const file = req.file;
@@ -32,7 +27,7 @@ export const createCampaign = async (req: Request, res: Response) => {
       // Create campaign first to get ID for folder structure
       const tempCampaign: any = await campaignService.createCampaign(
         userId.toString(),
-        data
+        data,
       );
 
       // Upload header image to S3
@@ -40,21 +35,21 @@ export const createCampaign = async (req: Request, res: Response) => {
         file.buffer,
         file.originalname,
         file.mimetype,
-        tempCampaign._id.toString()
+        tempCampaign._id.toString(),
       );
 
       // Update campaign with header image URL
       const campaign = await campaignService.updateCampaign(
         tempCampaign._id.toString(),
         userId.toString(),
-        { headerImageUrl }
+        { headerImageUrl },
       );
 
       res.status(201).json(campaign);
     } else {
       const campaign = await campaignService.createCampaign(
         userId.toString(),
-        data
+        data,
       );
       res.status(201).json(campaign);
     }
@@ -110,7 +105,7 @@ export const updateCampaign = async (req: Request, res: Response) => {
         file.buffer,
         file.originalname,
         file.mimetype,
-        req.params.id
+        req.params.id,
       );
 
       // Add header image URL to update data
@@ -120,7 +115,7 @@ export const updateCampaign = async (req: Request, res: Response) => {
     const campaign = await campaignService.updateCampaign(
       req.params.id,
       userId.toString(),
-      data
+      data,
     );
     res.json(campaign);
   } catch (error) {
@@ -141,7 +136,7 @@ export const updatePricing = async (req: Request, res: Response) => {
     await campaignService.updateCampaignPricing(
       req.params.id,
       userId.toString(),
-      req.body
+      req.body,
     );
     res.status(200).json({ message: "Pricing updated successfully" });
   } catch (error) {
@@ -161,7 +156,7 @@ export const closeCampaign = async (req: Request, res: Response) => {
 
     const campaign = await campaignService.closeCampaign(
       req.params.id,
-      userId.toString()
+      userId.toString(),
     );
     res.json(campaign);
   } catch (error) {

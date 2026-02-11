@@ -238,7 +238,7 @@ export const getDefaultSizeTiers = (): SizeTier[] => {
       minAmount: 100,
       maxAmount: null, // No upper limit
       textFontSize: 28,
-      logoWidth: 120,
+      logoWidth: 100,
     },
   ];
 };

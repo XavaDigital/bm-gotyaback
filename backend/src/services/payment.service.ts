@@ -94,13 +94,6 @@ export const createPaymentIntent = async (
     payment_method_types: ["card", "afterpay_clearpay"],
   });
 
-  console.log(
-    `Created PaymentIntent ${paymentIntent.id} with methods:`,
-    paymentIntent.payment_method_types,
-  );
-  console.log(`Currency: ${paymentIntent.currency}`);
-  console.log(`Amount: ${paymentIntent.amount}`);
-
   return {
     clientSecret: paymentIntent.client_secret,
     paymentIntentId: paymentIntent.id,
@@ -179,8 +172,6 @@ const handlePaymentSuccess = async (paymentIntent: Stripe.PaymentIntent) => {
       status: "success",
       amount: paymentIntent.amount / 100,
     });
-
-    console.log(`Payment successful for sponsorship ${sponsorship._id}`);
   } catch (error) {
     console.error("Error handling payment success:", error);
 
@@ -217,10 +208,6 @@ const handlePaymentSuccess = async (paymentIntent: Stripe.PaymentIntent) => {
 
 const handlePaymentFailure = async (paymentIntent: Stripe.PaymentIntent) => {
   const { campaignId, positionId, sponsorName } = paymentIntent.metadata;
-
-  console.log(
-    `Payment failed for campaign ${campaignId}, position ${positionId}, sponsor ${sponsorName}`,
-  );
 
   // Could implement cleanup logic here if needed
   // e.g., release reserved position if it was held

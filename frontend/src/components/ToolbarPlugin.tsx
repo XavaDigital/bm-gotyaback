@@ -13,6 +13,7 @@ import {
   $isListNode,
   ListNode,
 } from "@lexical/list";
+import { $setBlocksType } from "@lexical/selection";
 import { $getNearestNodeOfType } from "@lexical/utils";
 import { $createHeadingNode, $isHeadingNode } from "@lexical/rich-text";
 import { Button, Space, Divider } from "antd";
@@ -78,15 +79,14 @@ const ToolbarPlugin = () => {
   }, [editor, updateToolbar]);
 
   const formatHeading = (headingSize: "h1" | "h2" | "h3") => {
-    editor.update(() => {
-      const selection = $getSelection();
-      if ($isRangeSelection(selection)) {
-        const anchorNode = selection.anchor.getNode();
-        const element = anchorNode.getTopLevelElementOrThrow();
-        const headingNode = $createHeadingNode(headingSize);
-        element.replace(headingNode);
-      }
-    });
+    if (blockType !== headingSize) {
+      editor.update(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          $setBlocksType(selection, () => $createHeadingNode(headingSize));
+        }
+      });
+    }
   };
 
   return (

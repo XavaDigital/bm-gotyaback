@@ -76,6 +76,9 @@ export const generatePositions = (
             undefined,
             totalPositions,
           );
+        } else if (campaignType === "pay-what-you-want") {
+          // For PWYW, price is determined by sponsor's donation amount, not position
+          price = pricing.minimumAmount || 0;
         }
 
         positions.push({
@@ -109,6 +112,9 @@ export const generatePositions = (
             undefined,
             totalPositions,
           );
+        } else if (campaignType === "pay-what-you-want") {
+          // For PWYW, price is determined by sponsor's donation amount, not position
+          price = pricing.minimumAmount || 0;
         }
 
         positions.push({

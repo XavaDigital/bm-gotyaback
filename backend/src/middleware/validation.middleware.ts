@@ -108,8 +108,8 @@ export const validateCreateCampaign = [
     .isLength({ min: 3, max: 200 }).withMessage('Title must be between 3 and 200 characters')
     .escape(),
   body('description')
+    .optional()
     .trim()
-    .notEmpty().withMessage('Description is required')
     .isLength({ max: 5000 }).withMessage('Description must not exceed 5000 characters'),
   body('campaignType')
     .notEmpty().withMessage('Campaign type is required')

@@ -148,12 +148,14 @@ const PublicCampaign: React.FC = () => {
     campaign.layoutStyle === "amount-ordered" &&
     layout?.placements.some((p) => p.section !== undefined);
 
-  // Check if this is a word cloud layout (should show simple button, not grid)
-  // EXCEPTION: Positional campaigns with word-cloud still need grid for position selection
-  // because position number determines the price
+  // Check if this should show simple button instead of position selection grid
+  // - Word cloud layouts (except Positional which needs grid for position-based pricing)
+  // - PWYW + amount-ordered (sponsors choose amount, not position)
   const isWordCloudLayout =
-    campaign.layoutStyle === "word-cloud" &&
-    campaign.campaignType !== "positional";
+    (campaign.layoutStyle === "word-cloud" &&
+      campaign.campaignType !== "positional") ||
+    (campaign.campaignType === "pay-what-you-want" &&
+      campaign.layoutStyle === "amount-ordered");
 
   return (
     <div
@@ -278,14 +280,20 @@ const PublicCampaign: React.FC = () => {
           >
             {campaign.sponsorDisplayType === "logo-only" && (
               <Alert
-                title="Logo Sponsors Only"
-                description="This campaign accepts logo sponsors only. When you sponsor, you'll upload your logo which will be displayed on the campaign."
+                message={
+                  <span style={{ color: "#000000" }}>Logo Sponsors Only</span>
+                }
+                description={
+                  <span style={{ color: "#000000" }}>
+                    This campaign accepts logo sponsors only. When you sponsor,
+                    you'll upload your logo which will be displayed on the
+                    campaign.
+                  </span>
+                }
                 type="info"
                 showIcon
                 style={{
                   marginBottom: 16,
-                  color: "#000000",
-                  backgroundColor: "transparent",
                 }}
               />
             )}
@@ -644,9 +652,12 @@ const PublicCampaign: React.FC = () => {
                   >
                     {campaign.campaignType === "fixed"
                       ? `Join as a sponsor for $${campaign.pricingConfig?.fixedPrice || 0} ${campaign.currency}. Your name will be displayed in an artistic word cloud layout.`
-                      : campaign.campaignType === "pay-what-you-want"
-                        ? `Join as a sponsor! Choose your contribution amount. Your name will be displayed in an artistic word cloud layout.`
-                        : `Join as a sponsor! Your name will be displayed in an artistic word cloud layout based on your position.`}
+                      : campaign.campaignType === "pay-what-you-want" &&
+                          campaign.layoutStyle === "amount-ordered"
+                        ? `Join as a sponsor! Choose your contribution amount. Higher contributions will be displayed more prominently on the shirt.`
+                        : campaign.campaignType === "pay-what-you-want"
+                          ? `Join as a sponsor! Choose your contribution amount. Your name will be displayed in an artistic word cloud layout.`
+                          : `Join as a sponsor! Your name will be displayed in an artistic word cloud layout based on your position.`}
                   </p>
                   <p
                     style={{
@@ -655,8 +666,9 @@ const PublicCampaign: React.FC = () => {
                       color: "#999",
                     }}
                   >
-                    💡 All sponsors are displayed together in a creative,
-                    cloud-like arrangement.
+                    {campaign.layoutStyle === "amount-ordered"
+                      ? "💡 Sponsor names are sized based on contribution amount."
+                      : "💡 All sponsors are displayed together in a creative, cloud-like arrangement."}
                   </p>
                 </div>
                 <Button
@@ -774,11 +786,19 @@ const PublicCampaign: React.FC = () => {
           >
             {campaign.sponsorDisplayType === "logo-only" && (
               <Alert
-                message="Logo Sponsors Only"
-                description="This campaign accepts logo sponsors only. When you sponsor, you'll upload your logo which will be displayed on the campaign."
+                message={
+                  <span style={{ color: "#000000" }}>Logo Sponsors Only</span>
+                }
+                description={
+                  <span style={{ color: "#000000" }}>
+                    This campaign accepts logo sponsors only. When you sponsor,
+                    you'll upload your logo which will be displayed on the
+                    campaign.
+                  </span>
+                }
                 type="info"
                 showIcon
-                style={{ marginBottom: 16, color: "#000000" }}
+                style={{ marginBottom: 16 }}
               />
             )}
             {isClosed ? (
@@ -913,21 +933,47 @@ const PublicCampaign: React.FC = () => {
               description="No sponsors yet. Be the first!"
               image={Empty.PRESENTED_IMAGE_SIMPLE}
             />
+          ) : /* Check if this is a section-based layout (Positional + amount-ordered with sections) */
+          layout?.layoutType === "grid" &&
+            campaign.campaignType === "positional" &&
+            campaign.layoutStyle === "amount-ordered" &&
+            layout.placements.length > 0 &&
+            layout.placements[0].section ? (
+            /* Show section-based layout using FlexibleLayoutRenderer */
+            <FlexibleLayoutRenderer
+              sponsors={sponsors}
+              layoutStyle="amount-ordered"
+              sponsorDisplayType={campaign.sponsorDisplayType}
+              campaignType={campaign.campaignType}
+            />
+          ) : /* Check if this is PWYW + amount-ordered (grid layout sorted by amount) */
+          layout?.layoutType === "grid" &&
+            campaign.campaignType === "pay-what-you-want" &&
+            campaign.layoutStyle === "amount-ordered" ? (
+            /* Show grid layout sorted by amount using FlexibleLayoutRenderer -> AmountOrderedRenderer */
+            <FlexibleLayoutRenderer
+              sponsors={sponsors}
+              layoutStyle="amount-ordered"
+              sponsorDisplayType={campaign.sponsorDisplayType}
+              campaignType={campaign.campaignType}
+              layout={layout}
+            />
           ) : layout?.layoutType === "grid" &&
             campaign.layoutStyle !== "word-cloud" ? (
-            /* Use GridLayoutRenderer for grid layouts - same as campaign detail page */
+            /* Use GridLayoutRenderer for Fixed/Positional grid layouts */
             <GridLayoutRenderer
               layout={layout}
               sponsors={sponsors}
               sponsorDisplayType={campaign.sponsorDisplayType}
             />
           ) : (
-            /* Use flexible layout renderer for word-cloud, amount-ordered, size-ordered, or flexible layouts */
+            /* Use flexible layout renderer for word-cloud, size-ordered, or flexible layouts */
             <FlexibleLayoutRenderer
               sponsors={sponsors}
               layoutStyle={campaign.layoutStyle}
               sponsorDisplayType={campaign.sponsorDisplayType}
               campaignType={campaign.campaignType}
+              layout={layout}
             />
           )}
         </Card>

@@ -963,8 +963,65 @@ const CampaignDetail: React.FC = () => {
             boxSizing: "border-box",
           }}
         >
+          {/* Check if this is a section-based layout (Positional + amount-ordered with sections) */}
           {layout.layoutType === "grid" &&
-          campaign.layoutStyle === "size-ordered" ? (
+          campaign.campaignType === "positional" &&
+          campaign.layoutStyle === "amount-ordered" &&
+          layout.placements.length > 0 &&
+          layout.placements[0].section ? (
+            /* Show section-based layout using FlexibleLayoutRenderer (same as PWYW + amount-ordered) */
+            <>
+              <div
+                style={{
+                  marginBottom: 16,
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 8,
+                  alignItems: "center",
+                }}
+              >
+                <Tag color="blue">
+                  {formatCampaignType(campaign.campaignType)}
+                </Tag>
+                <span
+                  style={{
+                    color: "#666",
+                    fontSize: "clamp(12px, 2.5vw, 14px)",
+                  }}
+                >
+                  Section-based layout ({layout.placements.length} positions)
+                </span>
+              </div>
+              {paidSponsors.length > 0 ? (
+                <FlexibleLayoutRenderer
+                  sponsors={paidSponsors}
+                  layoutStyle="amount-ordered"
+                  sponsorDisplayType={campaign.sponsorDisplayType}
+                  campaignType={campaign.campaignType}
+                />
+              ) : (
+                <div
+                  style={{
+                    padding: "clamp(24px, 6vw, 40px)",
+                    background: "#f5f5f5",
+                    borderRadius: 8,
+                    textAlign: "center",
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: "clamp(14px, 3vw, 16px)",
+                      color: "#999",
+                      margin: 0,
+                    }}
+                  >
+                    No sponsors yet
+                  </p>
+                </div>
+              )}
+            </>
+          ) : layout.layoutType === "grid" &&
+            campaign.layoutStyle === "size-ordered" ? (
             /* Show grid layout with sponsors for Fixed/Positional + Size-ordered */
             <>
               <div
@@ -996,8 +1053,9 @@ const CampaignDetail: React.FC = () => {
               />
             </>
           ) : layout.layoutType === "grid" &&
-            campaign.layoutStyle !== "word-cloud" ? (
-            /* Show traditional grid for other grid layouts (empty positions) */
+            campaign.layoutStyle !== "word-cloud" &&
+            campaign.campaignType !== "pay-what-you-want" ? (
+            /* Show traditional grid for other grid layouts (empty positions) - Fixed/Positional only */
             <>
               <div
                 style={{
@@ -1066,6 +1124,7 @@ const CampaignDetail: React.FC = () => {
                   layoutStyle={campaign.layoutStyle}
                   sponsorDisplayType={campaign.sponsorDisplayType}
                   campaignType={campaign.campaignType}
+                  layout={layout}
                 />
               ) : (
                 <div

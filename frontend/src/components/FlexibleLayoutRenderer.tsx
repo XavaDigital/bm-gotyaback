@@ -1,5 +1,5 @@
 import React from "react";
-import type { SponsorEntry, LayoutStyle, CampaignType } from "~/types/campaign.types";
+import type { SponsorEntry, LayoutStyle, CampaignType, ShirtLayout } from "~/types/campaign.types";
 import SizeOrderedRenderer from "./SizeOrderedRenderer";
 import AmountOrderedRenderer from "./AmountOrderedRenderer";
 import WordCloudRenderer from "./WordCloudRenderer";
@@ -9,6 +9,7 @@ interface FlexibleLayoutRendererProps {
   layoutStyle: LayoutStyle;
   sponsorDisplayType: "text-only" | "logo-only" | "both";
   campaignType?: CampaignType; // Optional for backward compatibility
+  layout?: ShirtLayout; // Optional layout for grid-based display (PWYW + ordered)
 }
 
 const FlexibleLayoutRenderer: React.FC<FlexibleLayoutRendererProps> = ({
@@ -16,6 +17,7 @@ const FlexibleLayoutRenderer: React.FC<FlexibleLayoutRendererProps> = ({
   layoutStyle,
   sponsorDisplayType,
   campaignType,
+  layout,
 }) => {
   // Delegate to specific renderer based on layout style
   switch (layoutStyle) {
@@ -32,6 +34,8 @@ const FlexibleLayoutRenderer: React.FC<FlexibleLayoutRendererProps> = ({
         <AmountOrderedRenderer
           sponsors={sponsors}
           sponsorDisplayType={sponsorDisplayType}
+          layout={layout}
+          campaignType={campaignType}
         />
       );
     case "word-cloud":
@@ -48,6 +52,8 @@ const FlexibleLayoutRenderer: React.FC<FlexibleLayoutRendererProps> = ({
         <AmountOrderedRenderer
           sponsors={sponsors}
           sponsorDisplayType={sponsorDisplayType}
+          layout={layout}
+          campaignType={campaignType}
         />
       );
   }

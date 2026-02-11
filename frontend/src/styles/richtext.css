@@ -3,9 +3,9 @@
   border: 1px solid #d9d9d9;
   border-radius: 4px;
   background: white;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
+    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
 }
 
 .editor-inner {
@@ -46,21 +46,44 @@
   font-size: 24px;
   font-weight: 600;
   margin: 0;
+  margin-top: 12px;
   margin-bottom: 12px;
+  line-height: 1.2;
 }
 
 .editor-heading-h2 {
   font-size: 20px;
   font-weight: 600;
   margin: 0;
+  margin-top: 10px;
   margin-bottom: 10px;
+  line-height: 1.3;
 }
 
 .editor-heading-h3 {
   font-size: 16px;
   font-weight: 600;
   margin: 0;
+  margin-top: 8px;
   margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+/* Text Styles */
+.editor-text-bold {
+  font-weight: bold;
+}
+
+.editor-text-italic {
+  font-style: italic;
+}
+
+.editor-text-underline {
+  text-decoration: underline;
+}
+
+.editor-text-strikethrough {
+  text-decoration: line-through;
 }
 
 .editor-list-ol {
@@ -167,4 +190,3 @@
 .campaign-description .ql-align-justify {
   text-align: justify;
 }
-

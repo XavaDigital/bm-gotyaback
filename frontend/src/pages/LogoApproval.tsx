@@ -42,7 +42,7 @@ const LogoApproval: React.FC = () => {
 
   // Fetch pending logos
   const {
-    data: pendingLogos,
+    data: pendingLogosData,
     isLoading: logosLoading,
     error: logosError,
     refetch,
@@ -50,6 +50,13 @@ const LogoApproval: React.FC = () => {
     queryKey: ["pending-logos", id],
     queryFn: () => sponsorshipService.getPendingLogos(id!),
   });
+
+  // Handle the nested structure from backend: { pendingLogos: [], pagination: {} }
+  const pendingLogos = Array.isArray(pendingLogosData?.pendingLogos)
+    ? pendingLogosData.pendingLogos
+    : Array.isArray(pendingLogosData)
+    ? pendingLogosData
+    : [];
 
   // Approve logo mutation
   const approveMutation = useMutation({

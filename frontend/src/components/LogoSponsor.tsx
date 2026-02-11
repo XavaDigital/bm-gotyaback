@@ -21,9 +21,9 @@ const LogoSponsor: React.FC<LogoSponsorProps> = ({
       src={logoUrl}
       alt={name}
       style={{
-        maxWidth: `${logoWidth}px`,
+        maxWidth: `min(${logoWidth}px, 100%)`,
         maxHeight: `${logoWidth}px`,
-        width: "auto",
+        width: "100%",
         height: "auto",
         opacity: isPending ? 0.6 : 1,
         transition: "opacity 0.2s",

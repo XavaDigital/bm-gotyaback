@@ -252,7 +252,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onLogout }) => {
             overflow: "auto",
           }}
         >
-          <Layout style={{ minHeight: "100%" }}>
+          <Layout style={{ minHeight: "100vh" }}>
             <Header
               style={{
                 background: "#fff",
@@ -306,6 +306,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, onLogout }) => {
             <Content
               style={{
                 padding: isMobile ? "16px" : "24px",
+                paddingBottom: isMobile ? "48px" : "64px",
                 background: "#f5f5f5",
                 minHeight: "calc(100vh - 64px)",
               }}

@@ -162,13 +162,6 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
         // Edit mode - set pricing values, pricing mode, and layout config
         const editModeValues: any = {};
 
-        console.log("Step 2 - Full campaignData:", campaignData);
-        console.log("Step 2 - campaignData.pricing:", campaignData.pricing);
-        console.log(
-          "Step 2 - campaignData.layoutConfig:",
-          campaignData.layoutConfig,
-        );
-
         if (campaignData.pricing) {
           editModeValues.pricing = campaignData.pricing;
         }
@@ -177,22 +170,10 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
           editModeValues.layoutConfig = campaignData.layoutConfig;
         }
 
-        console.log("Setting edit mode configuration values:", editModeValues);
-        console.log(
-          "Current form values before setFieldsValue:",
-          form.getFieldsValue(),
-        );
-
         // Set the values
         form.setFieldsValue(editModeValues);
 
-        console.log(
-          "Current form values after setFieldsValue:",
-          form.getFieldsValue(),
-        );
-
         // Force validate to check if fields are properly set
-        console.log("Form field value for pricing.fixedPrice:", form.getFieldValue(['pricing', 'fixedPrice']));
       }
     } else if (current === 3) {
       // Step 3: Settings
@@ -207,21 +188,15 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
 
   const next = () => {
     form.validateFields().then((values) => {
-      console.log(`=== Next from step ${current} ===`);
-      console.log("Form values:", values);
-      console.log("Current campaignData before merge:", campaignData);
-
       if (current === 0) {
         setCampaignData({ ...campaignData, ...values });
       } else if (current === 2) {
         // Step 2 is Configuration - save to layoutData in create mode, campaignData in edit mode
         if (mode === "create") {
-          console.log("Saving to layoutData (create mode)");
           setLayoutData({ ...layoutData, ...values });
         } else {
-          console.log("Saving to campaignData (edit mode)");
           const newCampaignData = { ...campaignData, ...values };
-          console.log("New campaignData after merge:", newCampaignData);
+
           setCampaignData(newCampaignData);
         }
       } else {
@@ -238,13 +213,6 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
-
-      console.log("=== CampaignWizard handleSubmit ===");
-      console.log("Mode:", mode);
-      console.log("Current step:", current);
-      console.log("Form values from current step:", values);
-      console.log("Accumulated campaignData:", campaignData);
-      console.log("Accumulated layoutData:", layoutData);
 
       // Start with accumulated campaignData
       let finalCampaignData = { ...campaignData };
@@ -275,9 +243,6 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
       if (headerImageFile) {
         finalCampaignData.headerImageFile = headerImageFile;
       }
-
-      console.log("Final campaignData to submit:", finalCampaignData);
-      console.log("Final layoutData to submit:", finalLayoutData);
 
       await onSubmit(finalCampaignData, finalLayoutData);
     } catch (error) {
@@ -1968,19 +1933,100 @@ const CampaignWizard: React.FC<CampaignWizardProps> = ({
                       </Form.Item>
                     </Col>
                     <Col span={12}>
-                      <Form.Item
-                        label="Maximum Sponsors (Optional)"
-                        name="maxSponsors"
-                        extra="Leave empty for unlimited sponsors"
-                      >
-                        <InputNumber
-                          min={1}
-                          style={{ width: "100%" }}
-                          placeholder="Leave empty for unlimited"
-                        />
+                      <Form.Item noStyle shouldUpdate>
+                        {({ getFieldValue }) => {
+                          const layoutStyle =
+                            getFieldValue("layoutStyle") ||
+                            campaignData.layoutStyle;
+                          const isAmountOrdered =
+                            layoutStyle === "amount-ordered";
+
+                          return (
+                            <Form.Item
+                              label={
+                                isAmountOrdered
+                                  ? "Maximum Sponsors"
+                                  : "Maximum Sponsors (Optional)"
+                              }
+                              name="maxSponsors"
+                              rules={
+                                isAmountOrdered
+                                  ? [
+                                      {
+                                        required: true,
+                                        message:
+                                          "Please enter maximum sponsors",
+                                      },
+                                    ]
+                                  : []
+                              }
+                              extra={
+                                isAmountOrdered
+                                  ? "Total sponsor positions in the grid (e.g., 20)"
+                                  : "Leave empty for unlimited sponsors"
+                              }
+                            >
+                              <InputNumber
+                                min={1}
+                                style={{ width: "100%" }}
+                                placeholder={
+                                  isAmountOrdered
+                                    ? "20"
+                                    : "Leave empty for unlimited"
+                                }
+                              />
+                            </Form.Item>
+                          );
+                        }}
                       </Form.Item>
                     </Col>
                   </Row>
+
+                  {/* Grid configuration - only show for amount-ordered layout */}
+                  <Form.Item noStyle shouldUpdate>
+                    {({ getFieldValue }) => {
+                      const layoutStyle =
+                        getFieldValue("layoutStyle") ||
+                        campaignData.layoutStyle;
+                      const isAmountOrdered = layoutStyle === "amount-ordered";
+
+                      // For amount-ordered layout, show grid configuration
+                      if (!isAmountOrdered) {
+                        return null;
+                      }
+
+                      return (
+                        <>
+                          <Alert
+                            message="Grid Layout Configuration"
+                            description="Sponsors are displayed in a grid sorted by donation amount (highest first). Set 'Maximum Sponsors' above to define total positions, and configure columns below for portrait orientation."
+                            type="info"
+                            showIcon
+                            style={{ marginBottom: 16 }}
+                          />
+                          <Form.Item
+                            label="Number of Columns"
+                            name="columns"
+                            rules={[
+                              {
+                                required: true,
+                                message: "Please enter number of columns",
+                              },
+                            ]}
+                            extra="Columns in grid (default: 3 for portrait orientation)"
+                            initialValue={3}
+                          >
+                            <InputNumber
+                              min={1}
+                              max={10}
+                              style={{ width: "100%" }}
+                              placeholder="3"
+                            />
+                          </Form.Item>
+                        </>
+                      );
+                    }}
+                  </Form.Item>
                 </>
               )}
             </>
