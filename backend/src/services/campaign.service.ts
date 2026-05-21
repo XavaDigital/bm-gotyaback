@@ -58,14 +58,26 @@ export const createCampaign = async (userId: string, campaignData: any) => {
     campaignData.pricingConfig.sizeTiers = getDefaultSizeTiers();
   }
 
-  // Generate unique slug from title
+  // Generate initial slug from title. The unique index on Campaign.slug is the real
+  // guard — generateUniqueSlug is a best-effort pre-check. On the rare TOCTOU race
+  // where two concurrent creates pick the same slug, catch the duplicate-key error
+  // and retry once with a timestamp suffix (virtually impossible to collide again).
   const slug = await generateUniqueSlug(campaignData.title);
 
-  const campaign = await Campaign.create({
-    ...campaignData,
-    slug,
-    ownerId: userId,
-  });
+  let campaign: any;
+  try {
+    campaign = await Campaign.create({ ...campaignData, slug, ownerId: userId });
+  } catch (error: any) {
+    if (error.code === 11000 && error.keyPattern?.slug) {
+      campaign = await Campaign.create({
+        ...campaignData,
+        slug: `${generateSlug(campaignData.title)}-${Date.now()}`,
+        ownerId: userId,
+      });
+    } else {
+      throw error;
+    }
+  }
 
   return campaign;
 };

@@ -270,24 +270,20 @@ export const releasePosition = async (layoutId: string, positionId: string) => {
   return layout;
 };
 
-// Get position details
+// Get position details — uses the positional $ projection so only the matching
+// placement is returned from MongoDB instead of the entire placements array.
 export const getPositionDetails = async (
   layoutId: string,
   positionId: string,
 ) => {
-  const layout = await ShirtLayout.findById(layoutId);
-
-  if (!layout) {
-    throw new Error("Layout not found");
-  }
-
-  const position = layout.placements.find(
-    (p: any) => p.positionId === positionId,
+  const layout = await ShirtLayout.findOne(
+    { _id: layoutId, "placements.positionId": positionId },
+    { "placements.$": 1 },
   );
 
-  if (!position) {
+  if (!layout || !layout.placements?.[0]) {
     throw new Error("Position not found");
   }
 
-  return position;
+  return layout.placements[0];
 };

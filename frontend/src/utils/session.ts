@@ -17,8 +17,12 @@ export interface SessionData {
  * This function can only be called on the server side
  */
 export async function getSession() {
+  const secret = process.env.SESSION_SECRET
+  if (!secret) {
+    throw new Error('SESSION_SECRET environment variable is required but not set. Generate one with: openssl rand -hex 32')
+  }
   return await useSession<SessionData>({
-    password: process.env.SESSION_SECRET || 'change-this-to-a-secure-random-string-min-32-chars-long-please',
+    password: secret,
   })
 }
 

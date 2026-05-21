@@ -1,15 +1,14 @@
 import axios from 'axios';
 
+const apiBaseUrl = import.meta.env.VITE_API_URL;
+if (!apiBaseUrl) {
+  throw new Error('VITE_API_URL is not set. Add it to your .env file.');
+}
+
 const apiClient = axios.create({
-    baseURL: 'http://localhost:5000/api',
+    baseURL: apiBaseUrl,
     headers: {
         'Content-Type': 'application/json',
-    },
-    // Disable axios's default error logging
-    validateStatus: (status) => {
-        // Accept all status codes to prevent axios from throwing
-        // We'll handle errors in the interceptor
-        return status >= 200 && status < 600;
     },
 });
 
@@ -18,7 +17,7 @@ apiClient.interceptors.request.use(
     (config) => {
         // Only access localStorage on the client side
         if (typeof window !== 'undefined') {
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('token');
             if (token) {
                 config.headers.Authorization = `Bearer ${token}`;
             }
@@ -32,25 +31,22 @@ apiClient.interceptors.request.use(
 
 // Add a response interceptor to handle errors
 apiClient.interceptors.response.use(
-    (response) => {
-        // Handle 404 for layout endpoints silently
-        if (response.status === 404 && response.config?.url?.includes('/layout')) {
-            return { ...response, data: null };
-        }
-
-        // For other error status codes (4xx, 5xx), reject
-        if (response.status >= 400) {
-            return Promise.reject({
-                response,
-                message: response.data?.message || 'Request failed',
-                config: response.config,
-            });
-        }
-
-        return response;
-    },
+    (response) => response,
     (error) => {
-        // Network errors or other issues
+        const status = error.response?.status;
+
+        // Handle 404 for layout endpoints silently — caller expects null data
+        if (status === 404 && error.config?.url?.includes('/layout')) {
+            return Promise.resolve({ ...error.response, data: null });
+        }
+
+        // On 401, clear stale session and redirect to login
+        if (status === 401 && typeof window !== 'undefined') {
+            sessionStorage.removeItem('user');
+            sessionStorage.removeItem('token');
+            window.location.href = '/login';
+        }
+
         return Promise.reject(error);
     }
 );

@@ -32,8 +32,8 @@ describe('Auth Service', () => {
 
       expect(apiClient.post).toHaveBeenCalledWith('/auth/register', userData);
       expect(result).toEqual(mockResponse.data);
-      expect(localStorage.getItem('token')).toBe('test-token');
-      expect(localStorage.getItem('user')).toBe(JSON.stringify(mockResponse.data));
+      expect(sessionStorage.getItem('token')).toBe('test-token');
+      expect(sessionStorage.getItem('user')).toBe(JSON.stringify(mockResponse.data));
     });
 
     it('should handle registration error', async () => {
@@ -46,7 +46,7 @@ describe('Auth Service', () => {
       };
 
       await expect(authService.register(userData)).rejects.toThrow('Registration failed');
-      expect(localStorage.getItem('token')).toBeNull();
+      expect(sessionStorage.getItem('token')).toBeNull();
     });
   });
 
@@ -69,8 +69,8 @@ describe('Auth Service', () => {
 
       expect(apiClient.post).toHaveBeenCalledWith('/auth/login', credentials);
       expect(result).toEqual(mockResponse.data);
-      expect(localStorage.getItem('token')).toBe('test-token');
-      expect(localStorage.getItem('user')).toBe(JSON.stringify(mockResponse.data));
+      expect(sessionStorage.getItem('token')).toBe('test-token');
+      expect(sessionStorage.getItem('user')).toBe(JSON.stringify(mockResponse.data));
     });
 
     it('should handle login error', async () => {
@@ -82,14 +82,14 @@ describe('Auth Service', () => {
       };
 
       await expect(authService.login(credentials)).rejects.toThrow('Invalid credentials');
-      expect(localStorage.getItem('token')).toBeNull();
+      expect(sessionStorage.getItem('token')).toBeNull();
     });
   });
 
   describe('logout', () => {
-    it('should clear localStorage and redirect', async () => {
-      localStorage.setItem('token', 'test-token');
-      localStorage.setItem('user', JSON.stringify(createMockUser()));
+    it('should clear sessionStorage and redirect', async () => {
+      sessionStorage.setItem('token', 'test-token');
+      sessionStorage.setItem('user', JSON.stringify(createMockUser()));
 
       // Mock window.location.href
       delete (window as any).location;
@@ -97,8 +97,8 @@ describe('Auth Service', () => {
 
       await authService.logout();
 
-      expect(localStorage.getItem('token')).toBeNull();
-      expect(localStorage.getItem('user')).toBeNull();
+      expect(sessionStorage.getItem('token')).toBeNull();
+      expect(sessionStorage.getItem('user')).toBeNull();
       expect(window.location.href).toBe('/login');
     });
   });
@@ -107,7 +107,7 @@ describe('Auth Service', () => {
     it('should return user from localStorage', () => {
       const mockUser = createMockUser();
       const userWithToken = { ...mockUser, token: 'test-token' };
-      localStorage.setItem('user', JSON.stringify(userWithToken));
+      sessionStorage.setItem('user', JSON.stringify(userWithToken));
 
       const result = authService.getCurrentUser();
 
@@ -121,7 +121,7 @@ describe('Auth Service', () => {
     });
 
     it('should return null if user data is invalid JSON', () => {
-      localStorage.setItem('user', 'invalid-json');
+      sessionStorage.setItem('user', 'invalid-json');
 
       const result = authService.getCurrentUser();
 
@@ -132,7 +132,7 @@ describe('Auth Service', () => {
   describe('isAuthenticated', () => {
     it('should return true if user is authenticated', () => {
       const mockUser = createMockUser();
-      localStorage.setItem('user', JSON.stringify({ ...mockUser, token: 'test-token' }));
+      sessionStorage.setItem('user', JSON.stringify({ ...mockUser, token: 'test-token' }));
 
       const result = authService.isAuthenticated();
 

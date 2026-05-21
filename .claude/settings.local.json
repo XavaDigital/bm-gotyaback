@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(Get-Content \"d:\\\\Coding\\\\bm-gotyaback\\\\backend\\\\node_modules\\\\express-mongo-sanitize\\\\index.js\")",
+      "Bash(npm install *)",
+      "Bash(npx ts-node *)",
+      "Bash(node -e \"require\\('./src/middleware/validation.middleware.ts'\\)\")",
+      "Bash(node -e \"const s = require\\('sanitize-html'\\); console.log\\(typeof s\\);\")",
+      "Bash(node -e \"const s = require\\('sanitize-html'\\); console.log\\('defaults type:', typeof s.defaults\\); console.log\\('allowedTags:', s.defaults && s.defaults.allowedTags ? s.defaults.allowedTags.slice\\(0,3\\) : 'MISSING'\\);\")",
+      "Bash(kill %1)",
+      "Bash(wait)",
+      "Bash(exit 0)"
+    ]
+  }
+}

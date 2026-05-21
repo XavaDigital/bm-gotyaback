@@ -142,17 +142,17 @@ export const mockApiError = (message: string, status = 400) => ({
 });
 
 /**
- * Setup localStorage with auth token
+ * Setup sessionStorage with auth token
  */
 export const setupAuthToken = (token = 'test-token') => {
-  localStorage.setItem('token', token);
+  sessionStorage.setItem('token', token);
 };
 
 /**
- * Clear localStorage
+ * Clear sessionStorage
  */
 export const clearAuth = () => {
-  localStorage.clear();
+  sessionStorage.clear();
 };
 
 // Re-export everything from testing library

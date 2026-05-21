@@ -1,5 +1,6 @@
 import { body, param, query, validationResult } from 'express-validator';
 import { Request, Response, NextFunction } from 'express';
+import sanitizeHtml from 'sanitize-html';
 
 /**
  * Middleware to handle validation errors
@@ -28,17 +29,7 @@ export const validateRegister = [
     .trim()
     .notEmpty().withMessage('Email is required')
     .isEmail().withMessage('Must be a valid email address')
-    .toLowerCase()
-    .customSanitizer((value) => {
-      // Only normalize email in production (removes + aliases in Gmail)
-      if (process.env.NODE_ENV === 'production') {
-        // Basic normalization: lowercase and trim (already done above)
-        // For production, you might want to add more aggressive normalization
-        return value;
-      }
-      // In development, keep the email as-is (after lowercase)
-      return value;
-    }),
+    .toLowerCase(),
   body('password')
     .notEmpty().withMessage('Password is required')
     .isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
@@ -53,14 +44,7 @@ export const validateLogin = [
     .trim()
     .notEmpty().withMessage('Email is required')
     .isEmail().withMessage('Must be a valid email address')
-    .toLowerCase()
-    .customSanitizer((value) => {
-      // Only normalize email in production (removes + aliases in Gmail)
-      if (process.env.NODE_ENV === 'production') {
-        return value;
-      }
-      return value;
-    }),
+    .toLowerCase(),
   body('password')
     .notEmpty().withMessage('Password is required'),
   handleValidationErrors,
@@ -74,14 +58,7 @@ export const validateForgotPassword = [
     .trim()
     .notEmpty().withMessage('Email is required')
     .isEmail().withMessage('Must be a valid email address')
-    .toLowerCase()
-    .customSanitizer((value) => {
-      // Only normalize email in production (removes + aliases in Gmail)
-      if (process.env.NODE_ENV === 'production') {
-        return value;
-      }
-      return value;
-    }),
+    .toLowerCase(),
   handleValidationErrors,
 ];
 
@@ -110,7 +87,13 @@ export const validateCreateCampaign = [
   body('description')
     .optional()
     .trim()
-    .isLength({ max: 5000 }).withMessage('Description must not exceed 5000 characters'),
+    .isLength({ max: 5000 }).withMessage('Description must not exceed 5000 characters')
+    .customSanitizer((value) =>
+      sanitizeHtml(value, {
+        allowedTags: sanitizeHtml.defaults.allowedTags.concat(['h1', 'h2', 'h3', 's']),
+        allowedAttributes: { a: ['href', 'target', 'rel'] },
+      }),
+    ),
   body('campaignType')
     .notEmpty().withMessage('Campaign type is required')
     .isIn(['fixed', 'positional', 'pay-what-you-want']).withMessage('Invalid campaign type'),
@@ -137,14 +120,7 @@ export const validateCreateSponsorship = [
     .trim()
     .notEmpty().withMessage('Email is required')
     .isEmail().withMessage('Must be a valid email address')
-    .toLowerCase()
-    .customSanitizer((value) => {
-      // Only normalize email in production (removes + aliases in Gmail)
-      if (process.env.NODE_ENV === 'production') {
-        return value;
-      }
-      return value;
-    }),
+    .toLowerCase(),
   body('phone')
     .optional()
     .trim()
@@ -181,14 +157,7 @@ export const validateCreatePaymentIntent = [
     .trim()
     .notEmpty().withMessage('Sponsor email is required')
     .isEmail().withMessage('Must be a valid email address')
-    .toLowerCase()
-    .customSanitizer((value) => {
-      // Only normalize email in production (removes + aliases in Gmail)
-      if (process.env.NODE_ENV === 'production') {
-        return value;
-      }
-      return value;
-    }),
+    .toLowerCase(),
   handleValidationErrors,
 ];
 

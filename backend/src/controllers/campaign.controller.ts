@@ -11,12 +11,15 @@ export const createCampaign = async (req: Request, res: Response) => {
     }
 
     // Parse data from body (could be JSON or multipart form data)
-    const data =
-      typeof req.body.data === "string" ? JSON.parse(req.body.data) : req.body;
-
-    // Parse pricingConfig if it's a string (from FormData)
-    if (data.pricingConfig && typeof data.pricingConfig === "string") {
-      data.pricingConfig = JSON.parse(data.pricingConfig);
+    let data: any;
+    try {
+      data =
+        typeof req.body.data === "string" ? JSON.parse(req.body.data) : req.body;
+      if (data.pricingConfig && typeof data.pricingConfig === "string") {
+        data.pricingConfig = JSON.parse(data.pricingConfig);
+      }
+    } catch {
+      return res.status(400).json({ message: "Invalid JSON in request body" });
     }
 
     // Handle header image upload if present
@@ -88,12 +91,15 @@ export const updateCampaign = async (req: Request, res: Response) => {
     }
 
     // Parse data from body (could be JSON or multipart form data)
-    const data =
-      typeof req.body.data === "string" ? JSON.parse(req.body.data) : req.body;
-
-    // Parse pricingConfig if it's a string (from FormData)
-    if (data.pricingConfig && typeof data.pricingConfig === "string") {
-      data.pricingConfig = JSON.parse(data.pricingConfig);
+    let data: any;
+    try {
+      data =
+        typeof req.body.data === "string" ? JSON.parse(req.body.data) : req.body;
+      if (data.pricingConfig && typeof data.pricingConfig === "string") {
+        data.pricingConfig = JSON.parse(data.pricingConfig);
+      }
+    } catch {
+      return res.status(400).json({ message: "Invalid JSON in request body" });
     }
 
     // Handle header image upload if present

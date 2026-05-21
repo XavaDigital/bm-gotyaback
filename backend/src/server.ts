@@ -3,6 +3,9 @@ import dotenv from "dotenv";
 // Load environment variables FIRST before importing anything else
 dotenv.config();
 
+import { validateEnvironment } from "./utils/validateEnv";
+validateEnvironment();
+
 // Initialize Sentry for production error tracking
 import * as Sentry from "@sentry/node";
 import { nodeProfilingIntegration } from "@sentry/profiling-node";
@@ -11,19 +14,16 @@ if (process.env.NODE_ENV === 'production' && process.env.SENTRY_DSN) {
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     environment: process.env.NODE_ENV,
-    tracesSampleRate: 0.1, // 10% of transactions for performance monitoring
-    profilesSampleRate: 0.1, // 10% profiling
+    tracesSampleRate: 0.1,
+    profilesSampleRate: 0.1,
     integrations: [
       nodeProfilingIntegration(),
     ],
   });
   console.log('✅ Sentry initialized for production monitoring');
+} else if (process.env.NODE_ENV === 'production') {
+  console.warn('⚠️  WARNING: SENTRY_DSN is not set. Errors will not be tracked in production.');
 }
-
-// Validate environment variables before starting the server
-// NOTE: Commented out for development - uncomment for production
-// import { validateEnvironment } from "./utils/validateEnv";
-// validateEnvironment();
 
 import app from "./app";
 import connectDB from "./config/db";

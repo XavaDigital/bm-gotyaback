@@ -30,7 +30,7 @@ interface EnvConfig {
 
 // Critical variables required in all environments
 const criticalEnvVars = [
-  'MONGODB_URI',
+  'MONGO_URI',
   'JWT_SECRET',
 ];
 
@@ -38,13 +38,13 @@ const criticalEnvVars = [
 const productionRequiredVars = [
   'NODE_ENV',
   'FRONTEND_URL',
-  'AWS_REGION',
-  'AWS_ACCESS_KEY_ID',
-  'AWS_SECRET_ACCESS_KEY',
-  'AWS_S3_BUCKET_NAME',
-  'MAILGUN_API_KEY',
-  'MAILGUN_DOMAIN',
-  'MAILGUN_FROM_EMAIL',
+  'AWS_S3_REGION',
+  'AWS_S3_ACCESS_KEY',
+  'AWS_S3_SECRET_ACCESS_KEY',
+  'AWS_S3_BUCKET',
+  'SMTP_HOST',
+  'SMTP_USER',
+  'SMTP_PASS',
 ];
 
 const optionalEnvVars = [
@@ -157,9 +157,9 @@ const validateSpecificFormats = (): void => {
     }
   }
 
-  // Validate MONGODB_URI format (required)
-  if (!process.env.MONGODB_URI?.startsWith('mongodb')) {
-    throw new Error('MONGODB_URI must be a valid MongoDB connection string');
+  // Validate MONGO_URI format (required)
+  if (!process.env.MONGO_URI?.startsWith('mongodb')) {
+    throw new Error('MONGO_URI must be a valid MongoDB connection string');
   }
 
   // Validate JWT_SECRET length (required)
@@ -188,6 +188,11 @@ const validateSpecificFormats = (): void => {
     console.warn('Set variables:', setStripeVars.join(', '));
     console.warn('Missing variables:', stripeVars.filter(v => !process.env[v]).join(', '));
     console.warn('Stripe payments may not work correctly\n');
+  }
+
+  // Warn if SENTRY_DSN is absent in production
+  if (process.env.NODE_ENV === 'production' && !process.env.SENTRY_DSN) {
+    console.warn('⚠️  WARNING: SENTRY_DSN is not set. Errors will not be tracked in production.');
   }
 };
 

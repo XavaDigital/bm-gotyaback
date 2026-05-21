@@ -1,7 +1,8 @@
 import { User } from "../models/User";
 import { Campaign } from "../models/Campaign";
+import { SponsorEntry } from "../models/SponsorEntry";
+import { ShirtLayout } from "../models/ShirtLayout";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { sendPasswordResetEmail } from "./email.service";
 import * as tokenService from "./token.service";
@@ -123,70 +124,88 @@ export const getPublicProfile = async (slug: string) => {
   }
 
   const now = new Date();
-  const activeCampaigns = await Campaign.find({
-    ownerId: user._id,
-    isClosed: false,
-    $or: [{ endDate: { $gt: now } }, { endDate: null }],
-  });
 
-  // Add sponsor statistics to each campaign
-  const { SponsorEntry } = require("../models/SponsorEntry");
-  const { ShirtLayout } = require("../models/ShirtLayout");
-
-  const campaignsWithStats = await Promise.all(
-    activeCampaigns.map(async (campaign) => {
-      const campaignObj = campaign.toObject();
-
-      // Get sponsor count (paid sponsors only)
-      const sponsorCount = await SponsorEntry.countDocuments({
-        campaignId: campaign._id,
-        paymentStatus: "paid",
-      });
-
-      // Get total positions for fixed/positional campaigns
-      let totalPositions = 0;
-      let claimedPositions = 0;
-
-      if (campaign.campaignType !== "pay-what-you-want") {
-        try {
-          const layout = await ShirtLayout.findOne({
-            campaignId: campaign._id,
-          });
-          if (layout) {
-            totalPositions = layout.placements.length;
-            claimedPositions = layout.placements.filter(
-              (p: any) => p.isTaken
-            ).length;
-          }
-        } catch (error) {
-          // Layout might not exist yet
-        }
-      }
-
-      return {
-        ...campaignObj,
+  // Single aggregation replaces the previous Campaign.find() + per-campaign
+  // SponsorEntry.countDocuments() + ShirtLayout.findOne() loop (N+1 queries).
+  const campaignsWithStats = await Campaign.aggregate([
+    {
+      $match: {
+        ownerId: user._id,
+        isClosed: false,
+        $or: [{ endDate: { $gt: now } }, { endDate: null }],
+      },
+    },
+    {
+      $lookup: {
+        from: "sponsorentries",
+        let: { campaignId: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$campaignId", "$$campaignId"] },
+                  { $eq: ["$paymentStatus", "paid"] },
+                ],
+              },
+            },
+          },
+          { $count: "count" },
+        ],
+        as: "sponsorStats",
+      },
+    },
+    {
+      $lookup: {
+        from: "shirtlayouts",
+        localField: "_id",
+        foreignField: "campaignId",
+        as: "layout",
+      },
+    },
+    {
+      $addFields: {
         stats: {
-          sponsorCount,
-          totalPositions,
-          claimedPositions,
-          remainingPositions: totalPositions - claimedPositions,
+          sponsorCount: {
+            $ifNull: [{ $arrayElemAt: ["$sponsorStats.count", 0] }, 0],
+          },
+          totalPositions: {
+            $let: {
+              vars: { layoutDoc: { $arrayElemAt: ["$layout", 0] } },
+              in: { $size: { $ifNull: ["$$layoutDoc.placements", []] } },
+            },
+          },
+          claimedPositions: {
+            $let: {
+              vars: { layoutDoc: { $arrayElemAt: ["$layout", 0] } },
+              in: {
+                $size: {
+                  $filter: {
+                    input: { $ifNull: ["$$layoutDoc.placements", []] },
+                    as: "p",
+                    cond: { $eq: ["$$p.isTaken", true] },
+                  },
+                },
+              },
+            },
+          },
         },
-      };
-    })
-  );
+      },
+    },
+    {
+      $addFields: {
+        "stats.remainingPositions": {
+          $subtract: ["$stats.totalPositions", "$stats.claimedPositions"],
+        },
+      },
+    },
+    { $project: { sponsorStats: 0, layout: 0 } },
+  ]);
 
   return {
     profile: user.organizerProfile,
     campaigns: campaignsWithStats,
   };
-};
-
-// Legacy function - kept for backward compatibility
-// New code should use tokenService.generateAccessToken instead
-const generateToken = (id: string) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET as string, {
-    expiresIn: "30d",
-  });
 };
 
 /**

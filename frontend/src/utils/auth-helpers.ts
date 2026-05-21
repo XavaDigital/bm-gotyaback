@@ -10,12 +10,12 @@ function getCurrentUser() {
   if (!isBrowser) return null
 
   try {
-    const userStr = localStorage.getItem('user')
+    const userStr = sessionStorage.getItem('user')
     if (userStr) {
       return JSON.parse(userStr)
     }
   } catch (error) {
-    console.error('Failed to parse user from localStorage:', error)
+    console.error('Failed to parse user from sessionStorage:', error)
   }
   return null
 }
@@ -25,7 +25,7 @@ function getCurrentUser() {
  */
 function getToken() {
   if (!isBrowser) return null
-  return localStorage.getItem('token')
+  return sessionStorage.getItem('token')
 }
 
 /**

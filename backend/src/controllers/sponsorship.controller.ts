@@ -1,14 +1,20 @@
 import { Request, Response } from "express";
 import * as sponsorshipService from "../services/sponsorship.service";
 import * as uploadService from "../services/upload.service";
+import { Campaign } from "../models/Campaign";
 
 export const createSponsorship = async (req: Request, res: Response) => {
   try {
     const campaignId = req.params.id;
 
     // Parse data from body (could be JSON or multipart form data)
-    const data =
-      typeof req.body.data === "string" ? JSON.parse(req.body.data) : req.body;
+    let data: any;
+    try {
+      data =
+        typeof req.body.data === "string" ? JSON.parse(req.body.data) : req.body;
+    } catch {
+      return res.status(400).json({ message: "Invalid JSON in request body" });
+    }
 
     const {
       positionId,
@@ -86,6 +92,7 @@ export const getSponsors = async (req: Request, res: Response) => {
 
     const result = await sponsorshipService.getSponsorsByCampaign(
       campaignId,
+      userId.toString(),
       page,
       limit,
       filters
@@ -224,14 +231,26 @@ export const getPendingLogos = async (req: Request, res: Response) => {
 // Upload logo before payment (for card payments)
 export const uploadLogo = async (req: Request, res: Response) => {
   try {
+    const userId = req.user?._id;
     const campaignId = req.params.id;
     const file = req.file;
+
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
 
     if (!file) {
       return res.status(400).json({ message: "No logo file provided" });
     }
 
-    // Upload logo to S3 with a temporary ID
+    const campaign = await Campaign.findById(campaignId);
+    if (!campaign) {
+      return res.status(404).json({ message: "Campaign not found" });
+    }
+    if (campaign.ownerId.toString() !== userId.toString()) {
+      return res.status(403).json({ message: "Not authorized to upload to this campaign" });
+    }
+
     const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(7)}`;
     const logoUrl = await uploadService.uploadLogoToS3(
       file.buffer,

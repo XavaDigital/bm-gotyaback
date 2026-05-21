@@ -48,8 +48,8 @@ const refreshTokenSchema = new mongoose.Schema(
 // Index for efficient cleanup of expired tokens
 refreshTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-// Index for finding user's active tokens
-refreshTokenSchema.index({ userId: 1, isRevoked: 1 });
+// Index for finding user's active tokens, including expiry range scans
+refreshTokenSchema.index({ userId: 1, isRevoked: 1, expiresAt: 1 });
 
 export const RefreshToken = mongoose.model("RefreshToken", refreshTokenSchema);
 

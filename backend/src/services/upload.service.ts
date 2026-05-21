@@ -1,6 +1,22 @@
 import { uploadToS3 } from "../utils/s3Upload";
 import sharp from "sharp";
 
+// Detect actual file type from magic bytes so client-supplied Content-Type cannot be spoofed.
+const detectMimeFromBuffer = (buf: Buffer): string | null => {
+  if (buf.length >= 4 && buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) {
+    return "image/png";
+  }
+  if (buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) {
+    return "image/jpeg";
+  }
+  // SVG is XML text — check that the start of the file looks like SVG markup.
+  const head = buf.slice(0, 512).toString("utf8").replace(/^﻿/, "").trimStart();
+  if (head.startsWith("<svg") || (head.startsWith("<?xml") && head.includes("<svg"))) {
+    return "image/svg+xml";
+  }
+  return null;
+};
+
 /**
  * Validate logo file type
  */
@@ -57,6 +73,13 @@ export const uploadLogoToS3 = async (
   mimeType: string,
   sponsorshipId: string
 ): Promise<string> => {
+  // Verify actual file type via magic bytes — client-supplied MIME is untrustworthy.
+  const detectedMime = detectMimeFromBuffer(fileBuffer);
+  const normalizedDeclared = mimeType === "image/jpg" ? "image/jpeg" : mimeType;
+  if (!detectedMime || detectedMime !== normalizedDeclared) {
+    throw new Error("File content does not match the declared file type.");
+  }
+
   // Validate file type
   if (!validateLogoFileType(mimeType)) {
     throw new Error(

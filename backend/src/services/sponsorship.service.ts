@@ -15,11 +15,12 @@ export const createSponsorship = async (
     phone?: string;
     message?: string;
     amount: number;
-    paymentMethod: "card" | "cash";
+    paymentMethod: "card" | "cash" | "afterpay";
     sponsorType?: SponsorType;
     logoUrl?: string;
     displayName?: string;
   },
+  positionAlreadyReserved = false,
 ) => {
   // Get campaign and validate it's open
   const campaign = await Campaign.findById(campaignId);
@@ -29,33 +30,51 @@ export const createSponsorship = async (
 
   campaignService.validateCampaignIsOpen(campaign);
 
-  // For positional and fixed campaigns, we need to reserve a position
+  // For PWYW campaigns, enforce the server-side minimum so a cash sponsor cannot
+  // send $0.01 and receive a "large" display tier.
+  if (campaign.campaignType === "pay-what-you-want") {
+    const config = campaign.pricingConfig as any;
+    const minimumAmount: number | undefined =
+      config?.minimumAmount ??
+      (config?.sizeTiers?.length > 0
+        ? Math.min(...(config.sizeTiers as any[]).map((t: any) => t.minAmount ?? 0))
+        : undefined);
+
+    if (minimumAmount !== undefined && minimumAmount > 0 && sponsorData.amount < minimumAmount) {
+      throw new Error(`Minimum sponsorship amount is ${minimumAmount}`);
+    }
+  }
+
+  // For positional and fixed campaigns, verify the positionId and optionally reserve it.
+  // Always scope the lookup by campaignId so a crafted positionId from another campaign's
+  // layout cannot be injected via Stripe PaymentIntent metadata.
   if (
-    (campaign.campaignType === "positional" ||
-      campaign.campaignType === "fixed") &&
+    (campaign.campaignType === "positional" || campaign.campaignType === "fixed") &&
     sponsorData.positionId
   ) {
     const layout = await shirtLayoutService.getLayoutByCampaignId(campaignId);
 
-    // Get position details to verify price
+    // This throws "Position not found" if positionId does not belong to this campaign's layout.
     const position = await shirtLayoutService.getPositionDetails(
       layout._id.toString(),
       sponsorData.positionId,
     );
 
-    // Verify amount matches position price
-    if (sponsorData.amount !== position.price) {
-      throw new Error("Amount does not match position price");
-    }
+    if (!positionAlreadyReserved) {
+      // Verify amount matches position price
+      if (sponsorData.amount !== position.price) {
+        throw new Error("Amount does not match position price");
+      }
 
-    // Atomically reserve the position
-    try {
-      await shirtLayoutService.reservePosition(
-        layout._id.toString(),
-        sponsorData.positionId,
-      );
-    } catch (error) {
-      throw new Error("Position not available or already taken");
+      // Atomically reserve the position
+      try {
+        await shirtLayoutService.reservePosition(
+          layout._id.toString(),
+          sponsorData.positionId,
+        );
+      } catch (error) {
+        throw new Error("Position not available or already taken");
+      }
     }
   }
 
@@ -116,7 +135,7 @@ export const createSponsorship = async (
       amount: sponsorData.amount,
       paymentMethod: sponsorData.paymentMethod,
       paymentStatus:
-        sponsorData.paymentMethod === "cash" ? "pending" : "pending",
+        sponsorData.paymentMethod === "cash" ? "pending" : "paid",
       sponsorType: sponsorData.sponsorType || "text",
       logoUrl: sponsorData.logoUrl,
       displayName: sponsorData.displayName,
@@ -128,17 +147,25 @@ export const createSponsorship = async (
 
     return sponsorEntry;
   } catch (error) {
-    // If sponsorship creation fails, release the position
+    // If sponsorship creation fails, release the position so it is not permanently locked.
     if (
       (campaign.campaignType === "positional" ||
         campaign.campaignType === "fixed") &&
       sponsorData.positionId
     ) {
-      const layout = await shirtLayoutService.getLayoutByCampaignId(campaignId);
-      await shirtLayoutService.releasePosition(
-        layout._id.toString(),
-        sponsorData.positionId,
-      );
+      try {
+        const layout = await shirtLayoutService.getLayoutByCampaignId(campaignId);
+        await shirtLayoutService.releasePosition(
+          layout._id.toString(),
+          sponsorData.positionId,
+        );
+      } catch (releaseError) {
+        // CRITICAL: position is permanently locked and requires manual intervention.
+        console.error(
+          "CRITICAL: Failed to release position after SponsorEntry creation failure. Manual intervention required.",
+          { campaignId, positionId: sponsorData.positionId, releaseError },
+        );
+      }
     }
     throw error;
   }
@@ -146,12 +173,31 @@ export const createSponsorship = async (
 
 export const getSponsorsByCampaign = async (
   campaignId: string,
+  userId: string,
   page: number = 1,
   limit: number = 50,
   filters?: { paymentStatus?: string; logoApprovalStatus?: string }
 ) => {
   if (!mongoose.Types.ObjectId.isValid(campaignId)) {
     throw new Error("Invalid campaign ID");
+  }
+
+  const campaign = await Campaign.findById(campaignId);
+  if (!campaign) {
+    throw new Error("Campaign not found");
+  }
+  if (campaign.ownerId.toString() !== userId) {
+    throw new Error("Not authorized to view sponsors for this campaign");
+  }
+
+  const VALID_PAYMENT_STATUSES = new Set(["pending", "paid", "failed"]);
+  const VALID_LOGO_STATUSES = new Set(["pending", "approved", "rejected"]);
+
+  if (filters?.paymentStatus && !VALID_PAYMENT_STATUSES.has(filters.paymentStatus)) {
+    throw new Error("Invalid paymentStatus filter");
+  }
+  if (filters?.logoApprovalStatus && !VALID_LOGO_STATUSES.has(filters.logoApprovalStatus)) {
+    throw new Error("Invalid logoApprovalStatus filter");
   }
 
   const query: any = { campaignId };

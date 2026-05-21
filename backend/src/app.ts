@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import * as Sentry from "@sentry/node";
-// import mongoSanitize from "express-mongo-sanitize"; // Removed due to compatibility issues
+import mongoSanitize from "express-mongo-sanitize";
 import authRoutes from "./routes/auth.routes";
 import campaignRoutes from "./routes/campaign.routes";
 import sponsorshipRoutes from "./routes/sponsorship.routes";
@@ -17,12 +17,21 @@ import { errorHandler, notFoundHandler, requestLogger } from "./middleware/error
 
 const app = express();
 
-// Trust proxy - required when behind a reverse proxy (nginx, AWS ALB, etc.)
-// This allows Express to correctly read X-Forwarded-* headers for client IP, protocol, etc.
-app.set('trust proxy', 1);
+// Trust proxy — required when behind a reverse proxy (AWS ALB, nginx, etc.) so Express
+// reads X-Forwarded-For correctly. Set TRUST_PROXY to a specific IP/CIDR in production
+// (e.g. the ALB's private IP range) for stricter control; defaults to 1 (single-hop).
+app.set('trust proxy', process.env.TRUST_PROXY ?? 1);
 
 // Request logging middleware
 app.use(requestLogger);
+
+// Build the imgSrc allowlist from known deployment origins rather than allowing all HTTPS.
+const imgSrcOrigins: string[] = ["'self'", "data:"];
+if (process.env.AWS_S3_SERVER_URL) imgSrcOrigins.push(process.env.AWS_S3_SERVER_URL);
+if (process.env.CDN_URL) imgSrcOrigins.push(process.env.CDN_URL);
+// Fallback: if no S3 URL is configured (e.g. local dev without S3), allow HTTPS so the
+// app doesn't break — remove this line in production once AWS_S3_SERVER_URL is set.
+if (!process.env.AWS_S3_SERVER_URL) imgSrcOrigins.push("https:");
 
 // Security middleware - helmet for security headers
 app.use(helmet({
@@ -31,7 +40,7 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
+      imgSrc: imgSrcOrigins,
     },
   },
   crossOriginEmbedderPolicy: false, // Allow embedding for Stripe, etc.
@@ -41,9 +50,6 @@ app.use(helmet({
     preload: true,
   },
 }));
-
-// MongoDB injection prevention is handled by express-validator in validation middleware
-// express-mongo-sanitize was removed due to compatibility issues with the current Express version
 
 // CORS configuration
 const isProduction = process.env.NODE_ENV === 'production';
@@ -85,6 +91,16 @@ app.post(
 
 // JSON parsing for all other routes
 app.use(express.json());
+
+// NoSQL injection prevention — strip keys containing $ or . from user input
+// Custom wrapper: express-mongo-sanitize reassigns req.query which is read-only in Express 5
+app.use((req, res, next) => {
+  if (req.body) req.body = mongoSanitize.sanitize(req.body);
+  if (req.params) req.params = mongoSanitize.sanitize(req.params);
+  // req.query is a getter in Express 5; sanitize mutates in-place so no reassignment needed
+  if (req.query) mongoSanitize.sanitize(req.query);
+  next();
+});
 
 // Health check routes (no rate limiting for health checks)
 app.use(healthRoutes);

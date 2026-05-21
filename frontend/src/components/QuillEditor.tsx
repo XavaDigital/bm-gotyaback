@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import Quill from "quill";
 import "quill/dist/quill.snow.css";
+import DOMPurify from "dompurify";
 
 interface QuillEditorProps {
   value?: string;
@@ -74,7 +75,7 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
     // Set initial value
     if (value) {
       isUpdatingRef.current = true;
-      quill.clipboard.dangerouslyPasteHTML(value);
+      quill.clipboard.dangerouslyPasteHTML(DOMPurify.sanitize(value));
       isUpdatingRef.current = false;
     }
 

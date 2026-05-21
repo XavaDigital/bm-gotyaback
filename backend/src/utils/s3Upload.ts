@@ -1,5 +1,4 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import path from 'path';
 
 // Initialize S3 client
 const s3Client = new S3Client({
@@ -27,11 +26,15 @@ export async function uploadToS3(
     const bucket = process.env.AWS_S3_BUCKET as string;
     const serverUrl = process.env.AWS_S3_SERVER_URL as string;
 
-    // Generate unique filename
+    // Derive extension from MIME type to avoid path traversal via user-supplied filename
+    const mimeToExt: Record<string, string> = {
+        'image/png': '.png',
+        'image/jpeg': '.jpg',
+        'image/svg+xml': '.svg',
+    };
     const timestamp = Date.now();
-    const ext = path.extname(originalName);
-    const baseName = path.basename(originalName, ext);
-    const fileName = `${baseName}-${timestamp}${ext}`;
+    const ext = mimeToExt[mimeType] ?? '.bin';
+    const fileName = `upload-${timestamp}${ext}`;
     const key = `${folder}${fileName}`;
 
     const params = {

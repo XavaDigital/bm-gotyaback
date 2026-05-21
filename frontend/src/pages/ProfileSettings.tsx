@@ -82,7 +82,7 @@ const ProfileSettings: React.FC = () => {
           ...currentUser,
           organizerProfile: response.user.organizerProfile,
         };
-        localStorage.setItem("user", JSON.stringify(updatedUser));
+        sessionStorage.setItem("user", JSON.stringify(updatedUser));
         setCurrentUser(updatedUser);
       }
 

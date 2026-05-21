@@ -1,6 +1,8 @@
 import Stripe from "stripe";
+import mongoose from "mongoose";
 import { SponsorEntry } from "../models/SponsorEntry";
 import { Transaction } from "../models/Transaction";
+import { FailedRefund } from "../models/FailedRefund";
 import * as sponsorshipService from "./sponsorship.service";
 import * as campaignService from "./campaign.service";
 import * as shirtLayoutService from "./shirtLayout.service";
@@ -47,52 +49,58 @@ export const createPaymentIntent = async (
     throw new Error("Online payments are not enabled for this campaign");
   }
 
-  // Optimistic Concurrency Check: Verify spot is still available before starting payment
-  if (positionId && positionId !== "none") {
+  // Atomically reserve the position BEFORE creating the PaymentIntent.
+  // This prevents two concurrent checkouts from both receiving a client_secret
+  // for the same spot and racing to the webhook.
+  let reservedLayoutId: string | undefined;
+  const shouldReserve =
+    (campaign.campaignType === "positional" || campaign.campaignType === "fixed") &&
+    positionId &&
+    positionId !== "none";
+
+  if (shouldReserve) {
     try {
       const layout = await shirtLayoutService.getLayoutByCampaignId(campaignId);
-      const position = await shirtLayoutService.getPositionDetails(
-        layout._id.toString(),
-        positionId,
+      await shirtLayoutService.reservePosition(layout._id.toString(), positionId!);
+      reservedLayoutId = layout._id.toString();
+    } catch {
+      throw new Error(
+        "This position has just been taken by another sponsor. Please select a different spot.",
       );
-
-      if (position.isTaken) {
-        throw new Error(
-          "This position has just been taken by another sponsor. Please select a different spot.",
-        );
-      }
-    } catch (error) {
-      if ((error as Error).message.includes("just been taken")) {
-        throw error;
-      }
-      // Ignore other errors here (e.g. layout not found checks are handled later/elsewhere,
-      // or we let the main flow proceed and fail if critical)
-      // But for "position taken", we block immediately.
-      console.log("Optimistic check warning:", error);
     }
   }
 
   // Get Stripe instance (will throw if not configured)
   const stripe = getStripe();
 
-  // Create Payment Intent
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: Math.round(amount * 100), // Convert to cents
-    currency: campaign.currency.toLowerCase(),
-    metadata: {
-      campaignId,
-      positionId: positionId || "none",
-      sponsorName: sponsorData.name,
-      sponsorEmail: sponsorData.email,
-      sponsorPhone: sponsorData.phone || "",
-      sponsorMessage: sponsorData.message || "",
-      sponsorType: sponsorData.sponsorType || "text",
-      logoUrl: sponsorData.logoUrl || "",
-      displayName: sponsorData.displayName || "",
-    },
-    // Explicitly allow payment methods to debug visibility
-    payment_method_types: ["card", "afterpay_clearpay"],
-  });
+  // Create Payment Intent — release the reservation if Stripe call fails.
+  let paymentIntent: Stripe.PaymentIntent;
+  try {
+    paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(amount * 100), // Convert to cents
+      currency: campaign.currency.toLowerCase(),
+      metadata: {
+        campaignId,
+        positionId: positionId || "none",
+        sponsorName: sponsorData.name,
+        sponsorEmail: sponsorData.email,
+        sponsorPhone: sponsorData.phone || "",
+        sponsorMessage: sponsorData.message || "",
+        sponsorType: sponsorData.sponsorType || "text",
+        logoUrl: sponsorData.logoUrl || "",
+        displayName: sponsorData.displayName || "",
+      },
+      // Explicitly allow payment methods to debug visibility
+      payment_method_types: ["card", "afterpay_clearpay"],
+    });
+  } catch (stripeError) {
+    if (reservedLayoutId && positionId) {
+      await shirtLayoutService.releasePosition(reservedLayoutId, positionId).catch((e) =>
+        console.error("Failed to release position after Stripe error:", e),
+      );
+    }
+    throw stripeError;
+  }
 
   return {
     clientSecret: paymentIntent.client_secret,
@@ -146,32 +154,54 @@ const handlePaymentSuccess = async (paymentIntent: Stripe.PaymentIntent) => {
   } = paymentIntent.metadata;
 
   try {
-    // Create sponsorship entry
-    const sponsorship = await sponsorshipService.createSponsorship(campaignId, {
-      positionId: positionId === "none" ? undefined : positionId,
-      name: sponsorName,
-      email: sponsorEmail,
-      phone: sponsorPhone || undefined,
-      message: sponsorMessage || undefined,
-      amount: paymentIntent.amount / 100, // Convert from cents
-      paymentMethod: (paymentIntent.payment_method_types?.[0] as any) || "card",
-      sponsorType: (sponsorType as "text" | "logo") || "text",
-      logoUrl: logoUrl || undefined,
-      displayName: displayName || undefined,
-    });
+    // Create sponsorship entry — position was already reserved in createPaymentIntent,
+    // so skip the second reservation attempt in createSponsorship.
+    const sponsorship = await sponsorshipService.createSponsorship(
+      campaignId,
+      {
+        positionId: positionId === "none" ? undefined : positionId,
+        name: sponsorName,
+        email: sponsorEmail,
+        phone: sponsorPhone || undefined,
+        message: sponsorMessage || undefined,
+        amount: paymentIntent.amount / 100, // Convert from cents
+        paymentMethod: (
+          ({ card: "card", afterpay_clearpay: "afterpay" } as Record<string, "card" | "afterpay">)[
+            paymentIntent.payment_method_types?.[0] ?? ""
+          ] ?? "card"
+        ),
+        sponsorType: (sponsorType as "text" | "logo") || "text",
+        logoUrl: logoUrl || undefined,
+        displayName: displayName || undefined,
+      },
+      true, // positionAlreadyReserved
+    );
 
-    // Update sponsorship to paid status
-    sponsorship.paymentStatus = "paid";
-    await sponsorship.save();
+    // Atomically mark as paid and record the transaction in a single MongoDB session.
+    // Requires MongoDB replica set (Atlas or self-hosted RS) — transactions are no-ops
+    // on standalone instances and will throw if sessions are unsupported.
+    const session = await mongoose.startSession();
+    try {
+      await session.withTransaction(async () => {
+        sponsorship.paymentStatus = "paid";
+        await sponsorship.save({ session });
 
-    // Create transaction record
-    await Transaction.create({
-      sponsorEntryId: sponsorship._id,
-      provider: "stripe",
-      providerRef: paymentIntent.id,
-      status: "success",
-      amount: paymentIntent.amount / 100,
-    });
+        await Transaction.create(
+          [
+            {
+              sponsorEntryId: sponsorship._id,
+              provider: "stripe",
+              providerRef: paymentIntent.id,
+              status: "success",
+              amount: paymentIntent.amount / 100,
+            },
+          ],
+          { session },
+        );
+      });
+    } finally {
+      await session.endSession();
+    }
   } catch (error) {
     console.error("Error handling payment success:", error);
 
@@ -195,11 +225,24 @@ const handlePaymentSuccess = async (paymentIntent: Stripe.PaymentIntent) => {
 
         console.log(`Successfully refunded ${paymentIntent.id}`);
       } catch (refundError) {
-        // CRITICAL: If refund fails, we have a charged customer with no spot and no refund.
-        // This requires manual intervention.
+        // CRITICAL: customer was charged but got no spot and the refund failed.
+        // Persist a durable record first so it survives beyond log retention,
+        // then log for immediate alerting.
+        try {
+          await FailedRefund.create({
+            paymentIntentId: paymentIntent.id,
+            campaignId: paymentIntent.metadata.campaignId,
+            sponsorEmail: paymentIntent.metadata.sponsorEmail,
+            amount: paymentIntent.amount / 100,
+            fulfillmentError: (error as Error).message,
+            refundError: (refundError as Error).message,
+          });
+        } catch (dbError) {
+          console.error("CRITICAL: Failed to persist FailedRefund record:", dbError);
+        }
         console.error(
-          "CRITICAL: Failed to process automatic refund!",
-          refundError,
+          "CRITICAL: Failed to process automatic refund — manual intervention required.",
+          { paymentIntentId: paymentIntent.id, refundError },
         );
       }
     }
@@ -207,10 +250,28 @@ const handlePaymentSuccess = async (paymentIntent: Stripe.PaymentIntent) => {
 };
 
 const handlePaymentFailure = async (paymentIntent: Stripe.PaymentIntent) => {
-  const { campaignId, positionId, sponsorName } = paymentIntent.metadata;
+  const { campaignId, positionId } = paymentIntent.metadata;
 
-  // Could implement cleanup logic here if needed
-  // e.g., release reserved position if it was held
+  if (!positionId || positionId === "none" || !campaignId) return;
+
+  try {
+    const campaign = await campaignService.getCampaignById(campaignId);
+    if (
+      campaign.campaignType === "positional" ||
+      campaign.campaignType === "fixed"
+    ) {
+      const layout = await shirtLayoutService.getLayoutByCampaignId(campaignId);
+      await shirtLayoutService.releasePosition(layout._id.toString(), positionId);
+      console.log(
+        `Released position ${positionId} for campaign ${campaignId} after payment failure (intent ${paymentIntent.id})`,
+      );
+    }
+  } catch (error) {
+    console.error(
+      `Failed to release position ${positionId} for campaign ${campaignId} after payment failure (intent ${paymentIntent.id}):`,
+      error,
+    );
+  }
 };
 
 export const getStripePublishableKey = () => {

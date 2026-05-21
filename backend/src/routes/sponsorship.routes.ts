@@ -58,9 +58,10 @@ router.post(
   sponsorshipController.approveAllLogos,
 );
 
-// Logo pre-upload route (for card payments)
+// Logo pre-upload route (for card payments) — campaign owner only
 router.post(
   "/campaigns/:id/upload-logo",
+  protect,
   uploadLimiter,
   uploadLogo.single("logoFile"),
   sponsorshipController.uploadLogo,
