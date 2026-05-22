@@ -196,7 +196,7 @@ const AmountOrderedRenderer: React.FC<AmountOrderedRendererProps> = ({
                             name={sponsor.name}
                             displayName={sponsor.displayName}
                             logoUrl={sponsor.logoUrl}
-                            logoWidth={sponsor.calculatedLogoWidth || 100}
+                            logoWidth={(sponsor.displayMetrics?.kind === "logo" ? sponsor.displayMetrics.logoWidth : undefined) ?? 100}
                             message={sponsor.message}
                             isPending={sponsor.paymentStatus === "pending"}
                           />
@@ -209,7 +209,7 @@ const AmountOrderedRenderer: React.FC<AmountOrderedRendererProps> = ({
                           <LogoSponsor
                             name={sponsor.name}
                             logoUrl={sponsor.logoUrl}
-                            logoWidth={sponsor.calculatedLogoWidth || 100}
+                            logoWidth={(sponsor.displayMetrics?.kind === "logo" ? sponsor.displayMetrics.logoWidth : undefined) ?? 100}
                             message={sponsor.message}
                             isPending={sponsor.paymentStatus === "pending"}
                           />
@@ -220,7 +220,7 @@ const AmountOrderedRenderer: React.FC<AmountOrderedRendererProps> = ({
                             sponsor.sponsorType === "text") ? (
                           <TextSponsor
                             name={sponsor.name}
-                            fontSize={sponsor.calculatedFontSize || 16}
+                            fontSize={(sponsor.displayMetrics?.kind === "text" ? sponsor.displayMetrics.fontSize : undefined) ?? 16}
                             message={sponsor.message}
                             isPending={sponsor.paymentStatus === "pending"}
                           />
@@ -362,7 +362,7 @@ const AmountOrderedRenderer: React.FC<AmountOrderedRendererProps> = ({
                       name={sponsor.name}
                       displayName={sponsor.displayName!}
                       logoUrl={sponsor.logoUrl!}
-                      logoWidth={sponsor.calculatedLogoWidth || 100}
+                      logoWidth={(sponsor.displayMetrics?.kind === "logo" ? sponsor.displayMetrics.logoWidth : undefined) ?? 100}
                       message={sponsor.message}
                       isPending={isPending}
                     />
@@ -371,7 +371,7 @@ const AmountOrderedRenderer: React.FC<AmountOrderedRendererProps> = ({
                     <LogoSponsor
                       name={sponsor.name}
                       logoUrl={sponsor.logoUrl!}
-                      logoWidth={sponsor.calculatedLogoWidth || 100}
+                      logoWidth={(sponsor.displayMetrics?.kind === "logo" ? sponsor.displayMetrics.logoWidth : undefined) ?? 100}
                       message={sponsor.message}
                       isPending={isPending}
                     />
@@ -379,7 +379,7 @@ const AmountOrderedRenderer: React.FC<AmountOrderedRendererProps> = ({
                   {shouldShowText && (
                     <TextSponsor
                       name={sponsor.name}
-                      fontSize={sponsor.calculatedFontSize || 16}
+                      fontSize={(sponsor.displayMetrics?.kind === "text" ? sponsor.displayMetrics.fontSize : undefined) ?? 16}
                       message={sponsor.message}
                       isPending={isPending}
                     />

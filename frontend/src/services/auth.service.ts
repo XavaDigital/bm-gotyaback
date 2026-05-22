@@ -2,7 +2,8 @@ import apiClient from './apiClient';
 import type { User } from '~/types/campaign.types';
 
 interface AuthResponse extends User {
-    token: string;
+    accessToken: string;
+    refreshToken: string;
 }
 
 // Helper to check if we're in the browser
@@ -18,7 +19,7 @@ const register = async (userData: any): Promise<AuthResponse> => {
     if (response.data && isBrowser) {
         // Store in sessionStorage (cleared when tab closes, not accessible cross-tab)
         sessionStorage.setItem('user', JSON.stringify(response.data));
-        sessionStorage.setItem('token', response.data.token);
+        sessionStorage.setItem('token', response.data.accessToken);
     }
 
     return response.data;
@@ -34,7 +35,7 @@ const login = async (userData: any): Promise<AuthResponse> => {
     if (response.data && isBrowser) {
         // Store in sessionStorage (cleared when tab closes, not accessible cross-tab)
         sessionStorage.setItem('user', JSON.stringify(response.data));
-        sessionStorage.setItem('token', response.data.token);
+        sessionStorage.setItem('token', response.data.accessToken);
     }
 
     return response.data;
@@ -60,7 +61,7 @@ const logout = async () => {
 /**
  * Get current user from localStorage (client-side only)
  */
-const getCurrentUser = (): (User & { token: string }) | null => {
+const getCurrentUser = (): (User & { accessToken: string }) | null => {
     if (!isBrowser) return null;
 
     const userStr = sessionStorage.getItem('user');

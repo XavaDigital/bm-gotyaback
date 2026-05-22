@@ -136,9 +136,7 @@ export interface SponsorEntry {
   displayName?: string; // For logo sponsors with name+logo display (different from sponsor name)
   logoApprovalStatus: LogoApprovalStatus;
   logoRejectionReason?: string;
-  displaySize: DisplaySize;
-  calculatedFontSize?: number;
-  calculatedLogoWidth?: number;
+  displayMetrics: { kind: "text"; fontSize: number } | { kind: "logo"; logoWidth: number } | null;
   createdAt: Date | string;
 }
 

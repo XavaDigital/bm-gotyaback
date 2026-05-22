@@ -44,7 +44,6 @@ export const registerUser = async (
     email: user.email,
     role: user.role,
     organizerProfile: user.organizerProfile,
-    token: accessToken, // Keep for backward compatibility
     accessToken,
     refreshToken,
   };
@@ -75,7 +74,6 @@ export const loginUser = async (
       email: user.email,
       role: user.role,
       organizerProfile: user.organizerProfile,
-      token: accessToken, // Keep for backward compatibility
       accessToken,
       refreshToken,
     };
@@ -246,7 +244,6 @@ export const refreshAccessToken = async (
     organizerProfile: user.organizerProfile,
     accessToken,
     refreshToken: newRefreshToken,
-    token: accessToken, // Keep for backward compatibility
   };
 };
 

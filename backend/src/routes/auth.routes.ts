@@ -8,7 +8,7 @@ import {
   logout,
   logoutAll,
 } from "../controllers/auth.controller";
-import { authLimiter, passwordResetLimiter } from "../middleware/rateLimiter.middleware";
+import { authLimiter, passwordResetLimiter, refreshLimiter } from "../middleware/rateLimiter.middleware";
 import {
   validateRegister,
   validateLogin,
@@ -25,8 +25,7 @@ router.post("/login", authLimiter, validateLogin, login);
 router.post("/forgot-password", passwordResetLimiter, validateForgotPassword, forgotPassword);
 router.post("/reset-password", passwordResetLimiter, validateResetPassword, resetPassword);
 
-// Token refresh endpoint (no strict rate limiting, but still protected by general API limiter)
-router.post("/refresh", refreshToken);
+router.post("/refresh", refreshLimiter, refreshToken);
 
 // Logout endpoints
 router.post("/logout", logout);

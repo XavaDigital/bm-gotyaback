@@ -28,7 +28,7 @@ describe('Session Utils', () => {
         _id: 'user-123',
         name: 'Test User',
         email: 'user@example.com',
-        token: 'test-token',
+        accessToken: 'test-token',
       };
 
       await setUserSession(userData);
@@ -59,7 +59,7 @@ describe('Session Utils', () => {
         _id: 'user-123',
         name: 'Test User',
         email: 'user@example.com',
-        token: 'test-token',
+        accessToken: 'test-token',
       };
       mockSessionData.user = userData;
 
@@ -84,7 +84,7 @@ describe('Session Utils', () => {
         _id: 'user-123',
         name: 'Test User',
         email: 'user@example.com',
-        token: 'test-token',
+        accessToken: 'test-token',
       };
 
       const result = await isAuthenticatedServer();
@@ -97,7 +97,7 @@ describe('Session Utils', () => {
         _id: 'user-123',
         name: 'Test User',
         email: 'user@example.com',
-        token: 'test-token',
+        accessToken: 'test-token',
       };
 
       const result = await isAuthenticatedServer();

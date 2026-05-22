@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"\\\\.\\(ts|tsx|js|jsx\\)$\")",
+      "PowerShell(cd D:\\\\Coding\\\\bm-gotyaback\\\\backend; $out = npx tsc --noEmit 2>&1; $out | Where-Object { $_ -match \"pricing|campaign\\\\.types|shirtLayout|sponsorship\\\\.service\" })",
+      "PowerShell(cd D:\\\\Coding\\\\bm-gotyaback\\\\backend; npx tsc --noEmit 2>&1 | Out-String | Select-String -Pattern \"pricing\\\\.service\\\\.ts|campaign\\\\.types\\\\.ts|shirtLayout\\\\.service\\\\.ts|sponsorship\\\\.service\\\\.ts\" -AllMatches | ForEach-Object { $_.Matches } | ForEach-Object { $_.Value })",
+      "PowerShell(cd D:\\\\Coding\\\\bm-gotyaback\\\\backend; $output = \\(npx tsc --noEmit 2>&1\\) -join \"`n\"; Write-Output \\($output | Select-String \"pricing.service.ts|shirtLayout.service.ts|sponsorship.service.ts|campaign.types.ts\" -AllMatches\\))",
+      "Bash(node -e \"require\\('./dist/app.js'\\)\")",
+      "Bash(Remove-Item \"D:\\\\Coding\\\\bm-gotyaback\\\\frontend\\\\src\\\\components\\\\QuillEditor.tsx\" -Force)",
+      "Bash(Remove-Item \"D:\\\\Coding\\\\bm-gotyaback\\\\frontend\\\\src\\\\components\\\\QuillEditor.test.tsx\" -Force)",
+      "Bash(Remove-Item \"D:\\\\Coding\\\\bm-gotyaback\\\\frontend\\\\src\\\\components\\\\WordCloudRenderer.legacy.tsx\" -Force)",
+      "Bash(Write-Output \"Deleted 3 files\")"
+    ]
+  }
+}

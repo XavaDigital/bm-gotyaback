@@ -13,32 +13,35 @@ export interface SectionConfig {
   slots: number; // Number of slots in this section
 }
 
-export interface PricingConfig {
-  // For fixed pricing
-  fixedPrice?: number;
+export type SectionMap = {
+  top?: SectionConfig;
+  middle?: SectionConfig;
+  bottom?: SectionConfig;
+};
 
-  // For positional pricing (additive: basePrice + position * pricePerPosition)
+// Discriminated union for type-safe pricing — each variant carries only the
+// fields it needs. Use parsePricingConfig() to construct from a flat PricingConfig.
+export type PositionalPricing =
+  | { type: "positional"; mode: "additive"; basePrice: number; pricePerPosition: number; pricingOrder?: "ascending" | "descending" }
+  | { type: "positional"; mode: "multiplicative"; priceMultiplier: number }
+  | { type: "positional"; mode: "sections"; sections: SectionMap };
+
+export type CampaignPricing =
+  | { type: "fixed"; fixedPrice: number }
+  | PositionalPricing
+  | { type: "pay-what-you-want"; minimumAmount: number; suggestedAmounts?: number[]; sizeTiers?: SizeTier[] };
+
+// Flat representation stored in MongoDB — all fields optional because which ones
+// are relevant depends on campaignType. Use parsePricingConfig() for typed access.
+export interface PricingConfig {
+  fixedPrice?: number;
   basePrice?: number;
   pricePerPosition?: number;
-
-  // For positional pricing (multiplicative: position * priceMultiplier)
   priceMultiplier?: number;
-
-  // For positional pricing (order preference)
   pricingOrder?: "ascending" | "descending";
-
-  // For positional pricing with sections layout (amount-ordered)
-  sections?: {
-    top?: SectionConfig;
-    middle?: SectionConfig;
-    bottom?: SectionConfig;
-  };
-
-  // For pay-what-you-want
+  sections?: SectionMap;
   minimumAmount?: number;
   suggestedAmounts?: number[];
-
-  // Size tiers for pay-what-you-want
   sizeTiers?: SizeTier[];
 }
 

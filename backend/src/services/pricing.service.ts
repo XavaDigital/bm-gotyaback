@@ -1,20 +1,103 @@
-import { PricingConfig, SizeTier, SponsorType } from "../types/campaign.types";
+import { CampaignPricing, PositionalPricing, PricingConfig, SizeTier, SponsorType } from "../types/campaign.types";
 
 /**
- * Calculate the price for a specific position in a positional pricing campaign
- * Supports three modes:
- * - Sections: Different prices for top, middle, and bottom sections
- * - Additive: basePrice + (position × pricePerPosition)
- * - Multiplicative: position × priceMultiplier
+ * Convert a flat PricingConfig + campaignType into the appropriate CampaignPricing
+ * discriminated union variant. Validates the config and throws on invalid input.
+ */
+export const parsePricingConfig = (
+  campaignType: string,
+  config: PricingConfig,
+): CampaignPricing => {
+  if (campaignType === "fixed") {
+    if (!config.fixedPrice || config.fixedPrice <= 0) {
+      throw new Error("Fixed pricing requires a valid fixedPrice");
+    }
+    return { type: "fixed", fixedPrice: config.fixedPrice };
+  }
+
+  if (campaignType === "positional") {
+    const hasSections =
+      config.sections &&
+      (config.sections.top || config.sections.middle || config.sections.bottom);
+
+    if (hasSections && config.sections) {
+      const validateSection = (section: { amount?: number; slots?: number } | undefined, name: string) => {
+        if (section) {
+          if (!section.amount || section.amount <= 0) {
+            throw new Error(`Section '${name}' requires a valid amount greater than 0`);
+          }
+          if (!section.slots || section.slots <= 0) {
+            throw new Error(`Section '${name}' requires a valid number of slots greater than 0`);
+          }
+        }
+      };
+      validateSection(config.sections.top, "top");
+      validateSection(config.sections.middle, "middle");
+      validateSection(config.sections.bottom, "bottom");
+      return { type: "positional", mode: "sections", sections: config.sections };
+    }
+
+    if (config.priceMultiplier !== undefined) {
+      if (config.priceMultiplier <= 0) {
+        throw new Error("Invalid pricing config: priceMultiplier must be positive");
+      }
+      return { type: "positional", mode: "multiplicative", priceMultiplier: config.priceMultiplier };
+    }
+
+    if (config.basePrice !== undefined && config.pricePerPosition !== undefined) {
+      if (config.basePrice < 0 || config.pricePerPosition < 0) {
+        throw new Error("Invalid pricing config: basePrice and pricePerPosition must be non-negative");
+      }
+      return {
+        type: "positional",
+        mode: "additive",
+        basePrice: config.basePrice,
+        pricePerPosition: config.pricePerPosition,
+        pricingOrder: config.pricingOrder,
+      };
+    }
+
+    throw new Error(
+      "Positional pricing requires either priceMultiplier, (basePrice + pricePerPosition), or sections configuration",
+    );
+  }
+
+  if (campaignType === "pay-what-you-want") {
+    if (!config.minimumAmount || config.minimumAmount <= 0) {
+      throw new Error("Pay-what-you-want requires a valid minimumAmount");
+    }
+    if (config.sizeTiers && config.sizeTiers.length > 0) {
+      config.sizeTiers.forEach((tier, index) => {
+        if (tier.minAmount < 0) throw new Error(`Size tier ${index} has invalid minAmount`);
+        if (tier.textFontSize <= 0 || tier.logoWidth <= 0) throw new Error(`Size tier ${index} has invalid display sizes`);
+      });
+    }
+    return {
+      type: "pay-what-you-want",
+      minimumAmount: config.minimumAmount,
+      suggestedAmounts: config.suggestedAmounts,
+      sizeTiers: config.sizeTiers,
+    };
+  }
+
+  throw new Error(`Unknown campaign type: ${campaignType}`);
+};
+
+/**
+ * Calculate the price for a specific position in a positional pricing campaign.
+ * Accepts a typed PositionalPricing variant — use parsePricingConfig() to obtain one.
+ * For sections mode, pass the section name as the third argument.
  */
 export const calculatePositionPrice = (
   position: number,
-  config: PricingConfig,
+  config: PositionalPricing,
   section?: "top" | "middle" | "bottom",
   totalPositions?: number,
 ): number => {
-  // Section-based pricing (for amount-ordered layout)
-  if (config.sections && section) {
+  if (config.mode === "sections") {
+    if (!section) {
+      throw new Error("Section parameter required for sections-mode positional pricing");
+    }
     const sectionConfig = config.sections[section];
     if (!sectionConfig) {
       throw new Error(`Section configuration not found for ${section}`);
@@ -22,66 +105,15 @@ export const calculatePositionPrice = (
     return sectionConfig.amount;
   }
 
-  // Multiplicative pricing (e.g., position 40 × $5 = $200)
-  if (config.priceMultiplier) {
-    if (config.priceMultiplier <= 0) {
-      throw new Error(
-        "Invalid pricing config: priceMultiplier must be positive",
-      );
-    }
+  if (config.mode === "multiplicative") {
     return position * config.priceMultiplier;
   }
 
-  // Additive pricing (e.g., $10 + (position 40 × $2) = $90)
-  if (config.basePrice !== undefined && config.pricePerPosition !== undefined) {
-    if (config.basePrice < 0 || config.pricePerPosition < 0) {
-      throw new Error(
-        "Invalid pricing config: basePrice and pricePerPosition must be non-negative",
-      );
-    }
-
-    // Check for pricing order preference (default is ascending)
-    if (config.pricingOrder === "descending") {
-      // Descending logic: Base Price is the LAST spot.
-      // Price increases as we go backwards from the last spot to the first.
-      // E.g. Total 100. Pos 100 = Base. Pos 99 = Base + 1*Diff. Pos 1 = Base + 99*Diff.
-
-      if (!totalPositions) {
-        // Fallback if totalPositions is not provided (though it should be)
-        // We'll treat Base Price as the starting max price in this edge case, or just error?
-        // Let's stick to the previous simple logic as fallback but log/warn?
-        // Actually, let's just assume position 1 is base + 0 for now to avoid breaking existing calls without totalPositions
-        // WAIT, the user wants Base Price to be the MINIMUM.
-        // If we don't know totalPositions, we can't calculate "Total - Position".
-        // Let's assume a standard grid size if missing? No, that's risky.
-        // Let's rely on the caller providing it.
-      }
-
-      if (totalPositions) {
-        const inversePosition = totalPositions - position;
-        return config.basePrice + inversePosition * config.pricePerPosition;
-      }
-
-      // Fallback: If we don't know the total, we can't anchor to the end.
-      // But we can interpret "Base Price" as the "Max Price" (Price at Pos 1) if we wanted?
-      // No, let's keep consistency. If totalPositions is missing, we simply can't do "Base is Last".
-      // But since we control the caller (shirtLayout), we will provide it.
-      // For safety, if totalPositions is missing, we default to standard ascending to avoid negative prices or weirdness,
-      // OR we just use the previous reversed logic?
-      // User said "Base Price as $10... should be at the last spot".
-      // Without totalPositions, we can't know which is the last spot.
-      // So if no totalPositions, we just return standard additive (ascending) as a safe default?
-      // Or maybe throw an error?
-      // Let's default to standard additive and maybe log.
-      return config.basePrice + position * config.pricePerPosition;
-    }
-
-    return config.basePrice + (position - 1) * config.pricePerPosition;
+  // additive
+  if (config.pricingOrder === "descending" && totalPositions) {
+    return config.basePrice + (totalPositions - position) * config.pricePerPosition;
   }
-
-  throw new Error(
-    "Invalid pricing config for positional pricing: must provide either sections, priceMultiplier, or (basePrice + pricePerPosition)",
-  );
+  return config.basePrice + (position - 1) * config.pricePerPosition;
 };
 
 /**
@@ -136,74 +168,14 @@ export const calculateDisplaySizes = (
 };
 
 /**
- * Validate pricing config based on campaign type
+ * Validate a pricing config for the given campaign type.
+ * Delegates to parsePricingConfig — throws the same errors on invalid input.
  */
 export const validatePricingConfig = (
   campaignType: string,
   config: PricingConfig,
 ): boolean => {
-  if (campaignType === "fixed") {
-    if (!config.fixedPrice || config.fixedPrice <= 0) {
-      throw new Error("Fixed pricing requires a valid fixedPrice");
-    }
-  } else if (campaignType === "positional") {
-    // Must have either multiplicative OR additive pricing OR sections-based pricing
-    const hasMultiplicative =
-      config.priceMultiplier && config.priceMultiplier > 0;
-    const hasAdditive =
-      config.basePrice !== undefined &&
-      config.basePrice >= 0 &&
-      config.pricePerPosition !== undefined &&
-      config.pricePerPosition >= 0;
-    const hasSections =
-      config.sections &&
-      (config.sections.top || config.sections.middle || config.sections.bottom);
-
-    if (!hasMultiplicative && !hasAdditive && !hasSections) {
-      throw new Error(
-        "Positional pricing requires either priceMultiplier, (basePrice + pricePerPosition), or sections configuration",
-      );
-    }
-
-    // Validate sections if provided
-    if (hasSections && config.sections) {
-      const validateSection = (section: any, name: string) => {
-        if (section) {
-          if (!section.amount || section.amount <= 0) {
-            throw new Error(
-              `Section '${name}' requires a valid amount greater than 0`,
-            );
-          }
-          if (!section.slots || section.slots <= 0) {
-            throw new Error(
-              `Section '${name}' requires a valid number of slots greater than 0`,
-            );
-          }
-        }
-      };
-
-      validateSection(config.sections.top, "top");
-      validateSection(config.sections.middle, "middle");
-      validateSection(config.sections.bottom, "bottom");
-    }
-  } else if (campaignType === "pay-what-you-want") {
-    if (!config.minimumAmount || config.minimumAmount <= 0) {
-      throw new Error("Pay-what-you-want requires a valid minimumAmount");
-    }
-
-    // Size tiers are optional - if provided, validate them
-    if (config.sizeTiers && config.sizeTiers.length > 0) {
-      config.sizeTiers.forEach((tier, index) => {
-        if (tier.minAmount < 0) {
-          throw new Error(`Size tier ${index} has invalid minAmount`);
-        }
-        if (tier.textFontSize <= 0 || tier.logoWidth <= 0) {
-          throw new Error(`Size tier ${index} has invalid display sizes`);
-        }
-      });
-    }
-  }
-
+  parsePricingConfig(campaignType, config);
   return true;
 };
 

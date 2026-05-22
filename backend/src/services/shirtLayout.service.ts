@@ -1,7 +1,7 @@
 import { ShirtLayout } from "../models/ShirtLayout";
 import mongoose from "mongoose";
 import { PricingConfig } from "../types/campaign.types";
-import { calculatePositionPrice } from "./pricing.service";
+import { calculatePositionPrice, parsePricingConfig } from "./pricing.service";
 
 // Generate positions for section-based layout (top, middle, bottom)
 export const generateSectionPositions = (
@@ -52,79 +52,44 @@ export const generatePositions = (
   pricing: PricingConfig,
   arrangement: "horizontal" | "vertical" = "horizontal",
 ) => {
+  const campaignPricing = parsePricingConfig(campaignType, pricing);
   const positions = [];
   const rows = Math.ceil(totalPositions / columns);
   let positionNumber = 1;
 
+  const priceForPosition = (pos: number): number => {
+    if (campaignPricing.type === "fixed") return campaignPricing.fixedPrice;
+    if (campaignPricing.type === "positional") {
+      return calculatePositionPrice(pos, campaignPricing, undefined, totalPositions);
+    }
+    return campaignPricing.minimumAmount;
+  };
+
   if (arrangement === "horizontal") {
-    // Horizontal arrangement: fill rows first (left to right, top to bottom)
-    // Position 1, 2, 3 are in the first row
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < columns; col++) {
         if (positionNumber > totalPositions) break;
-
-        const positionId = positionNumber.toString();
-        let price = 0;
-
-        if (campaignType === "fixed" && pricing.fixedPrice) {
-          price = pricing.fixedPrice;
-        } else if (campaignType === "positional") {
-          // Use the new pricing service for positional pricing
-          price = calculatePositionPrice(
-            positionNumber,
-            pricing,
-            undefined,
-            totalPositions,
-          );
-        } else if (campaignType === "pay-what-you-want") {
-          // For PWYW, price is determined by sponsor's donation amount, not position
-          price = pricing.minimumAmount || 0;
-        }
-
         positions.push({
-          positionId,
+          positionId: positionNumber.toString(),
           row: row + 1,
           col: col + 1,
-          price,
+          price: priceForPosition(positionNumber),
           isTaken: false,
         });
-
         positionNumber++;
       }
     }
   } else {
-    // Vertical arrangement: fill columns first (top to bottom, left to right)
-    // Position 1, 2, 3 are in the first column
     for (let col = 0; col < columns; col++) {
       for (let row = 0; row < rows; row++) {
         if (positionNumber > totalPositions) break;
-
-        const positionId = positionNumber.toString();
-        let price = 0;
-
-        if (campaignType === "fixed" && pricing.fixedPrice) {
-          price = pricing.fixedPrice;
-        } else if (campaignType === "positional") {
-          // Use the new pricing service for positional pricing
-          price = calculatePositionPrice(
-            positionNumber,
-            pricing,
-            undefined,
-            totalPositions,
-          );
-        } else if (campaignType === "pay-what-you-want") {
-          // For PWYW, price is determined by sponsor's donation amount, not position
-          price = pricing.minimumAmount || 0;
-        }
-
         positions.push({
-          positionId,
+          positionId: positionNumber.toString(),
           row: row + 1,
           col: col + 1,
-          price,
+          price: priceForPosition(positionNumber),
           isTaken: false,
         });
-
         positionNumber++;
       }
     }
@@ -286,4 +251,31 @@ export const getPositionDetails = async (
   }
 
   return layout.placements[0];
+};
+
+// Recalculate every placement price after a pricing config change.
+// Owned here because it mutates the layout document — campaign.service has no business
+// touching layout internals directly.
+export const recalculateLayoutPrices = async (
+  campaignId: string,
+  campaignType: string,
+  pricing: PricingConfig,
+) => {
+  const layout = await ShirtLayout.findOne({ campaignId });
+  if (!layout) throw new Error("Layout not found");
+
+  const campaignPricing = parsePricingConfig(campaignType, pricing);
+  const total = layout.placements.length;
+
+  layout.placements.forEach((placement: any, index: number) => {
+    const pos = index + 1;
+    if (campaignPricing.type === "fixed") {
+      placement.price = campaignPricing.fixedPrice;
+    } else if (campaignPricing.type === "positional") {
+      placement.price = calculatePositionPrice(pos, campaignPricing, undefined, total);
+    }
+  });
+
+  await layout.save();
+  return layout;
 };

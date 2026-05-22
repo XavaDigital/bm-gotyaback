@@ -78,7 +78,7 @@ const WordCloudRenderer: React.FC<WordCloudRendererProps> = ({
 
         // Prepare word list for wordcloud2.js
         const wordList = approvedSponsors.map((sponsor) => {
-          const fontSize = sponsor.calculatedFontSize || 16;
+          const fontSize = (sponsor.displayMetrics?.kind === "text" ? sponsor.displayMetrics.fontSize : undefined) ?? 16;
           return [sponsor.name, fontSize];
         });
 
@@ -156,7 +156,7 @@ const WordCloudRenderer: React.FC<WordCloudRendererProps> = ({
     const centerX = containerWidth / 2;
 
     // Check if sponsors have varying sizes (pay-what-you-want or positional with tiers)
-    const sizes = approvedSponsors.map(s => s.calculatedFontSize || s.calculatedLogoWidth || 20);
+    const sizes = approvedSponsors.map(s => (s.displayMetrics ? (s.displayMetrics.kind === "text" ? s.displayMetrics.fontSize : s.displayMetrics.logoWidth) : 20));
     const hasVaryingSizes = Math.max(...sizes) - Math.min(...sizes) > 5;
     const maxSize = Math.max(...sizes);
 
@@ -176,15 +176,15 @@ const WordCloudRenderer: React.FC<WordCloudRendererProps> = ({
 
     // Sort sponsors by size (largest first) for better packing
     const sortedSponsors = [...approvedSponsors].sort((a, b) => {
-      const sizeA = a.calculatedFontSize || a.calculatedLogoWidth || 20;
-      const sizeB = b.calculatedFontSize || b.calculatedLogoWidth || 20;
+      const sizeA = (a.displayMetrics ? (a.displayMetrics.kind === "text" ? a.displayMetrics.fontSize : a.displayMetrics.logoWidth) : 20);
+      const sizeB = (b.displayMetrics ? (b.displayMetrics.kind === "text" ? b.displayMetrics.fontSize : b.displayMetrics.logoWidth) : 20);
       return sizeB - sizeA;
     });
 
     sortedSponsors.forEach((sponsor, index) => {
       // Calculate size based on amount or display size
       const baseSize =
-        sponsor.calculatedFontSize || sponsor.calculatedLogoWidth || 20;
+        (sponsor.displayMetrics ? (sponsor.displayMetrics.kind === "text" ? sponsor.displayMetrics.fontSize : sponsor.displayMetrics.logoWidth) : 20);
 
       // Determine what will be shown for this sponsor
       const isLogoSponsor = sponsor.sponsorType === "logo" && sponsor.logoUrl;
@@ -212,14 +212,14 @@ const WordCloudRenderer: React.FC<WordCloudRendererProps> = ({
 
       if (willShowLogoWithName) {
         // Logo with name underneath: use logo width, add heights
-        const logoWidth = sponsor.calculatedLogoWidth || 100;
+        const logoWidth = (sponsor.displayMetrics?.kind === "logo" ? sponsor.displayMetrics.logoWidth : undefined) ?? 100;
         const logoHeight = logoWidth * 0.8; // More accurate logo height
         const textHeight = 12 * 1.2 * 2; // fontSize * lineHeight * max 2 lines
         width = Math.max(logoWidth + 16, 60); // REDUCED padding from 40 to 16
         height = logoHeight + textHeight + 12; // REDUCED gap from 20 to 12
       } else if (willShowLogoOnly) {
         // Logo only
-        const logoWidth = sponsor.calculatedLogoWidth || 100;
+        const logoWidth = (sponsor.displayMetrics?.kind === "logo" ? sponsor.displayMetrics.logoWidth : undefined) ?? 100;
         width = logoWidth + 16; // REDUCED padding from 30 to 16
         height = logoWidth * 0.8 + 16; // More accurate height
       } else {
@@ -415,7 +415,7 @@ const WordCloudRenderer: React.FC<WordCloudRendererProps> = ({
                 name={sponsor.name}
                 displayName={sponsor.displayName!}
                 logoUrl={sponsor.logoUrl!}
-                logoWidth={sponsor.calculatedLogoWidth || 100}
+                logoWidth={(sponsor.displayMetrics?.kind === "logo" ? sponsor.displayMetrics.logoWidth : undefined) ?? 100}
                 message={sponsor.message}
                 isPending={isPending}
               />
@@ -424,7 +424,7 @@ const WordCloudRenderer: React.FC<WordCloudRendererProps> = ({
               <LogoSponsor
                 name={sponsor.name}
                 logoUrl={sponsor.logoUrl!}
-                logoWidth={sponsor.calculatedLogoWidth || 100}
+                logoWidth={(sponsor.displayMetrics?.kind === "logo" ? sponsor.displayMetrics.logoWidth : undefined) ?? 100}
                 message={sponsor.message}
                 isPending={isPending}
               />
@@ -432,7 +432,7 @@ const WordCloudRenderer: React.FC<WordCloudRendererProps> = ({
             {shouldShowText && (
               <TextSponsor
                 name={sponsor.name}
-                fontSize={sponsor.calculatedFontSize || 16}
+                fontSize={(sponsor.displayMetrics?.kind === "text" ? sponsor.displayMetrics.fontSize : undefined) ?? 16}
                 message={sponsor.message}
                 isPending={isPending}
               />

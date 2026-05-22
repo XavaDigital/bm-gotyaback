@@ -194,7 +194,7 @@
 
 ## 8. Code Correctness & Bug-Prone Blocks
 
-- [ ] **Dead conditional in `createSponsorship` — `paymentStatus` always `"pending"`**
+- [x] **Dead conditional in `createSponsorship` — `paymentStatus` always `"pending"`**
   `sponsorship.service.ts:118–119`:
   ```ts
   paymentStatus: sponsorData.paymentMethod === "cash" ? "pending" : "pending"
@@ -202,29 +202,29 @@
   Both branches return the same value. This is almost certainly a leftover from a refactor. Decide the intended logic (cash → `"pending"`, card → something else?) and fix it.
   _File: `backend/src/services/sponsorship.service.ts` lines 118–119_
 
-- [ ] **Legacy `generateToken` function still in production code with 30-day expiry**
+- [x] **Legacy `generateToken` function still in production code with 30-day expiry**
   `user.service.ts:186–189` is marked "legacy — kept for backward compatibility." It generates tokens with a `30d` expiry, much longer than the access tokens in `tokenService`. If it is actually called anywhere, it bypasses the short-lived token architecture. Trace all callers and remove it or redirect them to `tokenService.generateAccessToken`.
   _File: `backend/src/services/user.service.ts` lines 184–189_
 
-- [ ] **Logout does not revoke the server-side refresh token**
+- [x] **Logout does not revoke the server-side refresh token**
   `auth.service.ts:47–55`: logout clears `localStorage` and redirects, but never calls the backend logout endpoint. If a refresh token exists in a cookie or elsewhere, it remains valid until expiry. Call `POST /api/auth/logout` before clearing local state.
   _File: `frontend/src/services/auth.service.ts` lines 47–55_
 
-- [ ] **`isAuthenticated()` checks only for the existence of a stored object, not token validity**
+- [x] **`isAuthenticated()` checks only for the existence of a stored object, not token validity**
   `auth.service.ts:79–81`: returns `true` if `localStorage` has a `user` key, regardless of whether the token is expired. This means a user whose JWT has expired is still considered "authenticated" by the client until they make an actual API call that returns 401.
   Decode the JWT (without verifying the signature, which is fine client-side for expiry) and check `exp` against `Date.now()`.
   _File: `frontend/src/services/auth.service.ts` lines 79–81_
 
-- [ ] **`axios` `validateStatus` accepts all status codes including 5xx**
+- [x] **`axios` `validateStatus` accepts all status codes including 5xx**
   `apiClient.ts:9–13` returns `true` for any status `200–599`. This disables Axios's built-in error throwing, and the response interceptor must manually check for `>=400`. If a developer adds a new API call without checking the status, 500 errors will appear as successful responses. Revert to the default (`status < 400`) and handle the one known exception (404 on layout) more narrowly.
   _File: `frontend/src/services/apiClient.ts` lines 9–13_
 
-- [ ] **`validateStatus` swallows 401 — no automatic redirect to login**
+- [x] **`validateStatus` swallows 401 — no automatic redirect to login**
   Because all 4xx/5xx are caught by the interceptor, there is no global 401 → redirect-to-login handler. Users whose tokens expire mid-session see broken UI instead of being redirected.
   Add a response interceptor case for `status === 401` that clears the stored user and redirects.
   _File: `frontend/src/services/apiClient.ts` lines 34–56_
 
-- [ ] **`path.extname` and `path.basename` on user-supplied filenames without sanitization**
+- [x] **`path.extname` and `path.basename` on user-supplied filenames without sanitization**
   `s3Upload.ts:33–35`: the file name used to build the S3 key is derived from `originalName` (user input). A name like `../../../etc/passwd.png` could produce an unexpected S3 key path. Sanitize the base name by stripping non-alphanumeric characters before constructing the key.
   _File: `backend/src/utils/s3Upload.ts` lines 33–35_
 
@@ -232,15 +232,15 @@
 
 ## 9. Observability & Error Tracking
 
-- [ ] **Payment fulfillment failures and refund failures only log to `console.error`**
+- [x] **Payment fulfillment failures and refund failures only log to `console.error`**
   `payment.service.ts:176, 200–203`: errors during `handlePaymentSuccess` and failed automatic refunds are only written to `console.error`. In a cloud environment, console logs are ephemeral. Persist these failures to a database collection (e.g., `FailedOperation`) so they are queryable and alertable.
   _File: `backend/src/services/payment.service.ts` lines 175–205_
 
-- [ ] **No payment audit log for successful charges**
+- [x] **No payment audit log for successful charges**
   The `Transaction` document is created on success (payment.service.ts:168–174), but there is no audit event logged for payment success, failure, or refund. Extend the existing `auditLogger` (used in auth flows) to cover all financial operations.
   _File: `backend/src/services/payment.service.ts` lines 163–174_
 
-- [ ] **Position release failure is not logged with identifying context**
+- [x] **Position release failure is not logged with identifying context**
   `sponsorship.service.ts:131–143`: if `SponsorEntry.create` fails and the subsequent `releasePosition` also fails, the error is re-thrown but the `campaignId` and `positionId` are not included in the log output. An operator cannot identify which position is stuck without cross-referencing timestamps.
   Log `{ campaignId, positionId }` alongside the error before rethrowing.
   _File: `backend/src/services/sponsorship.service.ts` lines 130–143_
@@ -249,23 +249,23 @@
 
 ## 10. Minor / Low-Priority Improvements
 
-- [ ] **`styleSrc: ["'unsafe-inline'"]` in CSP**
+- [x] **`styleSrc: ["'unsafe-inline'"]` in CSP**
   `app.ts:32` allows inline styles globally. This weakens the CSP against style-based injection attacks. Prefer a nonce-based approach or move styles to external sheets.
   _File: `backend/src/app.ts` line 32_
 
-- [ ] **Rate limiter on `/refresh` token endpoint is too lenient**
+- [x] **Rate limiter on `/refresh` token endpoint is too lenient**
   `auth.routes.ts` applies only the general `apiLimiter` (100 req/15 min) to the refresh token endpoint. A stolen refresh token could be used to generate many access tokens before being revoked. Create a dedicated `refreshLimiter` (e.g., 10 req/15 min per IP).
   _File: `backend/src/routes/auth.routes.ts`, `backend/src/middleware/rateLimiter.middleware.ts`_
 
-- [ ] **`STRIPE_WEBHOOK_SECRET` is cast as `string` without a null check**
+- [x] **`STRIPE_WEBHOOK_SECRET` is cast as `string` without a null check**
   `payment.service.ts:108`: `process.env.STRIPE_WEBHOOK_SECRET as string` silently passes `undefined` to `stripe.webhooks.constructEvent`. If the variable is missing, every webhook will throw with a confusing Stripe error instead of a clear startup/config failure.
   Add `if (!webhookSecret) throw new Error("STRIPE_WEBHOOK_SECRET is not configured")`.
   _File: `backend/src/services/payment.service.ts` line 108_
 
-- [ ] **`payment_method_types` hardcoded as `["card", "afterpay_clearpay"]`**
+- [x] **`payment_method_types` hardcoded as `["card", "afterpay_clearpay"]`**
   `payment.service.ts:94`: Afterpay is hard-coded for all campaigns regardless of region or campaign settings. Afterpay is only available for NZD/AUD/USD and not all Stripe accounts. Derive the available payment methods from campaign currency and server-side Stripe account capabilities.
   _File: `backend/src/services/payment.service.ts` line 94_
 
-- [ ] **TypeScript `strict` mode should be confirmed enabled**
+- [x] **TypeScript `strict` mode should be confirmed enabled**
   Verify `backend/tsconfig.json` has `"strict": true`. Strict mode catches many null-safety issues at compile time (e.g., `process.env.X as string` bypasses would surface more naturally).
   _File: `backend/tsconfig.json`_

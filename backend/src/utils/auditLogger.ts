@@ -3,6 +3,8 @@
  * Logs admin actions, authentication events, and critical operations
  */
 
+import { AuditLog } from "../models/AuditLog";
+
 export enum AuditAction {
   // Authentication
   USER_LOGIN = 'USER_LOGIN',
@@ -32,6 +34,9 @@ export enum AuditAction {
   PAYMENT_INTENT_CREATE = 'PAYMENT_INTENT_CREATE',
   PAYMENT_SUCCESS = 'PAYMENT_SUCCESS',
   PAYMENT_FAILURE = 'PAYMENT_FAILURE',
+  PAYMENT_REFUND_SUCCEEDED = 'PAYMENT_REFUND_SUCCEEDED',
+  PAYMENT_REFUND_FAILED = 'PAYMENT_REFUND_FAILED',
+  PAYMENT_FULFILLMENT_FAILURE = 'PAYMENT_FULFILLMENT_FAILURE',
   
   // Security events
   AUTH_FAILURE = 'AUTH_FAILURE',
@@ -86,13 +91,10 @@ export const logAudit = (entry: Omit<AuditLogEntry, 'timestamp'>): void => {
       console.log(logMessage);
   }
 
-  // In production, you would also:
-  // 1. Write to a database table for audit trail
-  // 2. Send to a logging service (e.g., CloudWatch, Datadog, Sentry)
-  // 3. Alert on critical events
-  
-  // Example: Save to database (implement this in production)
-  // await AuditLog.create(logEntry);
+  // Persist to database — fire-and-forget so a DB failure never silences the console log
+  AuditLog.create(logEntry).catch((err) =>
+    console.error("[AUDIT] Failed to persist audit log to database:", err),
+  );
 };
 
 /**

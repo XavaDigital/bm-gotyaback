@@ -77,6 +77,18 @@ export const sponsorLimiter = rateLimit({
 });
 
 /**
+ * Rate limiter for the token refresh endpoint.
+ * Tighter than the general API limiter to limit access token generation from a stolen refresh token.
+ */
+export const refreshLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: isProduction ? 10 : 1000, // 10 refresh calls per 15 min in production
+  message: "Too many token refresh requests, please try again later.",
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/**
  * Lenient rate limiter for public read-only endpoints
  * Allows more requests for viewing campaigns, sponsors, etc.
  */

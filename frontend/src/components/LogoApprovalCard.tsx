@@ -124,9 +124,11 @@ const LogoApprovalCard: React.FC<LogoApprovalCardProps> = ({
                 {sponsor.name}
               </strong>
               <Tag color="blue">${sponsor.amount}</Tag>
-              {sponsor.displaySize && (
-                <Tag color="purple" style={{ textTransform: "capitalize" }}>
-                  {sponsor.displaySize}
+              {sponsor.displayMetrics && (
+                <Tag color="purple">
+                  {sponsor.displayMetrics.kind === "logo"
+                    ? `${sponsor.displayMetrics.logoWidth}px wide`
+                    : `${sponsor.displayMetrics.fontSize}px`}
                 </Tag>
               )}
             </div>

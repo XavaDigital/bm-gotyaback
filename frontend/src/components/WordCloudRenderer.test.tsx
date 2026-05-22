@@ -18,7 +18,7 @@ describe('WordCloudRenderer', () => {
       _id: '1',
       name: 'Sponsor 1',
       amount: 100,
-      calculatedFontSize: 20,
+      displayMetrics: { kind: 'text' as const, fontSize: 20 },
       sponsorType: 'text',
       logoApprovalStatus: 'approved',
     }),
@@ -26,7 +26,7 @@ describe('WordCloudRenderer', () => {
       _id: '2',
       name: 'Sponsor 2',
       amount: 200,
-      calculatedFontSize: 30,
+      displayMetrics: { kind: 'text' as const, fontSize: 30 },
       sponsorType: 'text',
       logoApprovalStatus: 'approved',
     }),
@@ -39,7 +39,7 @@ describe('WordCloudRenderer', () => {
       amount: 100,
       sponsorType: 'logo',
       logoUrl: 'https://example.com/logo1.png',
-      calculatedLogoWidth: 100,
+      displayMetrics: { kind: 'logo' as const, logoWidth: 100 },
       logoApprovalStatus: 'approved',
     }),
     createMockSponsor({
@@ -48,7 +48,7 @@ describe('WordCloudRenderer', () => {
       amount: 200,
       sponsorType: 'logo',
       logoUrl: 'https://example.com/logo2.png',
-      calculatedLogoWidth: 150,
+      displayMetrics: { kind: 'logo' as const, logoWidth: 150 },
       logoApprovalStatus: 'approved',
     }),
   ];
@@ -92,7 +92,7 @@ describe('WordCloudRenderer', () => {
         sponsorType: 'logo',
         logoUrl: 'https://example.com/logo1.png',
         logoApprovalStatus: 'approved',
-        calculatedFontSize: 20,
+        displayMetrics: { kind: 'logo' as const, logoWidth: 20 },
       }),
       createMockSponsor({
         _id: '2',
@@ -100,7 +100,7 @@ describe('WordCloudRenderer', () => {
         sponsorType: 'logo',
         logoUrl: 'https://example.com/logo2.png',
         logoApprovalStatus: 'pending',
-        calculatedFontSize: 20,
+        displayMetrics: { kind: 'logo' as const, logoWidth: 20 },
       }),
     ];
 
@@ -157,7 +157,7 @@ describe('WordCloudRenderer', () => {
         _id: '1',
         name: 'Text Sponsor',
         sponsorType: 'text',
-        calculatedFontSize: 20,
+        displayMetrics: { kind: 'text' as const, fontSize: 20 },
         logoApprovalStatus: 'approved',
       }),
       createMockSponsor({
@@ -166,7 +166,7 @@ describe('WordCloudRenderer', () => {
         sponsorType: 'logo',
         logoUrl: 'https://example.com/logo.png',
         displayName: 'Logo Display',
-        calculatedLogoWidth: 100,
+        displayMetrics: { kind: 'logo' as const, logoWidth: 100 },
         logoApprovalStatus: 'approved',
       }),
     ];

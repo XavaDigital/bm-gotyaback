@@ -10,7 +10,9 @@
       "Bash(node -e \"const s = require\\('sanitize-html'\\); console.log\\('defaults type:', typeof s.defaults\\); console.log\\('allowedTags:', s.defaults && s.defaults.allowedTags ? s.defaults.allowedTags.slice\\(0,3\\) : 'MISSING'\\);\")",
       "Bash(kill %1)",
       "Bash(wait)",
-      "Bash(exit 0)"
+      "Bash(exit 0)",
+      "Bash(Get-ChildItem -Path \"d:\\\\Coding\\\\bm-gotyaback\" -Force)",
+      "Bash(Select-Object Name, FullName)"
     ]
   }
 }

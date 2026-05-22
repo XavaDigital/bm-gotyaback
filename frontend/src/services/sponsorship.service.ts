@@ -74,8 +74,8 @@ const sponsorshipService = {
   },
 
   // Get pending logo approvals for a campaign (owner only)
-  getPendingLogos: async (campaignId: string): Promise<SponsorEntry[]> => {
-    const response = await apiClient.get<SponsorEntry[]>(
+  getPendingLogos: async (campaignId: string): Promise<{ pendingLogos: SponsorEntry[]; pagination: unknown } | SponsorEntry[]> => {
+    const response = await apiClient.get<{ pendingLogos: SponsorEntry[]; pagination: unknown } | SponsorEntry[]>(
       `/campaigns/${campaignId}/pending-logos`,
     );
     return response.data;

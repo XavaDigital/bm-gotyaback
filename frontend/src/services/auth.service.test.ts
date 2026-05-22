@@ -17,7 +17,8 @@ describe('Auth Service', () => {
       const mockUser = createMockUser();
       const mockResponse = mockApiResponse({
         ...mockUser,
-        token: 'test-token',
+        accessToken: 'test-token',
+        refreshToken: 'refresh-token',
       });
 
       vi.spyOn(apiClient, 'post').mockResolvedValue(mockResponse);
@@ -55,7 +56,8 @@ describe('Auth Service', () => {
       const mockUser = createMockUser();
       const mockResponse = mockApiResponse({
         ...mockUser,
-        token: 'test-token',
+        accessToken: 'test-token',
+        refreshToken: 'refresh-token',
       });
 
       vi.spyOn(apiClient, 'post').mockResolvedValue(mockResponse);
@@ -106,7 +108,7 @@ describe('Auth Service', () => {
   describe('getCurrentUser', () => {
     it('should return user from localStorage', () => {
       const mockUser = createMockUser();
-      const userWithToken = { ...mockUser, token: 'test-token' };
+      const userWithToken = { ...mockUser, accessToken: 'test-token' };
       sessionStorage.setItem('user', JSON.stringify(userWithToken));
 
       const result = authService.getCurrentUser();
@@ -132,7 +134,7 @@ describe('Auth Service', () => {
   describe('isAuthenticated', () => {
     it('should return true if user is authenticated', () => {
       const mockUser = createMockUser();
-      sessionStorage.setItem('user', JSON.stringify({ ...mockUser, token: 'test-token' }));
+      sessionStorage.setItem('user', JSON.stringify({ ...mockUser, accessToken: 'test-token' }));
 
       const result = authService.isAuthenticated();
 

@@ -103,9 +103,7 @@ export const createMockSponsor = (overrides?: Partial<SponsorEntry>): SponsorEnt
   paymentStatus: 'paid',
   paymentMethod: 'cash',
   logoApprovalStatus: 'approved',
-  displaySize: 'medium',
-  calculatedFontSize: 16,
-  calculatedLogoWidth: 100,
+  displayMetrics: { kind: 'text' as const, fontSize: 16 },
   createdAt: new Date().toISOString(),
   ...overrides,
 });

@@ -126,11 +126,12 @@ const generateRandomSponsor = (
   const phone = `+64${Math.floor(Math.random() * 900000000 + 100000000)}`;
   const message = messages[Math.floor(Math.random() * messages.length)];
 
+  type DisplayMetrics =
+    | { kind: "text"; fontSize: number }
+    | { kind: "logo"; logoWidth: number };
   let amount: number;
   let positionId: string | undefined;
-  let displaySize: "small" | "medium" | "large" | "xlarge";
-  let calculatedFontSize: number | undefined;
-  let calculatedLogoWidth: number | undefined;
+  let displayMetrics: DisplayMetrics;
 
   // Determine amount and position based on campaign type and layout type
   if (layout.layoutType === "grid" && availablePositions.length > 0) {
@@ -174,73 +175,27 @@ const generateRandomSponsor = (
     sponsorType = "logo";
   }
 
-  // Determine display size based on campaign type and amount
-  if (
-    campaign.campaignType === "pay-what-you-want" &&
-    campaign.pricingConfig?.sizeTiers
-  ) {
-    // Use size tiers for pay-what-you-want
+  // Determine display metrics based on campaign type and amount
+  const amountToMetrics = (amt: number): DisplayMetrics =>
+    sponsorType === "text"
+      ? { kind: "text", fontSize: amt < 50 ? 14 : amt < 100 ? 18 : amt < 150 ? 24 : 32 }
+      : { kind: "logo", logoWidth: amt < 50 ? 60 : amt < 100 ? 80 : amt < 150 ? 120 : 160 };
+
+  if (campaign.campaignType === "pay-what-you-want" && campaign.pricingConfig?.sizeTiers) {
     const tier = campaign.pricingConfig.sizeTiers.find((t: any) => {
       const minMatch = !t.minAmount || amount >= t.minAmount;
       const maxMatch = !t.maxAmount || amount <= t.maxAmount;
       return minMatch && maxMatch;
     });
-
-    if (tier) {
-      displaySize = tier.size;
-      if (sponsorType === "text") {
-        calculatedFontSize = tier.textFontSize || 16;
-      } else {
-        calculatedLogoWidth = tier.logoWidth || 80;
-      }
-    } else {
-      // Fallback
-      displaySize = "medium";
-      if (sponsorType === "text") {
-        calculatedFontSize = 18;
-      } else {
-        calculatedLogoWidth = 80;
-      }
-    }
-  } else if (campaign.campaignType === "fixed") {
-    // For fixed pricing, all sponsors have the same amount and should have the same size
-    // Use a consistent size based on the fixed price
-    if (amount < 50) {
-      displaySize = "small";
-      calculatedFontSize = 14;
-      calculatedLogoWidth = 60;
-    } else if (amount < 100) {
-      displaySize = "medium";
-      calculatedFontSize = 18;
-      calculatedLogoWidth = 80;
-    } else if (amount < 150) {
-      displaySize = "large";
-      calculatedFontSize = 24;
-      calculatedLogoWidth = 120;
-    } else {
-      displaySize = "xlarge";
-      calculatedFontSize = 32;
-      calculatedLogoWidth = 160;
-    }
+    displayMetrics = tier
+      ? sponsorType === "text"
+        ? { kind: "text", fontSize: tier.textFontSize || 16 }
+        : { kind: "logo", logoWidth: tier.logoWidth || 80 }
+      : sponsorType === "text"
+        ? { kind: "text", fontSize: 18 }
+        : { kind: "logo", logoWidth: 80 };
   } else {
-    // For positional pricing, use amount-based sizing (amounts vary by position)
-    if (amount < 50) {
-      displaySize = "small";
-      calculatedFontSize = 14;
-      calculatedLogoWidth = 60;
-    } else if (amount < 100) {
-      displaySize = "medium";
-      calculatedFontSize = 18;
-      calculatedLogoWidth = 80;
-    } else if (amount < 150) {
-      displaySize = "large";
-      calculatedFontSize = 24;
-      calculatedLogoWidth = 120;
-    } else {
-      displaySize = "xlarge";
-      calculatedFontSize = 32;
-      calculatedLogoWidth = 160;
-    }
+    displayMetrics = amountToMetrics(amount);
   }
 
   // Generate logo URL if sponsor type is logo
@@ -269,19 +224,13 @@ const generateRandomSponsor = (
     paymentMethod: "card" as const,
     paymentStatus: "paid" as const,
     sponsorType,
-    displaySize,
+    displayMetrics,
   };
 
-  // Add logo-specific fields
   if (sponsorType === "logo") {
     sponsor.logoUrl = logoUrl;
-    sponsor.logoApprovalStatus = "approved"; // Auto-approve seeded logos
-    sponsor.calculatedLogoWidth = calculatedLogoWidth;
-    if (displayName) {
-      sponsor.displayName = displayName;
-    }
-  } else {
-    sponsor.calculatedFontSize = calculatedFontSize;
+    sponsor.logoApprovalStatus = "approved";
+    if (displayName) sponsor.displayName = displayName;
   }
 
   return sponsor;

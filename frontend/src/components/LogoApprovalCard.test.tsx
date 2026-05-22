@@ -17,7 +17,7 @@ describe('LogoApprovalCard', () => {
       name: 'Test Sponsor',
       email: 'test@example.com',
       amount: 100,
-      displaySize: 'medium',
+      displayMetrics: { kind: 'logo' as const, logoWidth: 80 },
     });
 
     renderWithProviders(

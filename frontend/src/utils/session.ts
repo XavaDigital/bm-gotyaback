@@ -8,7 +8,7 @@ export interface SessionData {
     name: string
     email: string
     organizerSlug?: string
-    token: string
+    accessToken: string
   }
 }
 
@@ -33,7 +33,7 @@ export async function setUserSession(userData: SessionData['user']) {
   const session = await getSession()
   await session.update({
     userId: userData?._id,
-    token: userData?.token,
+    token: userData?.accessToken,
     user: userData,
   })
 }

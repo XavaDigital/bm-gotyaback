@@ -48,10 +48,13 @@ const SizeOrderedRenderer: React.FC<SizeOrderedRendererProps> = ({
         return posB - posA; // Reverse order - highest position (highest price) first
       });
     } else {
-      const sizeOrder = { xlarge: 4, large: 3, medium: 2, small: 1 };
-      return [...approvedSponsors].sort(
-        (a, b) => sizeOrder[b.displaySize] - sizeOrder[a.displaySize]
-      );
+      const sizeValue = (s: SponsorEntry) => {
+        if (!s.displayMetrics) return 0;
+        return s.displayMetrics.kind === "text"
+          ? s.displayMetrics.fontSize
+          : s.displayMetrics.logoWidth;
+      };
+      return [...approvedSponsors].sort((a, b) => sizeValue(b) - sizeValue(a));
     }
   }, [sponsors, campaignType, sponsorDisplayType]);
 
@@ -138,7 +141,7 @@ const SizeOrderedRenderer: React.FC<SizeOrderedRendererProps> = ({
                 name={sponsor.name}
                 displayName={sponsor.displayName!}
                 logoUrl={sponsor.logoUrl!}
-                logoWidth={sponsor.calculatedLogoWidth || 100}
+                logoWidth={(sponsor.displayMetrics?.kind === "logo" ? sponsor.displayMetrics.logoWidth : undefined) ?? 100}
                 message={sponsor.message}
                 isPending={isPending}
               />
@@ -147,7 +150,7 @@ const SizeOrderedRenderer: React.FC<SizeOrderedRendererProps> = ({
               <LogoSponsor
                 name={sponsor.name}
                 logoUrl={sponsor.logoUrl!}
-                logoWidth={sponsor.calculatedLogoWidth || 100}
+                logoWidth={(sponsor.displayMetrics?.kind === "logo" ? sponsor.displayMetrics.logoWidth : undefined) ?? 100}
                 message={sponsor.message}
                 isPending={isPending}
               />
@@ -155,7 +158,7 @@ const SizeOrderedRenderer: React.FC<SizeOrderedRendererProps> = ({
             {shouldShowText && (
               <TextSponsor
                 name={sponsor.name}
-                fontSize={sponsor.calculatedFontSize || 16}
+                fontSize={(sponsor.displayMetrics?.kind === "text" ? sponsor.displayMetrics.fontSize : undefined) ?? 16}
                 message={sponsor.message}
                 isPending={isPending}
               />

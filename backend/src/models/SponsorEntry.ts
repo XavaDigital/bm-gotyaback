@@ -37,16 +37,16 @@ const sponsorEntrySchema = new mongoose.Schema(
     },
     logoRejectionReason: { type: String },
 
-    // Display size (calculated based on amount/tier)
-    displaySize: {
-      type: String,
-      enum: ["small", "medium", "large", "xlarge"],
-      default: "medium",
+    // Pixel dimensions for rendering — exactly one branch is populated depending on sponsorType.
+    // Replaces the old flat displaySize + calculatedFontSize + calculatedLogoWidth triple.
+    displayMetrics: {
+      type: {
+        kind: { type: String, enum: ["text", "logo"] },
+        fontSize: { type: Number },
+        logoWidth: { type: Number },
+      },
+      default: null,
     },
-
-    // Calculated pixel sizes for rendering
-    calculatedFontSize: { type: Number }, // for text sponsors
-    calculatedLogoWidth: { type: Number }, // for logo sponsors
   },
   { timestamps: true },
 );

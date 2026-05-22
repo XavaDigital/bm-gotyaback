@@ -94,7 +94,7 @@ const CampaignDetail: React.FC = () => {
     isLoading,
     refetch,
   } = useQuery({
-    queryKey: ["campaign", id],
+    queryKey: ["campaign-detail", id],
     queryFn: async () => {
       const [campaign, sponsors, layout] = await Promise.all([
         campaignService.getCampaignById(id!),
@@ -133,7 +133,12 @@ const CampaignDetail: React.FC = () => {
 
     try {
       setLoadingPendingLogos(true);
-      const logos = await sponsorshipService.getPendingLogos(id);
+      const logosData = await sponsorshipService.getPendingLogos(id);
+      const logos = Array.isArray((logosData as any)?.pendingLogos)
+        ? (logosData as any).pendingLogos
+        : Array.isArray(logosData)
+        ? logosData
+        : [];
       setPendingLogos(logos);
     } catch (error: any) {
       // Silently fail - user might not have permission or no pending logos

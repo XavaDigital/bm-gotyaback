@@ -1,6 +1,9 @@
 import { Campaign } from "../models/Campaign";
+import { ShirtLayout } from "../models/ShirtLayout";
+import { SponsorEntry } from "../models/SponsorEntry";
 import mongoose from "mongoose";
 import { validatePricingConfig, getDefaultSizeTiers } from "./pricing.service";
+import * as shirtLayoutService from "./shirtLayout.service";
 import { PricingConfig } from "../types/campaign.types";
 
 // Helper function to generate URL-friendly slug
@@ -22,6 +25,21 @@ const generateUniqueSlug = async (title: string): Promise<string> => {
   }
 
   return slug;
+};
+
+// Finds a campaign, asserts the caller owns it, and returns the document.
+// Centralises the populated-vs-plain-ObjectId normalisation in one place.
+const assertCampaignOwner = async (campaignId: string, userId: string) => {
+  const campaign = await Campaign.findById(campaignId);
+  if (!campaign) throw new Error("Campaign not found");
+
+  const ownerId =
+    typeof campaign.ownerId === "object" && campaign.ownerId._id
+      ? campaign.ownerId._id.toString()
+      : campaign.ownerId.toString();
+
+  if (ownerId !== userId) throw new Error("Not authorized");
+  return campaign;
 };
 
 export const createCampaign = async (userId: string, campaignData: any) => {
@@ -117,21 +135,7 @@ export const updateCampaign = async (
   userId: string,
   updates: any,
 ) => {
-  const campaign = await Campaign.findById(campaignId);
-
-  if (!campaign) {
-    throw new Error("Campaign not found");
-  }
-
-  // Verify ownership - handle populated ownerId
-  const ownerId =
-    typeof campaign.ownerId === "object" && campaign.ownerId._id
-      ? campaign.ownerId._id.toString()
-      : campaign.ownerId.toString();
-
-  if (ownerId !== userId) {
-    throw new Error("Not authorized to update this campaign");
-  }
+  const campaign = await assertCampaignOwner(campaignId, userId);
 
   // Don't allow updating certain fields if campaign is closed
   if (campaign.isClosed) {
@@ -169,28 +173,14 @@ export const updateCampaign = async (
   delete updates.ownerId;
   delete updates.slug;
 
-  Object.assign(campaign, updates);
+  campaign.set(updates);
   await campaign.save();
 
   return campaign;
 };
 
 export const closeCampaign = async (campaignId: string, userId: string) => {
-  const campaign = await Campaign.findById(campaignId);
-
-  if (!campaign) {
-    throw new Error("Campaign not found");
-  }
-
-  // Verify ownership - handle populated ownerId
-  const ownerId =
-    typeof campaign.ownerId === "object" && campaign.ownerId._id
-      ? campaign.ownerId._id.toString()
-      : campaign.ownerId.toString();
-
-  if (ownerId !== userId) {
-    throw new Error("Not authorized to close this campaign");
-  }
+  const campaign = await assertCampaignOwner(campaignId, userId);
 
   if (campaign.isClosed) {
     throw new Error("Campaign is already closed");
@@ -316,7 +306,7 @@ export const getUserCampaigns = async (userId: string) => {
   return campaigns;
 };
 
-export const validateCampaignIsOpen = (campaign: any) => {
+export const validateCampaignIsOpen = (campaign: any): void => {
   if (campaign.isClosed) {
     throw new Error("Campaign is closed");
   }
@@ -324,8 +314,6 @@ export const validateCampaignIsOpen = (campaign: any) => {
   if (campaign.endDate && new Date() > new Date(campaign.endDate)) {
     throw new Error("Campaign has ended");
   }
-
-  return true;
 };
 
 export const updateCampaignPricing = async (
@@ -333,42 +321,22 @@ export const updateCampaignPricing = async (
   userId: string,
   pricingData: any,
 ) => {
-  const campaign = await Campaign.findById(campaignId);
-
-  if (!campaign) {
-    throw new Error("Campaign not found");
-  }
-
-  // Verify ownership
-  const ownerId =
-    typeof campaign.ownerId === "object" && campaign.ownerId._id
-      ? campaign.ownerId._id.toString()
-      : campaign.ownerId.toString();
-
-  if (ownerId !== userId) {
-    throw new Error("Not authorized to update this campaign");
-  }
+  const campaign = await assertCampaignOwner(campaignId, userId);
 
   if (campaign.isClosed) {
     throw new Error("Cannot update a closed campaign");
   }
 
   // Check for ANY sponsors (even pending)
-  const hasSponsors = await mongoose
-    .model("SponsorEntry")
-    .exists({ campaignId });
+  const hasSponsors = await SponsorEntry.exists({ campaignId });
   if (hasSponsors) {
-    throw new Error(
-      "Cannot update pricing because campaign already has sponsors",
-    );
+    throw new Error("Cannot update pricing because campaign already has sponsors");
   }
 
-  // Determine config and update layout
-  const pricingConfig: any = {};
+  const pricingConfig: PricingConfig = {};
   if (campaign.campaignType === "fixed") {
     pricingConfig.fixedPrice = pricingData.fixedPrice;
   } else if (campaign.campaignType === "positional") {
-    // Support both multiplicative and additive pricing
     if (pricingData.priceMultiplier) {
       pricingConfig.priceMultiplier = pricingData.priceMultiplier;
     } else {
@@ -379,52 +347,15 @@ export const updateCampaignPricing = async (
     throw new Error("Cannot update pricing for pay-what-you-want campaigns");
   }
 
-  // Find and update layout directly
-  const ShirtLayout = mongoose.model("ShirtLayout");
-  const layout = await ShirtLayout.findOne({ campaignId });
+  await shirtLayoutService.recalculateLayoutPrices(campaignId, campaign.campaignType, pricingConfig);
+  campaign.set({ pricingConfig });
+  await campaign.save();
 
-  if (!layout) {
-    throw new Error("Layout not found");
-  }
-
-  // Recalculate all position prices
-  layout.placements.forEach((placement: any, index: number) => {
-    const positionNumber = index + 1; // Position number is 1-based
-
-    if (campaign.campaignType === "fixed") {
-      placement.price = pricingConfig.fixedPrice;
-    } else if (campaign.campaignType === "positional") {
-      if (pricingConfig.priceMultiplier) {
-        // Multiplicative: position × multiplier
-        placement.price = positionNumber * pricingConfig.priceMultiplier;
-      } else {
-        // Additive: basePrice + (position × pricePerPosition)
-        placement.price =
-          pricingConfig.basePrice + index * pricingConfig.pricePerPosition;
-      }
-    }
-  });
-
-  await layout.save();
   return true;
 };
 
 export const reopenCampaign = async (campaignId: string, userId: string) => {
-  const campaign = await Campaign.findById(campaignId);
-
-  if (!campaign) {
-    throw new Error("Campaign not found");
-  }
-
-  // Verify ownership - handle populated ownerId
-  const ownerId =
-    typeof campaign.ownerId === "object" && campaign.ownerId._id
-      ? campaign.ownerId._id.toString()
-      : campaign.ownerId.toString();
-
-  if (ownerId !== userId) {
-    throw new Error("Not authorized to reopen this campaign");
-  }
+  const campaign = await assertCampaignOwner(campaignId, userId);
 
   if (!campaign.isClosed) {
     throw new Error("Campaign is not closed");
@@ -449,18 +380,18 @@ export const deleteCampaign = async (campaignId: string) => {
   }
 
   const campaign = await Campaign.findById(campaignId);
+  if (!campaign) throw new Error("Campaign not found");
 
-  if (!campaign) {
-    throw new Error("Campaign not found");
+  const session = await mongoose.startSession();
+  try {
+    await session.withTransaction(async () => {
+      await ShirtLayout.deleteMany({ campaignId }, { session });
+      await SponsorEntry.deleteMany({ campaignId }, { session });
+      await Campaign.findByIdAndDelete(campaignId, { session });
+    });
+  } finally {
+    await session.endSession();
   }
-
-  // Delete associated data
-  const ShirtLayout = mongoose.model("ShirtLayout");
-  const SponsorEntry = mongoose.model("SponsorEntry");
-
-  await ShirtLayout.deleteMany({ campaignId });
-  await SponsorEntry.deleteMany({ campaignId });
-  await Campaign.findByIdAndDelete(campaignId);
 
   return { message: "Campaign deleted successfully" };
 };

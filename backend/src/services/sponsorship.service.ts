@@ -4,7 +4,7 @@ import * as shirtLayoutService from "./shirtLayout.service";
 import * as campaignService from "./campaign.service";
 import mongoose from "mongoose";
 import { calculateSizeTier, calculateDisplaySizes } from "./pricing.service";
-import { SponsorType } from "../types/campaign.types";
+import { PricingConfig, SponsorType } from "../types/campaign.types";
 
 export const createSponsorship = async (
   campaignId: string,
@@ -33,11 +33,11 @@ export const createSponsorship = async (
   // For PWYW campaigns, enforce the server-side minimum so a cash sponsor cannot
   // send $0.01 and receive a "large" display tier.
   if (campaign.campaignType === "pay-what-you-want") {
-    const config = campaign.pricingConfig as any;
+    const config = campaign.pricingConfig as PricingConfig;
     const minimumAmount: number | undefined =
       config?.minimumAmount ??
-      (config?.sizeTiers?.length > 0
-        ? Math.min(...(config.sizeTiers as any[]).map((t: any) => t.minAmount ?? 0))
+      (config?.sizeTiers && config.sizeTiers.length > 0
+        ? Math.min(...config.sizeTiers.map((t) => t.minAmount ?? 0))
         : undefined);
 
     if (minimumAmount !== undefined && minimumAmount > 0 && sponsorData.amount < minimumAmount) {
@@ -78,45 +78,34 @@ export const createSponsorship = async (
     }
   }
 
-  // Calculate display size for pay-what-you-want campaigns
-  let displaySize: "small" | "medium" | "large" | "xlarge" = "medium";
-  let calculatedFontSize: number | undefined;
-  let calculatedLogoWidth: number | undefined;
+  // Calculate display metrics for pay-what-you-want campaigns
+  type DisplayMetrics =
+    | { kind: "text"; fontSize: number }
+    | { kind: "logo"; logoWidth: number }
+    | null;
+  let displayMetrics: DisplayMetrics = null;
 
   if (campaign.campaignType === "pay-what-you-want") {
+    const sponsorType = sponsorData.sponsorType || "text";
     if (
       campaign.pricingConfig?.sizeTiers &&
       campaign.pricingConfig.sizeTiers.length > 0
     ) {
-      // Use size tiers if defined
       const tier = calculateSizeTier(
         sponsorData.amount,
-        campaign.pricingConfig.sizeTiers as any,
+        (campaign.pricingConfig as PricingConfig).sizeTiers,
       );
-
       if (tier) {
-        displaySize = tier.size;
-        const sponsorType = sponsorData.sponsorType || "text";
-        const sizes = calculateDisplaySizes(
-          sponsorData.amount,
-          tier,
-          sponsorType,
-        );
-        calculatedFontSize = sizes.fontSize;
-        calculatedLogoWidth = sizes.logoWidth;
+        const sizes = calculateDisplaySizes(sponsorData.amount, tier, sponsorType);
+        displayMetrics = sizes.fontSize !== undefined
+          ? { kind: "text", fontSize: sizes.fontSize }
+          : { kind: "logo", logoWidth: sizes.logoWidth! };
       }
-    } else {
-      // No size tiers - use simple proportional sizing based on amount
-      // Default: medium size for all sponsors
-      displaySize = "medium";
-      const sponsorType = sponsorData.sponsorType || "text";
-
-      // Simple proportional sizing: base size + amount-based scaling
-      if (sponsorType === "text") {
-        calculatedFontSize = 16; // Default medium text size
-      } else {
-        calculatedLogoWidth = 80; // Default medium logo size
-      }
+    }
+    if (!displayMetrics) {
+      displayMetrics = sponsorType === "text"
+        ? { kind: "text", fontSize: 16 }
+        : { kind: "logo", logoWidth: 80 };
     }
   }
 
@@ -140,9 +129,7 @@ export const createSponsorship = async (
       logoUrl: sponsorData.logoUrl,
       displayName: sponsorData.displayName,
       logoApprovalStatus,
-      displaySize,
-      calculatedFontSize,
-      calculatedLogoWidth,
+      displayMetrics: displayMetrics ?? undefined,
     });
 
     return sponsorEntry;
@@ -308,7 +295,7 @@ export const getPublicSponsors = async (campaignId: string) => {
     ],
   }).select(
     // Explicitly exclude sensitive fields: email, phone, paymentMethod
-    "name message positionId createdAt sponsorType logoUrl displayName logoApprovalStatus displaySize calculatedFontSize calculatedLogoWidth amount paymentStatus",
+    "name message positionId createdAt sponsorType logoUrl displayName logoApprovalStatus displayMetrics amount paymentStatus",
   );
 
   return sponsors;

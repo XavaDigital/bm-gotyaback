@@ -1,30 +1,27 @@
 import { describe, it, expect } from 'vitest';
 import * as pricingService from './pricing.service';
-import type { PricingConfig, SizeTier } from '../types/campaign.types';
+import type { PositionalPricing, PricingConfig, SizeTier } from '../types/campaign.types';
 
 describe('Pricing Service', () => {
   describe('calculatePositionPrice', () => {
     it('should calculate price with multiplicative pricing', () => {
-      const config: PricingConfig = {
-        priceMultiplier: 5,
-      };
+      const config: PositionalPricing = { type: 'positional', mode: 'multiplicative', priceMultiplier: 5 };
 
       const price = pricingService.calculatePositionPrice(40, config);
       expect(price).toBe(200); // 40 * 5
     });
 
     it('should calculate price with additive pricing (ascending)', () => {
-      const config: PricingConfig = {
-        basePrice: 10,
-        pricePerPosition: 2,
-      };
+      const config: PositionalPricing = { type: 'positional', mode: 'additive', basePrice: 10, pricePerPosition: 2 };
 
       const price = pricingService.calculatePositionPrice(40, config);
       expect(price).toBe(88); // 10 + (40 - 1) * 2
     });
 
     it('should calculate price with additive pricing (descending)', () => {
-      const config: PricingConfig = {
+      const config: PositionalPricing = {
+        type: 'positional',
+        mode: 'additive',
         basePrice: 10,
         pricePerPosition: 2,
         pricingOrder: 'descending',
@@ -35,7 +32,9 @@ describe('Pricing Service', () => {
     });
 
     it('should calculate price with section-based pricing', () => {
-      const config: PricingConfig = {
+      const config: PositionalPricing = {
+        type: 'positional',
+        mode: 'sections',
         sections: {
           top: { amount: 100, slots: 10 },
           middle: { amount: 50, slots: 20 },
@@ -48,32 +47,15 @@ describe('Pricing Service', () => {
       expect(pricingService.calculatePositionPrice(1, config, 'bottom')).toBe(25);
     });
 
-    it('should throw error for invalid multiplicative pricing', () => {
-      const config: PricingConfig = {
-        priceMultiplier: -5,
+    it('should throw for sections mode when section arg is missing', () => {
+      const config: PositionalPricing = {
+        type: 'positional',
+        mode: 'sections',
+        sections: { top: { amount: 100, slots: 10 } },
       };
 
-      expect(() => pricingService.calculatePositionPrice(40, config)).toThrow(
-        'priceMultiplier must be positive'
-      );
-    });
-
-    it('should throw error for invalid additive pricing', () => {
-      const config: PricingConfig = {
-        basePrice: -10,
-        pricePerPosition: 2,
-      };
-
-      expect(() => pricingService.calculatePositionPrice(40, config)).toThrow(
-        'basePrice and pricePerPosition must be non-negative'
-      );
-    });
-
-    it('should throw error for missing pricing config', () => {
-      const config: PricingConfig = {};
-
-      expect(() => pricingService.calculatePositionPrice(40, config)).toThrow(
-        'Invalid pricing config for positional pricing'
+      expect(() => pricingService.calculatePositionPrice(1, config)).toThrow(
+        'Section parameter required'
       );
     });
   });
@@ -139,21 +121,51 @@ describe('Pricing Service', () => {
     });
   });
 
+  describe('parsePricingConfig', () => {
+    it('should parse fixed pricing config', () => {
+      const config: PricingConfig = { fixedPrice: 25 };
+      const result = pricingService.parsePricingConfig('fixed', config);
+      expect(result).toEqual({ type: 'fixed', fixedPrice: 25 });
+    });
+
+    it('should parse positional multiplicative config', () => {
+      const config: PricingConfig = { priceMultiplier: 5 };
+      const result = pricingService.parsePricingConfig('positional', config);
+      expect(result).toEqual({ type: 'positional', mode: 'multiplicative', priceMultiplier: 5 });
+    });
+
+    it('should parse positional additive config', () => {
+      const config: PricingConfig = { basePrice: 10, pricePerPosition: 2 };
+      const result = pricingService.parsePricingConfig('positional', config);
+      expect(result).toEqual({ type: 'positional', mode: 'additive', basePrice: 10, pricePerPosition: 2, pricingOrder: undefined });
+    });
+
+    it('should parse pay-what-you-want config', () => {
+      const config: PricingConfig = { minimumAmount: 5 };
+      const result = pricingService.parsePricingConfig('pay-what-you-want', config);
+      expect(result).toEqual({ type: 'pay-what-you-want', minimumAmount: 5, suggestedAmounts: undefined, sizeTiers: undefined });
+    });
+
+    it('should throw for invalid fixed pricing', () => {
+      expect(() => pricingService.parsePricingConfig('fixed', { fixedPrice: 0 })).toThrow(
+        'Fixed pricing requires a valid fixedPrice'
+      );
+    });
+
+    it('should throw for positional pricing with no mode fields', () => {
+      expect(() => pricingService.parsePricingConfig('positional', {})).toThrow(
+        'Positional pricing requires'
+      );
+    });
+  });
+
   describe('validatePricingConfig', () => {
     it('should validate fixed pricing config', () => {
-      const config: PricingConfig = {
-        fixedPrice: 25,
-      };
-
-      expect(pricingService.validatePricingConfig('fixed', config)).toBe(true);
+      expect(pricingService.validatePricingConfig('fixed', { fixedPrice: 25 })).toBe(true);
     });
 
     it('should throw error for invalid fixed pricing', () => {
-      const config: PricingConfig = {
-        fixedPrice: 0,
-      };
-
-      expect(() => pricingService.validatePricingConfig('fixed', config)).toThrow(
+      expect(() => pricingService.validatePricingConfig('fixed', { fixedPrice: 0 })).toThrow(
         'Fixed pricing requires a valid fixedPrice'
       );
     });

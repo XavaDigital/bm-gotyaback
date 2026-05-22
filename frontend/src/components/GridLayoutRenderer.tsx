@@ -153,6 +153,7 @@ const GridLayoutRenderer: React.FC<GridLayoutRendererProps> = ({
                           name={sponsor.name}
                           displayName={sponsor.displayName}
                           logoUrl={sponsor.logoUrl}
+                          logoWidth={(sponsor.displayMetrics?.kind === "logo" ? sponsor.displayMetrics.logoWidth : undefined) ?? 100}
                           message={sponsor.message}
                           isPending={sponsor.paymentStatus === "pending"}
                         />
@@ -165,7 +166,7 @@ const GridLayoutRenderer: React.FC<GridLayoutRendererProps> = ({
                         <LogoSponsor
                           name={sponsor.name}
                           logoUrl={sponsor.logoUrl}
-                          logoWidth={sponsor.calculatedLogoWidth || 100}
+                          logoWidth={(sponsor.displayMetrics?.kind === "logo" ? sponsor.displayMetrics.logoWidth : undefined) ?? 100}
                           message={
                             sponsorDisplayType === "logo-only"
                               ? sponsor.message
@@ -183,7 +184,7 @@ const GridLayoutRenderer: React.FC<GridLayoutRendererProps> = ({
                           sponsor.sponsorType === "text")) && (
                         <TextSponsor
                           name={sponsor.name}
-                          fontSize={sponsor.calculatedFontSize || 16}
+                          fontSize={(sponsor.displayMetrics?.kind === "text" ? sponsor.displayMetrics.fontSize : undefined) ?? 16}
                           message={sponsor.message}
                           isPending={sponsor.paymentStatus === "pending"}
                         />
